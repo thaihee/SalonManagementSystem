@@ -32,7 +32,6 @@ Hệ thống quản lý salon tóc/spa toàn diện, hỗ trợ đặt lịch h�
 
 ## Cài đặt & chạy dự án
 
-\`\`\`bash
 # Clone repository
 git clone https://github.com/thaihee/SalonManagementSystem.git
 cd SalonManagementSystem
