@@ -29,7 +29,6 @@ Hệ thống quản lý salon tóc/spa toàn diện, hỗ trợ đặt lịch h�
 
 ## Cài đặt & chạy dự án
 
-\`\`\`bash
 # Clone repository
 git clone https://github.com/thaihee/SalonManagementSystem.git
 cd SalonManagementSystem
@@ -46,7 +45,6 @@ pip install -r requirements.txt
 
 # Chạy ứng dụng
 python app/index.py
-\`\`\`
 
 Truy cập ứng dụng tại `http://127.0.0.1:5000`
 
@@ -58,16 +56,12 @@ Dự án được đảm bảo chất lượng qua nhiều tầng kiểm thử, 
 
 Kiểm tra logic nghiệp vụ ở tầng dữ liệu và xử lý (tính tiền hóa đơn, kiểm tra khung giờ trống, trừ tồn kho...), chạy tự động mỗi khi có thay đổi code thông qua CI/CD (GitHub Actions).
 
-\`\`\`bash
 pytest rapp/test/
-\`\`\`
 
 Ví dụ 1 test case:
-\`\`\`python
 def test_tinh_tong_tien_hoa_don():
     tong = tinh_tong_tien(dich_vu_gia=200000, san_pham_gia=50000, khuyen_mai=10)
     assert tong == 225000
-\`\`\`
 
 ### API Test — Postman
 
@@ -81,14 +75,12 @@ Collection Postman được lưu tại `FileTestCase/postman/`.
 
 Mô phỏng thao tác thật của người dùng trên trình duyệt để kiểm tra toàn bộ luồng từ giao diện đến kết quả cuối, đặc biệt cho 2 luồng quan trọng nhất: **đặt lịch hẹn** và **thanh toán**.
 
-\`\`\`python
 def test_dat_lich_thanh_cong(page):
     page.goto("http://127.0.0.1:5000/dat-lich")
     page.select_option("#service-select", "Cắt tóc")
     page.fill("#appointment-date", "2026-08-20")
     page.click("#confirm-btn")
     assert page.locator("text=Đặt lịch thành công").is_visible()
-\`\`\`
 
 ### Kiểm thử bảo mật — OWASP ZAP
 
