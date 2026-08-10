@@ -2,7 +2,7 @@ import hashlib
 from datetime import datetime
 
 from flask_login import UserMixin
-from sqlalchemy import Column, String, Enum, Float, Text, DateTime, Integer, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Enum, Float, Text, DateTime, Integer, ForeignKey, UniqueConstraint, BigInteger
 from sqlalchemy.orm import relationship
 
 from app import db, app
@@ -70,7 +70,7 @@ class Service(BaseModel):
 
 class Product(BaseModel):
     product_name = Column(String(100), nullable=False, unique=True)
-    price = Column(Float, default=0, nullable=False)
+    price = Column(BigInteger, default=0, nullable=False)
     stock_quantity = Column(Integer, default=0, nullable=False)
     min_stock_level = Column(Integer, default=5, nullable=False)
 
