@@ -1,20 +1,36 @@
 import math
 from datetime import datetime
+from functools import wraps
 
 from flask import render_template, request, redirect, url_for, flash, jsonify, abort
 from flask_login import login_user, logout_user, login_required, current_user
 
 from app import app, dao, login, db
-from app.exceptions import ValidationError, DuplicateError
+from app.exceptions import ValidationError, DuplicateError, NotFoundError
 from app.models import User, UserRole, Service
 
 
 # =========================================================================
-# 0. FLASK-LOGIN USER LOADER
+# 0. FLASK-LOGIN USER LOADER + PHÂN QUYỀN
 # =========================================================================
 @login.user_loader
 def load_user(user_id):
     return dao.get_user_by_id(user_id)
+
+
+def role_required(*roles):
+    """Decorator chặn truy cập route nếu user chưa đăng nhập hoặc sai vai trò.
+    Dùng ở index.py và admin.py: @role_required(UserRole.ADMIN, UserRole.STAFF)"""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if current_user.role not in roles:
+                abort(403)
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 # =========================================================================
@@ -64,10 +80,9 @@ def login_process():
     except ValidationError as val:
         # HTTP 401 Unauthorized khi sai thông tin tài khoản
         return render_template('login.html', err_msg=str(val)), 401
-    except DuplicateError as dup:
-        return render_template('login.html', err_msg=str(dup)), 400
     except Exception as ex:
         # HTTP 500 khi gặp lỗi hệ thống
+        app.logger.exception(ex)
         return render_template('login.html', err_msg="Có lỗi hệ thống xảy ra!"), 500
 
 
@@ -112,10 +127,14 @@ def register_process():
         flash("Đăng ký tài khoản thành công! Vui lòng đăng nhập.", "success")
         return redirect('/login'), 302
 
-    except (ValidationError, DuplicateError) as ex:
-        # HTTP 400 Bad Request cho Tester kiểm tra lỗi dữ liệu đầu vào
+    except ValidationError as ex:
+        # HTTP 400 Bad Request: dữ liệu sai định dạng
         return render_template('register.html', err_msg=str(ex)), 400
+    except DuplicateError as ex:
+        # HTTP 409 Conflict: username/email đã tồn tại
+        return render_template('register.html', err_msg=str(ex)), 409
     except Exception as ex:
+        app.logger.exception(ex)
         return render_template('register.html', err_msg="Lỗi hệ thống khi đăng ký!"), 500
 
 
@@ -140,9 +159,14 @@ def update_profile_process():
             email=data.get('email')
         )
         return render_template('profile.html', succ_msg="Cập nhật thông tin thành công!"), 200
-    except (ValidationError, DuplicateError) as ex:
+    except NotFoundError as ex:
+        return render_template('profile.html', err_msg=str(ex)), 404
+    except ValidationError as ex:
         return render_template('profile.html', err_msg=str(ex)), 400
+    except DuplicateError as ex:
+        return render_template('profile.html', err_msg=str(ex)), 409
     except Exception as ex:
+        app.logger.exception(ex)
         return render_template('profile.html', err_msg="Không thể cập nhật hồ sơ!"), 500
 
 

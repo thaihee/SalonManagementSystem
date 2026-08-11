@@ -2,9 +2,9 @@ import hashlib
 import re
 from sqlalchemy.exc import IntegrityError
 
-from app.models import User, UserRole, Service
+from app.models import User, UserRole, Service, Product
 from app import db, app
-from app.exceptions import ValidationError, DuplicateError
+from app.exceptions import ValidationError, DuplicateError, NotFoundError
 
 
 def get_user_by_id(user_id):
@@ -108,7 +108,7 @@ def update_user_profile(user_id, full_name, phone, email):
     """Cập nhật thông tin bản thân (User/Staff/Admin)"""
     u = get_user_by_id(user_id)
     if not u:
-        raise ValidationError("Người dùng không tồn tại!")
+        raise NotFoundError("Người dùng không tồn tại!")
 
     validate_user_input(full_name, u.username, None, phone, email, is_update=True)
 
@@ -133,7 +133,7 @@ def delete_user_soft(user_id):
     """Vô hiệu hóa tài khoản nhân viên/người dùng (Soft Delete qua cột active)"""
     u = get_user_by_id(user_id)
     if not u:
-        raise ValidationError("Người dùng không tồn tại!")
+        raise NotFoundError("Người dùng không tồn tại!")
 
     u.active = False
     db.session.commit()
@@ -160,3 +160,218 @@ def count_services(kw=None):
     if kw:
         query = query.filter(Service.service_name.contains(kw.strip()))
     return query.count()
+
+
+# =========================================================================
+# Nghiệp vụ 2: Quản lý Dịch vụ (Service)
+# =========================================================================
+
+def get_service_by_id(service_id):
+    return Service.query.get(service_id)
+
+
+def validate_service_input(name, price, duration, is_update=False, service_id=None):
+    """Hàm kiểm tra dữ liệu đầu vào cho Dịch vụ"""
+    if not name or not name.strip():
+        raise ValidationError("Tên dịch vụ không được để trống!")
+
+    try:
+        price = float(price)
+        if price < 0:
+            raise ValidationError("Giá dịch vụ không được âm!")
+    except (ValueError, TypeError):
+        raise ValidationError("Giá dịch vụ phải là một số hợp lệ!")
+
+    try:
+        duration = int(duration)
+        if duration <= 0:
+            raise ValidationError("Thời gian thực hiện phải lớn hơn 0 phút!")
+    except (ValueError, TypeError):
+        raise ValidationError("Thời gian thực hiện phải là số nguyên!")
+
+    # Kiểm tra trùng tên dịch vụ
+    name = name.strip()
+    query = Service.query.filter(Service.service_name == name)
+    if is_update and service_id:
+        query = query.filter(Service.id != service_id)
+
+    if query.first():
+        raise DuplicateError(f"Dịch vụ '{name}' đã tồn tại trong hệ thống!")
+
+
+def add_service(name, price, duration, description=None):
+    """Thêm mới dịch vụ"""
+    validate_service_input(name, price, duration)
+
+    s = Service(
+        service_name=name.strip(),
+        price=float(price),
+        duration_minutes=int(duration),
+        description=description.strip() if description else None
+    )
+
+    db.session.add(s)
+    try:
+        db.session.commit()
+        return s
+    except IntegrityError:
+        db.session.rollback()
+        raise Exception("Lỗi hệ thống: Không thể thêm dịch vụ!")
+
+
+def update_service(service_id, name, price, duration, description=None):
+    """Cập nhật dịch vụ"""
+    s = get_service_by_id(service_id)
+    if not s:
+        raise NotFoundError("Không tìm thấy dịch vụ!")
+
+    validate_service_input(name, price, duration, is_update=True, service_id=service_id)
+
+    s.service_name = name.strip()
+    s.price = float(price)
+    s.duration_minutes = int(duration)
+    s.description = description.strip() if description else None
+
+    try:
+        db.session.commit()
+        return s
+    except IntegrityError:
+        db.session.rollback()
+        raise Exception("Lỗi hệ thống: Không thể cập nhật dịch vụ!")
+
+
+def delete_service(service_id):
+    """Xóa mềm (Soft Delete) dịch vụ"""
+    s = get_service_by_id(service_id)
+    if not s:
+        raise NotFoundError("Không tìm thấy dịch vụ!")
+
+    s.active = False
+    db.session.commit()
+    return True
+
+
+# =========================================================================
+# Nghiệp vụ 3: Quản lý Sản phẩm (Product)
+# =========================================================================
+
+def get_product_by_id(product_id):
+    return Product.query.get(product_id)
+
+
+def load_products(kw=None, page=None):
+    """Lấy danh sách sản phẩm (có tìm kiếm & phân trang)"""
+    query = Product.query.filter(Product.active.__eq__(True))
+    if kw:
+        query = query.filter(Product.product_name.contains(kw.strip()))
+
+    page_size = app.config.get('PAGE_SIZE', 8)
+    if page:
+        start = (page - 1) * page_size
+        query = query.offset(start).limit(page_size)
+
+    return query.all()
+
+
+def count_products(kw=None):
+    """Đếm tổng số lượng sản phẩm để phân trang"""
+    query = Product.query.filter(Product.active.__eq__(True))
+    if kw:
+        query = query.filter(Product.product_name.contains(kw.strip()))
+    return query.count()
+
+
+def validate_product_input(name, price, stock, min_stock, is_update=False, product_id=None):
+    """Hàm kiểm tra dữ liệu đầu vào cho Sản phẩm"""
+    if not name or not name.strip():
+        raise ValidationError("Tên sản phẩm không được để trống!")
+
+    try:
+        price = int(price)
+        if price < 0:
+            raise ValidationError("Giá sản phẩm không được âm!")
+    except (ValueError, TypeError):
+        raise ValidationError("Giá sản phẩm phải là một số hợp lệ!")
+
+    try:
+        stock = int(stock)
+        if stock < 0:
+            raise ValidationError("Số lượng tồn kho không được âm!")
+    except (ValueError, TypeError):
+        raise ValidationError("Số lượng tồn kho phải là số nguyên!")
+
+    try:
+        min_stock = int(min_stock)
+        if min_stock < 0:
+            raise ValidationError("Mức tồn kho tối thiểu không được âm!")
+    except (ValueError, TypeError):
+        raise ValidationError("Mức tồn kho tối thiểu phải là số nguyên!")
+
+    # Kiểm tra trùng tên sản phẩm
+    name = name.strip()
+    query = Product.query.filter(Product.product_name == name)
+    if is_update and product_id:
+        query = query.filter(Product.id != product_id)
+
+    if query.first():
+        raise DuplicateError(f"Sản phẩm '{name}' đã tồn tại trong hệ thống!")
+
+
+def add_product(name, price, stock_quantity, min_stock_level):
+    """Thêm mới sản phẩm"""
+    validate_product_input(name, price, stock_quantity, min_stock_level)
+
+    p = Product(
+        product_name=name.strip(),
+        price=int(price),
+        stock_quantity=int(stock_quantity),
+        min_stock_level=int(min_stock_level)
+    )
+
+    db.session.add(p)
+    try:
+        db.session.commit()
+        return p
+    except IntegrityError:
+        db.session.rollback()
+        raise Exception("Lỗi hệ thống: Không thể thêm sản phẩm!")
+
+
+def update_product(product_id, name, price, stock_quantity, min_stock_level):
+    """Cập nhật thông tin sản phẩm"""
+    p = get_product_by_id(product_id)
+    if not p:
+        raise NotFoundError("Không tìm thấy sản phẩm!")
+
+    validate_product_input(name, price, stock_quantity, min_stock_level, is_update=True, product_id=product_id)
+
+    p.product_name = name.strip()
+    p.price = int(price)
+    p.stock_quantity = int(stock_quantity)
+    p.min_stock_level = int(min_stock_level)
+
+    try:
+        db.session.commit()
+        return p
+    except IntegrityError:
+        db.session.rollback()
+        raise Exception("Lỗi hệ thống: Không thể cập nhật sản phẩm!")
+
+
+def delete_product(product_id):
+    """Xóa mềm (Soft Delete) sản phẩm"""
+    p = get_product_by_id(product_id)
+    if not p:
+        raise NotFoundError("Không tìm thấy sản phẩm!")
+
+    p.active = False
+    db.session.commit()
+    return True
+
+
+def check_low_stock_products():
+    """Lấy danh sách các sản phẩm sắp hết hàng (stock_quantity <= min_stock_level)"""
+    return Product.query.filter(
+        Product.active.__eq__(True),
+        Product.stock_quantity <= Product.min_stock_level
+    ).all()
