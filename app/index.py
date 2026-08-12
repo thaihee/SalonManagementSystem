@@ -8,7 +8,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app import app, dao, login, db
 from app.exceptions import ValidationError, DuplicateError, NotFoundError
 from app.models import User, UserRole, Service
-
+from app.decorators import role_required
 
 # =========================================================================
 # 0. FLASK-LOGIN USER LOADER + PHÂN QUYỀN
@@ -17,21 +17,21 @@ from app.models import User, UserRole, Service
 def load_user(user_id):
     return dao.get_user_by_id(user_id)
 
-
-def role_required(*roles):
-    """Decorator chặn truy cập route nếu user chưa đăng nhập hoặc sai vai trò.
-    Dùng ở index.py và admin.py: @role_required(UserRole.ADMIN, UserRole.STAFF)"""
-    def decorator(f):
-        @wraps(f)
-        def wrapper(*args, **kwargs):
-            if not current_user.is_authenticated:
-                abort(401)
-            if current_user.role not in roles:
-                abort(403)
-            return f(*args, **kwargs)
-        return wrapper
-    return decorator
-
+#
+# def role_required(*roles):
+#     """Decorator chặn truy cập route nếu user chưa đăng nhập hoặc sai vai trò.
+#     Dùng ở index.py và admin.py: @role_required(UserRole.ADMIN, UserRole.STAFF)"""
+#     def decorator(f):
+#         @wraps(f)
+#         def wrapper(*args, **kwargs):
+#             if not current_user.is_authenticated:
+#                 abort(401)
+#             if current_user.role not in roles:
+#                 abort(403)
+#             return f(*args, **kwargs)
+#         return wrapper
+#     return decorator
+#
 
 # =========================================================================
 # 1. TRANG CHỦ SALON (INDEX - HIỂN THỊ DANH SÁCH DỊCH VỤ)

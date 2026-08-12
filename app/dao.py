@@ -170,6 +170,10 @@ def get_service_by_id(service_id):
     return Service.query.get(service_id)
 
 
+def get_all_services():
+    return Service.query.all()
+
+
 def validate_service_input(name, price, duration, is_update=False, service_id=None):
     """Hàm kiểm tra dữ liệu đầu vào cho Dịch vụ"""
     if not name or not name.strip():
@@ -375,3 +379,64 @@ def check_low_stock_products():
         Product.active.__eq__(True),
         Product.stock_quantity <= Product.min_stock_level
     ).all()
+
+
+# =========================================================================
+# Nghiệp vụ 3b: Nhập / Xuất kho
+# =========================================================================
+
+def _validate_stock_quantity(quantity):
+    """Hàm bổ trợ: số lượng nhập/xuất phải là số nguyên dương"""
+    try:
+        quantity = int(quantity)
+    except (ValueError, TypeError):
+        raise ValidationError("Số lượng phải là số nguyên!")
+    if quantity <= 0:
+        raise ValidationError("Số lượng phải lớn hơn 0!")
+    return quantity
+
+
+def import_stock(product_id, quantity):
+    """Nhập kho: tăng stock_quantity của sản phẩm"""
+    p = get_product_by_id(product_id)
+    if not p:
+        raise NotFoundError("Không tìm thấy sản phẩm!")
+
+    quantity = _validate_stock_quantity(quantity)
+
+    p.stock_quantity += quantity
+    try:
+        db.session.commit()
+        return p
+    except IntegrityError:
+        db.session.rollback()
+        raise Exception("Lỗi hệ thống: Không thể nhập kho!")
+
+
+def export_stock(product_id, quantity):
+    """Xuất kho: giảm stock_quantity của sản phẩm.
+    Validate KHÔNG cho xuất âm: số lượng xuất không được vượt quá tồn kho hiện có."""
+    p = get_product_by_id(product_id)
+    if not p:
+        raise NotFoundError("Không tìm thấy sản phẩm!")
+
+    quantity = _validate_stock_quantity(quantity)
+
+    if quantity > p.stock_quantity:
+        raise ValidationError(
+            f"Không đủ tồn kho để xuất! Tồn kho hiện tại: {p.stock_quantity}"
+        )
+
+    p.stock_quantity -= quantity
+    try:
+        db.session.commit()
+        return p
+    except IntegrityError:
+        db.session.rollback()
+        raise Exception("Lỗi hệ thống: Không thể xuất kho!")
+
+
+
+
+
+

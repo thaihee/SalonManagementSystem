@@ -17,6 +17,7 @@ cloudinary.config(cloud_name='dphbawbuk',
 api_key='466151686122924',
 api_secret='dH86bZJEC8Z800SNhRZVQEw648k')
 
-
 csrf = CSRFProtect(app)
 app.config['WTF_CSRF_ENABLED'] = False   # TODO: bật lại khi làm frontend, gắn {{ csrf_token() }} vào form
+
+from app import admin
