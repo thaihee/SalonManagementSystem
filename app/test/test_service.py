@@ -1,5 +1,5 @@
 import pytest
-from app import dao
+from app import dao, db  # Thêm import db
 from app.models import Service
 from app.exceptions import ValidationError, DuplicateError
 
@@ -17,8 +17,8 @@ def test_add_service_success(app):
     assert s.price == 100000
     assert s.duration_minutes == 30
 
-    # Kiểm tra DB xem đã lưu chưa
-    saved_service = Service.query.get(s.id)
+    # Kiểm tra DB xem đã lưu chưa (Sửa cảnh báo Query.get)
+    saved_service = db.session.get(Service, s.id)
     assert saved_service is not None
 
 
@@ -40,6 +40,16 @@ def test_add_service_duplicate_name(app):
     assert "đã tồn tại trong hệ thống" in str(excinfo.value)
 
 
+def test_add_service_avatar_too_long(app):
+    """Kiểm tra bắt lỗi ValidationError khi đường dẫn avatar vượt quá 255 ký tự"""
+    long_avatar_url = "https://example.com/images/" + "a" * 250 + ".png"
+
+    with pytest.raises(ValidationError) as excinfo:
+        dao.add_service(name="Cạo mặt", price=50000, duration=15, avatar=long_avatar_url)
+
+    assert "vượt quá 255 ký tự" in str(excinfo.value).lower()
+
+
 def test_update_service_success(app):
     """Kiểm tra cập nhật thông tin dịch vụ thành công"""
     s = dao.add_service(name="Nhuộm tóc", price=200000, duration=60)
@@ -58,5 +68,6 @@ def test_delete_service_soft(app):
     result = dao.delete_service(s.id)
     assert result is True
 
-    deleted_s = Service.query.get(s.id)
+    # Sửa cảnh báo Query.get
+    deleted_s = db.session.get(Service, s.id)
     assert deleted_s.active is False

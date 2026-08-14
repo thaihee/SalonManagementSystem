@@ -1,10 +1,197 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "layout/base.html" %}
 
-</body>
-</html>
+{% block title %}Hồ sơ cá nhân — Minimalist Muse{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="profile-layout-grid">
+        
+        <!-- 1. CỘT TRÁI: THÔNG TIN THÀNH VIÊN & AVATAR -->
+        <aside class="profile-sidebar-card">
+            <div class="avatar-wrapper">
+                <div class="avatar-circle">
+                    <!-- Lấy chữ cái đầu tiên của tên làm Avatar -->
+                    <span>{{ current_user.full_name[0] | upper if current_user.full_name else 'U' }}</span>
+                </div>
+                <div class="member-role-badge">
+                    <i class="fa-solid fa-crown"></i>
+                    <span>{{ current_user.role.name if current_user.role else 'CUSTOMER' }}</span>
+                </div>
+            </div>
+
+            <div class="user-summary">
+                <h3 class="user-display-name">{{ current_user.full_name }}</h3>
+                <p class="user-username">@{{ current_user.username }}</p>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <div class="user-meta-info">
+                <div class="meta-item">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <div>
+                        <span class="meta-label">Ngày tham gia</span>
+                        <span class="meta-val">{{ current_user.created_date.strftime('%d/%m/%Y') if current_user.created_date else 'Vừa tham gia' }}</span>
+                    </div>
+                </div>
+                <div class="meta-item">
+                    <i class="fa-solid fa-phone"></i>
+                    <div>
+                        <span class="meta-label">Số điện thoại</span>
+                        <span class="meta-val">{{ current_user.phone }}</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 2. CỘT PHẢI: FORM CHỈNH SỬA THÔNG TIN & LỊCH HẸN -->
+        <main class="profile-main-content">
+            
+            <!-- THÔNG BÁO THÀNH CÔNG / LỖI FROM BACKEND -->
+            {% if succ_msg %}
+                <div class="profile-alert alert-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>{{ succ_msg }}</span>
+                </div>
+            {% endif %}
+
+            {% if err_msg %}
+                <div class="profile-alert alert-error">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>{{ err_msg }}</span>
+                </div>
+            {% endif %}
+
+            <!-- FORM CẬP NHẬT THÔNG TIN CÁ NHÂN -->
+            <div class="profile-card-box">
+                <div class="card-box-header">
+                    <div>
+                        <h2 class="card-box-title">Thông tin cá nhân</h2>
+                        <p class="card-box-sub">Cập nhật chi tiết thông tin tài khoản của bạn</p>
+                    </div>
+                </div>
+
+                <form id="profile-form" class="profile-form">
+                    <div class="form-row-2col">
+                        <!-- Họ và tên -->
+                        <div class="form-group-luxury">
+                            <label for="full_name">Họ và tên</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-id-card input-icon"></i>
+                                <input type="text" id="full_name" name="full_name" 
+                                       value="{{ current_user.full_name }}" class="form-control-luxury" required>
+                            </div>
+                        </div>
+
+                        <!-- Tên đăng nhập (Chỉ xem - Không cho sửa) -->
+                        <div class="form-group-luxury">
+                            <label for="username">Tên đăng nhập</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-user input-icon"></i>
+                                <input type="text" id="username" value="{{ current_user.username }}" 
+                                       class="form-control-luxury readonly-input" readonly disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2col">
+                        <!-- Số điện thoại -->
+                        <div class="form-group-luxury">
+                            <label for="phone">Số điện thoại</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-phone input-icon"></i>
+                                <input type="tel" id="phone" name="phone" 
+                                       value="{{ current_user.phone }}" class="form-control-luxury" required>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group-luxury">
+                            <label for="email">Email liên hệ</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-envelope input-icon"></i>
+                                <input type="email" id="email" name="email" 
+                                       value="{{ current_user.email if current_user.email else '' }}" 
+                                       placeholder="Chưa cập nhật email" class="form-control-luxury">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-action-right">
+                        <button type="submit" class="btn-save-profile">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Lưu thay đổi</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- QUẢN LÝ LỊCH HẸN GẦN ĐÂY -->
+            <div class="profile-card-box">
+                <div class="card-box-header">
+                    <div>
+                        <h2 class="card-box-title">Lịch hẹn gần đây</h2>
+                        <p class="card-box-sub">Danh sách các dịch vụ bạn đã đặt lịch trải nghiệm</p>
+                    </div>
+                    <a href="/booking" class="btn-new-booking">
+                        <i class="fa-solid fa-plus"></i> Đặt lịch mới
+                    </a>
+                </div>
+
+                {% if current_user.appointments_as_customer %}
+                    <div class="table-responsive">
+                        <table class="profile-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã LH</th>
+                                    <th>Thời gian</th>
+                                    <th>Dịch vụ</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appt in current_user.appointments_as_customer %}
+                                <tr>
+                                    <td><strong>#{{ appt.id }}</strong></td>
+                                    <td>{{ appt.appointment_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ appt.service.service_name if appt.service else 'Dịch vụ Salon' }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ appt.status.name.lower() }}">
+                                            {{ appt.status.name }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-history-box">
+                        <i class="fa-solid fa-calendar-xmark empty-icon"></i>
+                        <p>Bạn chưa có lịch hẹn nào tại Salon.</p>
+                        <a href="/booking" class="btn-book-now-link">Đặt lịch dịch vụ ngay</a>
+                    </div>
+                {% endif %}
+            </div>
+
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('profile-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const res = await fetch('/users/me', {
+        method: 'PUT',
+        body: new FormData(this)
+    });
+    if (res.ok) {
+        window.location.reload();
+    } else {
+        alert('Cập nhật thất bại, vui lòng kiểm tra lại thông tin!');
+    }
+});
+</script>
+{% endblock %}

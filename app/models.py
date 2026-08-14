@@ -24,10 +24,9 @@ class UserRole(UserEnum):
     CUSTOMER = 3
 
 class AppointmentStatus(UserEnum):
-    PENDING = 1
-    CONFIRMED = 2
-    CANCELLED = 3
-    COMPLETED = 4
+    CONFIRMED = 1
+    CANCELLED = 2
+    COMPLETED = 3
 
 class PaymentMethod(UserEnum):
     CASH = 1
@@ -45,6 +44,8 @@ class User(BaseModel, UserMixin):
     phone = Column(String(15), nullable=False)
     email = Column(String(100), unique=True)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.CUSTOMER)
+    avatar = Column(String(255), nullable=True,
+                    default="https://res.cloudinary.com/dxxwcby8l/image/upload/v1647056401/ipmsmnxjydrhsrthx0bd.jpg")
 
     appointments_as_customer = relationship('Appointment', foreign_keys='Appointment.customer_id', backref='customer', lazy=True)
     appointments_as_staff = relationship('Appointment', foreign_keys='Appointment.staff_id', backref='staff', lazy=True)
@@ -63,6 +64,8 @@ class Service(BaseModel):
 
     appointments = relationship('Appointment', backref='service', lazy=True)
     invoice_details = relationship('InvoiceDetail', backref='service', lazy=True)
+    avatar = Column(String(255), nullable=True,
+                    default="https://res.cloudinary.com/dxxwcby8l/image/upload/v1683162354/placeholder-image_q8mpxv.png")
 
     def __str__(self):
         return self.service_name
@@ -82,7 +85,7 @@ class Product(BaseModel):
 
 class Appointment(BaseModel):
     appointment_date = Column(DateTime, nullable=False)
-    status = Column(Enum(AppointmentStatus), default=AppointmentStatus.PENDING)
+    status = Column(Enum(AppointmentStatus), default=AppointmentStatus.CONFIRMED)
     note = Column(Text, nullable=True)
 
     customer_id = Column(Integer, ForeignKey(User.id), nullable=False)
@@ -191,7 +194,7 @@ if __name__ == '__main__':
         appointments_data = [
             Appointment(appointment_date=now.replace(hour=14), status=AppointmentStatus.CONFIRMED,
                         customer_id=cus1.id, staff_id=staff1.id, service_id=services_data[0].id),
-            Appointment(appointment_date=now.replace(hour=16), status=AppointmentStatus.PENDING,
+            Appointment(appointment_date=now.replace(hour=16), status=AppointmentStatus.CONFIRMED,
                         customer_id=cus2.id, staff_id=staff2.id, service_id=services_data[1].id),
         ]
         db.session.add_all(appointments_data)

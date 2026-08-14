@@ -133,3 +133,102 @@ def low_stock_products_route():
         "stock_quantity": p.stock_quantity,
         "min_stock_level": p.min_stock_level
     } for p in products]), 200
+
+
+# =========================Nghiệp vụ 1b: Admin quản lý User/Nhân viên==========================
+
+def _serialize_user(u):
+    return {
+        "id": u.id,
+        "full_name": u.full_name,
+        "username": u.username,
+        "phone": u.phone,
+        "email": u.email,
+        "role": u.role.name,
+        "active": u.active
+    }
+
+
+@app.route('/users', methods=['GET'])
+@role_required(UserRole.ADMIN)
+def list_users_route():
+    role_param = request.args.get('role')
+    role = None
+    if role_param:
+        try:
+            role = UserRole[role_param.upper()]
+        except KeyError:
+            return jsonify(success=False, error=f"Role '{role_param}' không hợp lệ!"), 400
+
+    users = dao.get_users(role=role)
+    return jsonify([_serialize_user(u) for u in users]), 200
+
+
+@app.route('/users/<int:user_id>', methods=['GET'])
+@role_required(UserRole.ADMIN)
+def get_user_detail_route(user_id):
+    u = dao.get_user_by_id(user_id)
+    if not u:
+        return jsonify(success=False, error="Không tìm thấy người dùng!"), 404
+    return jsonify(_serialize_user(u)), 200
+
+
+@app.route('/users', methods=['POST'])
+@role_required(UserRole.ADMIN)
+def create_staff_route():
+    """Admin tạo tài khoản nhân viên (role=STAFF)"""
+    data = request.form
+    try:
+        u = dao.add_user(
+            full_name=data.get('full_name'),
+            username=data.get('username'),
+            password=data.get('password'),
+            phone=data.get('phone'),
+            email=data.get('email'),
+            role=UserRole.STAFF
+        )
+        return jsonify(success=True, user=_serialize_user(u)), 201
+    except ValidationError as ex:
+        return jsonify(success=False, error=str(ex)), 400
+    except DuplicateError as ex:
+        return jsonify(success=False, error=str(ex)), 409
+    except Exception as ex:
+        app.logger.exception(ex)
+        return jsonify(success=False, error="Lỗi hệ thống khi tạo tài khoản nhân viên!"), 500
+
+
+@app.route('/users/<int:user_id>', methods=['PUT'])
+@role_required(UserRole.ADMIN)
+def update_staff_route(user_id):
+    data = request.form
+    try:
+        u = dao.update_user_profile(
+            user_id=user_id,
+            full_name=data.get('full_name'),
+            phone=data.get('phone'),
+            email=data.get('email')
+        )
+        return jsonify(success=True, user=_serialize_user(u)), 200
+    except NotFoundError as ex:
+        return jsonify(success=False, error=str(ex)), 404
+    except ValidationError as ex:
+        return jsonify(success=False, error=str(ex)), 400
+    except DuplicateError as ex:
+        return jsonify(success=False, error=str(ex)), 409
+    except Exception as ex:
+        app.logger.exception(ex)
+        return jsonify(success=False, error="Lỗi hệ thống khi cập nhật nhân viên!"), 500
+
+
+@app.route('/users/<int:user_id>', methods=['DELETE'])
+@role_required(UserRole.ADMIN)
+def deactivate_user_route(user_id):
+    """Vô hiệu hóa nhân viên (soft delete qua active)"""
+    try:
+        dao.delete_user_soft(user_id)
+        return jsonify(success=True), 200
+    except NotFoundError as ex:
+        return jsonify(success=False, error=str(ex)), 404
+    except Exception as ex:
+        app.logger.exception(ex)
+        return jsonify(success=False, error="Lỗi hệ thống khi vô hiệu hóa tài khoản!"), 500

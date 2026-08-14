@@ -1,6 +1,5 @@
 import pytest
 
-from app import app as flask_app, db
 from app import dao
 from app.exceptions import ValidationError, NotFoundError
 

@@ -1,0 +1,45 @@
+<header class="navbar-sticky">
+    <div class="header-inner">
+        <!-- Logo thương hiệu -->
+        <a href="/" class="brand-logo">
+            <!-- Icon Logo bự -->
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Minimalist Muse" class="logo-icon-img">
+
+            <!-- Cụm chữ thương hiệu bự & dài -->
+            <div class="brand-text-group">
+                <span class="brand-text">MINIMALIST <span>MUSE</span></span>
+                <span class="brand-subtext">LUXURY SALON & SPA</span>
+            </div>
+        </a>
+
+        <!-- Menu Điều Hướng Chi Tiết -->
+        <nav class="nav-menu">
+            <a href="/" class="nav-item active">Trang chủ</a>
+            <a href="/#about" class="nav-item">Về chúng tôi</a>
+            <a href="/#services" class="nav-item">Dịch vụ</a>
+            <a href="/#promotions" class="nav-item">Ưu đãi</a>
+            <a href="/#contact" class="nav-item">Liên hệ</a>
+        </nav>
+
+        <!-- Góc Tài Khoản Người Dùng -->
+        <div class="account-actions">
+            {% if current_user.is_authenticated %}
+                <a href="/users/me" class="btn-nav-login">
+                    <i class="fa-solid fa-user"></i>
+                    <span>{{ current_user.full_name }}</span>
+                </a>
+                <form action="/logout" method="POST" style="display:inline;">
+                    <button type="submit" class="btn-nav-register">Đăng xuất</button>
+                </form>
+            {% else %}
+                <a href="/login" class="btn-nav-login">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Đăng nhập</span>
+                </a>
+                <a href="/register" class="btn-nav-register">
+                    <span>Đăng ký</span>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</header>
