@@ -10,17 +10,18 @@ from app.exceptions import ValidationError, DuplicateError, NotFoundError
 from app.models import User, UserRole, Service, InvoiceItemType, InvoiceStatus
 from app.decorators import role_required
 
-# =========================================================================
-# 0. FLASK-LOGIN USER LOADER + PHÂN QUYỀN
-# =========================================================================
+
+
+
+# ==========================0. FLASK-LOGIN USER LOADER + PHÂN QUYỀN==========================
+
 @login.user_loader
 def load_user(user_id):
     return dao.get_user_by_id(user_id)
 
 
-# =========================================================================
-# 1. TRANG CHỦ SALON (INDEX - HIỂN THỊ DANH SÁCH DỊCH VỤ & KHUYẾN MÃI)
-# =========================================================================
+# ==========================1. TRANG CHỦ SALON (INDEX - HIỂN THỊ DANH SÁCH DỊCH VỤ & KHUYẾN MÃI)==========================
+
 @app.route('/')
 def index():
     kw = request.args.get('kw')
@@ -50,9 +51,7 @@ def index():
     ), 200
 
 
-# =========================================================================
-# 1.5. TRANG ĐẶT LỊCH HẸN (BOOKING)
-# =========================================================================
+# TRANG ĐẶT LỊCH HẸN (BOOKING)
 @app.route('/booking', methods=['GET'])
 @login_required
 def booking_view():
@@ -72,10 +71,8 @@ def booking_view():
     ), 200
 
 
+# ==========================2. XÁC THỰC: ĐĂNG NHẬP (LOGIN)==========================
 
-# =========================================================================
-# 2. XÁC THỰC: ĐĂNG NHẬP (LOGIN)
-# =========================================================================
 @app.route('/login', methods=['GET'])
 def login_view():
     if current_user.is_authenticated:
@@ -117,9 +114,8 @@ def login_process():
         return render_template('auth/login.html', err_msg="Có lỗi hệ thống xảy ra!"), 500
 
 
-# =========================================================================
-# 3. XÁC THỰC: ĐĂNG XUẤT (LOGOUT)
-# =========================================================================
+# ==========================3. XÁC THỰC: ĐĂNG XUẤT (LOGOUT)==========================
+
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout_process():
@@ -127,9 +123,8 @@ def logout_process():
     return redirect('/login'), 302
 
 
-# =========================================================================
-# 4. XÁC THỰC: ĐĂNG KÝ TÀI KHOẢN KHÁCH HÀNG (REGISTER)
-# =========================================================================
+# ==========================4. XÁC THỰC: ĐĂNG KÝ TÀI KHOẢN KHÁCH HÀNG (REGISTER)==========================
+
 @app.route('/register', methods=['GET'])
 def register_view():
     if current_user.is_authenticated:
@@ -171,9 +166,8 @@ def register_process():
         return render_template('auth/register.html', err_msg="Lỗi hệ thống khi đăng ký!"), 500
 
 
-# =========================================================================
-# 5. HỒ SƠ CÁ NHÂN (USER PROFILE) — /users/me theo đúng API spec
-# =========================================================================
+# ==========================5. HỒ SƠ CÁ NHÂN==========================
+
 @app.route('/users/me', methods=['GET'])
 @login_required
 def users_me_view():
@@ -209,9 +203,8 @@ def users_me_update():
         return jsonify({"error": "Không thể cập nhật hồ sơ!"}), 500
 
 
-# =========================================================================
-# 6. LỊCH HẸN
-# =========================================================================
+# ==========================6. LỊCH HẸN==========================
+
 # GET /appointments/available-slots?staff_id=1&service_id=2&date=2026-08-16&appointment_id=5
 @app.route('/appointments/available-slots', methods=['GET'])
 def get_available_slots_route():
@@ -379,9 +372,7 @@ def cancel_appointment_route(appointment_id):
         return jsonify({"error": "Lỗi hệ thống khi hủy lịch hẹn!"}), 500
 
 
-# =========================================================================
-# 7. QUẢN LÝ HÓA ĐƠN & THANH TOÁN (INVOICES API)
-# =========================================================================
+# ==========================7. QUẢN LÝ HÓA ĐƠN & THANH TOÁN (INVOICES API)==========================
 
 # 7.1 POST /invoices - Tạo hóa đơn
 @app.route('/invoices', methods=['POST'])
@@ -436,32 +427,6 @@ def get_invoice_detail_route(invoice_id):
     return render_template('receptionist/invoice_detail.html', invoice=invoice), 200
 
 
-# # 7.3 GET /invoices - Lấy danh sách hóa đơn (Dùng cho Nhân viên tra cứu)
-# @app.route('/invoices', methods=['GET'])
-# @login_required
-# @role_required(UserRole.STAFF, UserRole.RECEPTIONIST, UserRole.ADMIN)
-# def get_invoices_list_route():
-#     status = request.args.get('status')  # DRAFT / PAID / CANCELLED
-#     page = request.args.get('page', 1, type=int)
-#
-#     # Nhân viên CHỈ thấy hóa đơn do chính mình tạo; Lễ tân/Admin thấy tất cả
-#     staff_id_filter = current_user.id if current_user.role == UserRole.STAFF else request.args.get('staff_id', type=int)
-#
-#     invoices = dao.get_invoices(staff_id=staff_id_filter, status=status, page=page)
-#
-#     return jsonify({
-#         "invoices": [
-#             {
-#                 "id": inv.id,
-#                 "customer_name": inv.customer.full_name,
-#                 "staff_name": inv.staff.full_name,
-#                 "payment_method": inv.payment_method.name,
-#                 "total_amount": inv.total_amount,
-#                 "invoice_date": inv.invoice_date.strftime("%Y-%m-%d %H:%M:%S")
-#             } for inv in invoices
-#         ]
-#     }), 200
-
 # Khách hàng xem lịch sử hóa đơn của mình (Có Lọc & Phân trang)
 @app.route('/invoices/me', methods=['GET'])
 @login_required
@@ -505,7 +470,7 @@ def my_invoices_view():
     ), 200
 
 
-# 7.1 Giao diện lập hóa đơn nháp (Nhân viên)
+# Giao diện lập hóa đơn nháp (Nhân viên)
 @app.route('/staff/create-invoice', methods=['GET'])
 @login_required
 @role_required(UserRole.STAFF, UserRole.ADMIN)
@@ -546,9 +511,7 @@ def create_invoice_view():
     ), 200
 
 
-# =========================================================================
-# 7.4 Giao diện danh sách hóa đơn do Nhân viên lập
-# =========================================================================
+# Giao diện danh sách hóa đơn do Nhân viên lập
 @app.route('/staff/invoices', methods=['GET'])
 @login_required
 @role_required(UserRole.STAFF, UserRole.ADMIN)
@@ -604,7 +567,7 @@ def staff_invoices_view():
     ), 200
 
 
-# 7.3 Lễ tân quản lý toàn bộ danh sách hóa đơn (Xem nháp, Xem đã thanh toán)
+# Lễ tân quản lý toàn bộ danh sách hóa đơn (Xem nháp, Xem đã thanh toán)
 @app.route('/reception/invoices', methods=['GET'])
 @login_required
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)

@@ -8,15 +8,14 @@ from app import app as flask_app, db
 import app.index
 import app.admin
 
-pytest.fixture(scope='session')
+@pytest.fixture
 def app():
-    # Đè cấu hình sang SQLite in-memory để chạy test độc lập
     flask_app.config.update({
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
         "WTF_CSRF_ENABLED": False,
-        "SECRET_KEY": "test-secret-key"
+        "SERVER_NAME": "localhost"
     })
 
     with flask_app.app_context():
