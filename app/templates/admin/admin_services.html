@@ -1,0 +1,564 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Quản Lý Dịch Vụ & Định Mức — Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1200px; margin: 0 auto; padding: 20px 15px;">
+
+    <!-- HEADER BAR -->
+    <div class="staff-header-card mb-4" style="display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 20px; border-radius: 14px; border: 1px solid #EAE0D5;">
+        <div>
+            <span class="sub-title" style="color: #C5A880; font-size: 11px; font-weight: 700; letter-spacing: 1px;"><i class="fa-solid fa-scissors me-1"></i> ADMIN MANAGEMENT</span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px; color: #2C2623;">Quản Lý Dịch Vụ & Định Mức</h1>
+            <p class="section-subtext mb-0" style="color: #7A726D; font-size: 13px;">Thêm mới, cập nhật bảng giá dịch vụ và thiết lập định mức sản phẩm tiêu hao.</p>
+        </div>
+
+        <!-- CỤM NÚT THAO TÁC -->
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <!-- NÚT QUAY LẠI -->
+            <a href="/admin" style="width: 38px; height: 38px; background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s;">
+                <i class="fa-solid fa-arrow-left" style="font-size: 13px;"></i>
+            </a>
+
+            <!-- NÚT THÊM DỊCH VỤ MỚI -->
+            <button type="button" class="btn-action-primary" onclick="toggleCreateServiceForm()" style="background: #2C2623; color: #FFF; border: none; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                <i class="fa-solid fa-plus me-1"></i> Thêm Dịch Vụ Mới
+            </button>
+        </div>
+    </div>
+
+    <!-- KHU VỰC FORM THÊM DỊCH VỤ MỚI -->
+    <div id="createServiceCard" style="display: none; background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); text-align: left;">
+        <h6 style="font-size: 14px; font-weight: 700; color: #2C2623; margin-bottom: 16px;">
+            <i class="fa-solid fa-circle-plus" style="color: #C5A880; margin-right: 6px;"></i> Nhập Thông Tin Dịch Vụ Mới
+        </h6>
+        <form id="createServiceForm">
+            <input type="hidden" name="avatar" id="add_service_avatar_val">
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Tên dịch vụ <span style="color: red;">*</span></label>
+                    <input type="text" name="service_name" required placeholder="VD: Uốn Tóc Hàn Quốc"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Giá tiền (VNĐ) <span style="color: red;">*</span></label>
+                    <input type="number" name="price" required min="0" step="1000" placeholder="VD: 350000"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Thời lượng (Phút) <span style="color: red;">*</span></label>
+                    <input type="number" name="duration_minutes" required min="5" step="5" value="30"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+
+                <!-- UPLOAD ANH CLOUDINARY CHO FORM CREATING -->
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Ảnh Dịch Vụ</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="file" id="add_avatar_file" accept="image/*" style="display: none;" onchange="uploadToCloudinary(this, 'add_service_avatar_val', 'add_avatar_preview')">
+                        <button type="button" onclick="document.getElementById('add_avatar_file').click()"
+                                style="background: #FAF7F2; border: 1px solid #D8C8B8; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải ảnh lên
+                        </button>
+                        <img id="add_avatar_preview" src="" style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #D8C8B8;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Mô tả dịch vụ</label>
+                <textarea name="description" rows="2" placeholder="Mô tả ngắn gọn về dịch vụ..."
+                          style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;"></textarea>
+            </div>
+
+            <div style="text-align: right;">
+                <button type="button" onclick="toggleCreateServiceForm()" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 8px 18px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 8px;">Hủy</button>
+                <button type="submit" style="background: #2C2623; color: #FFF; border: none; padding: 8px 24px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer;">Tạo Dịch Vụ</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- BẢNG DANH SÁCH DỊCH VỤ -->
+    <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+        <div style="padding: 16px 20px; background: #FAF7F2; border-bottom: 1px solid #EAE0D5; text-align: left;">
+            <strong style="color: #2C2623; font-size: 15px;">
+                <i class="fa-solid fa-list-ul" style="margin-right: 8px; color: #C5A880;"></i>Danh Sách Dịch Vụ Salon ({{ services|length }})
+            </strong>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
+                <thead>
+                    <tr style="background: #FFF; border-bottom: 1px solid #EAE0D5; font-size: 12px; color: #8C827A; text-transform: uppercase;">
+                        <th style="padding: 12px 20px; width: 6%;">ID</th>
+                        <th style="padding: 12px 20px; width: 10%;">Ảnh</th>
+                        <th style="padding: 12px 20px; width: 20%;">Tên Dịch Vụ</th>
+                        <th style="padding: 12px 20px; width: 14%;">Đơn Giá</th>
+                        <th style="padding: 12px 20px; width: 14%;">Thời Lượng</th>
+                        <th style="padding: 12px 20px; width: 18%;">Mô Tả</th>
+                        <th style="padding: 12px 20px; width: 18%; text-align: center;">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 13px; color: #2C2623;">
+                    {% if services %}
+                        {% for s in services %}
+                        <!-- HÀNG HIỂN THỊ THÔNG TIN -->
+                        <tr style="border-bottom: 1px solid #F5EFE9; vertical-align: middle;">
+                            <td style="padding: 14px 20px; font-weight: 700; color: #8C827A;">#{{ s.id }}</td>
+
+                            <td style="padding: 14px 20px;">
+                                {% if s.avatar %}
+                                    <img src="{{ s.avatar }}"
+                                         alt="{{ s.service_name }}"
+                                         onerror="this.onerror=null; this.src='https://res.cloudinary.com/dxxwcby8l/image/upload/v1683162354/placeholder-image_q8mpxv.png';"
+                                         style="width: 42px; height: 42px; border-radius: 8px; object-fit: cover; border: 1px solid #EAE0D5;">
+                                {% else %}
+                                    <div style="width: 42px; height: 42px; border-radius: 8px; background: #FAF7F2; border: 1px solid #EAE0D5; display: flex; align-items: center; justify-content: center; color: #C5A880; font-size: 16px;">
+                                        <i class="fa-solid fa-scissors"></i>
+                                    </div>
+                                {% endif %}
+                            </td>
+
+                            <td style="padding: 14px 20px; font-weight: 700; color: #2C2623;">{{ s.service_name }}</td>
+                            <td style="padding: 14px 20px; font-weight: 700; color: #2E7D32;">{{ "{:,.0f}".format(s.price) }} đ</td>
+                            <td style="padding: 14px 20px;">
+                                <span style="background: #FAF7F2; border: 1px solid #D8C8B8; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                    <i class="fa-regular fa-clock" style="margin-right: 4px;"></i>{{ s.duration_minutes }} phút
+                                </span>
+                            </td>
+                            <td style="padding: 14px 20px; color: #7A726D; font-size: 12px;">{{ s.description or '---' }}</td>
+
+                            <td style="padding: 14px 20px; text-align: center;">
+                                <div style="display: flex; justify-content: center; gap: 6px;">
+                                    <button type="button" title="Cấu hình định mức tiêu hao"
+                                            style="background: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                            onclick="toggleProductNormRow({{ s.id }})">
+                                        <i class="fa-solid fa-boxes-stacked"></i> Định mức
+                                    </button>
+
+                                    <button type="button"
+                                            style="background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                            onclick="toggleEditServiceRow({{ s.id }})">
+                                        <i class="fa-solid fa-pen"></i> Sửa
+                                    </button>
+
+                                    <button type="button"
+                                            style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                            onclick="deleteService({{ s.id }}, '{{ s.service_name }}')">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- HÀNG CHỈNH SỬA DỊCH VỤ (INLINE EDIT) -->
+                        <tr id="edit_service_row_{{ s.id }}" style="display: none; background: #FAF7F2; border-bottom: 2px solid #EAE0D5;">
+                            <td colspan="7" style="padding: 16px; text-align: left;">
+                                <form onsubmit="event.preventDefault(); saveUpdateService({{ s.id }});" style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 12px; padding: 16px;">
+                                    <input type="hidden" id="edit_avatar_{{ s.id }}" value="{{ s.avatar or '' }}">
+
+                                    <strong style="color: #2C2623; font-size: 13px; display: block; margin-bottom: 12px;">
+                                        <i class="fa-solid fa-pen-to-square" style="color: #C5A880; margin-right: 6px;"></i> Chỉnh Sửa Dịch Vụ #{{ s.id }}
+                                    </strong>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Tên dịch vụ</label>
+                                            <input type="text" id="edit_name_{{ s.id }}" value="{{ s.service_name }}" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Giá tiền (đ)</label>
+                                            <input type="number" id="edit_price_{{ s.id }}" value="{{ s.price | int }}" step="1000" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Thời lượng (Phút)</label>
+                                            <input type="number" id="edit_duration_{{ s.id }}" value="{{ s.duration_minutes }}" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px;">
+                                        </div>
+
+                                        <!-- UPLOAD ANH CLOUDINARY CHO EDIT INLINE -->
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 4px;">Đổi ảnh đại diện</label>
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <input type="file" id="edit_file_{{ s.id }}" accept="image/*" style="display: none;" onchange="uploadToCloudinary(this, 'edit_avatar_{{ s.id }}', 'edit_preview_{{ s.id }}')">
+
+                                                <button type="button" onclick="document.getElementById('edit_file_{{ s.id }}').click()"
+                                                        style="background: #FAF7F2; border: 1px solid #D8C8B8; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                                                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Chọn ảnh
+                                                </button>
+
+                                                <img id="edit_preview_{{ s.id }}"
+                                                     {% if s.avatar %}src="{{ s.avatar }}"{% else %}style="display: none;"{% endif %}
+                                                     onerror="this.style.display='none';"
+                                                     style="width: 30px; height: 30px; border-radius: 4px; object-fit: cover; border: 1px solid #D8C8B8;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="margin-bottom: 12px;">
+                                        <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Mô tả</label>
+                                        <input type="text" id="edit_desc_{{ s.id }}" value="{{ s.description or '' }}" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px;">
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <button type="button" onclick="toggleEditServiceRow({{ s.id }})" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 6px;">Hủy</button>
+                                        <button type="submit" style="background: #2C2623; color: #FFF; border: none; padding: 5px 18px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer;">Lưu Dịch Vụ</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+
+                        <!-- HÀNG CẤU HÌNH ĐỊNH MỨC SẢN PHẨM -->
+                        <tr id="norm_row_{{ s.id }}" style="display: none; background: #FAF7F2; border-bottom: 2px solid #EAE0D5;">
+                            <td colspan="7" style="padding: 16px; text-align: left;">
+                                <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 12px; padding: 16px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                        <strong style="color: #2C2623; font-size: 13px;">
+                                            <i class="fa-solid fa-boxes-stacked" style="color: #C5A880; margin-right: 6px;"></i> Định Mức Sản Phẩm Tiêu Hao Cho: <span style="color: #A87C4F;">{{ s.service_name }}</span>
+                                        </strong>
+                                        <small style="color: #8C827A;">Cấu hình danh mục sản phẩm Stylist được phép ghi nhận khi lập hóa đơn.</small>
+                                    </div>
+
+                                    <div id="norm_list_container_{{ s.id }}" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+                                        <div style="color: #8C827A; font-size: 12px;"><i class="fa-solid fa-spinner fa-spin me-1"></i> Đang tải danh sách sản phẩm...</div>
+                                    </div>
+
+                                    <div style="background: #FAF7F2; border: 1px solid #EAE0D5; border-radius: 8px; padding: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                                        <strong style="font-size: 12px; color: #2C2623;">+ Gán sản phẩm mới:</strong>
+
+                                        <select id="add_product_select_{{ s.id }}" style="padding: 6px 12px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px; outline: none; background: #FFF;">
+                                            <option value="">-- Chọn sản phẩm kho --</option>
+                                            {% for p in products %}
+                                                <option value="{{ p.id }}">{{ p.product_name }} (ĐVT: {{ p.unit.name }})</option>
+                                            {% endfor %}
+                                        </select>
+
+                                        <input type="number" id="add_product_qty_{{ s.id }}" placeholder="Định mức gợi ý (VD: 30)" min="0" step="any"
+                                               style="width: 160px; padding: 6px 12px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px; outline: none;">
+
+                                        <button type="button" onclick="addServiceProduct({{ s.id }})"
+                                                style="background: #2C2623; color: #FFF; border: none; padding: 6px 16px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                                            Thêm Định Mức
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" style="padding: 30px; text-align: center; color: #8C827A;">
+                                <i class="fa-solid fa-scissors" style="font-size: 20px; display: block; margin-bottom: 8px;"></i>
+                                Chưa có dịch vụ nào trong hệ thống.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- THANH PHÂN TRANG -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrap" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px;">
+        <a href="{{ url_for('list_services', page=page-1) }}"
+           style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page <= 1 else '' }}">
+            <i class="fa-solid fa-chevron-left" style="margin-right: 4px;"></i> Trước
+        </a>
+
+        <div style="display: flex; gap: 4px;">
+            {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('list_services', page=p) }}"
+                   style="padding: 6px 12px; border-radius: 50%; font-size: 12px; font-weight: 700; text-decoration: none; {{ 'background: #2C2623; color: #FFF;' if p == page else 'background: #FFF; color: #2C2623; border: 1px solid #D8C8B8;' }}">
+                    {{ p }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <a href="{{ url_for('list_services', page=page+1) }}"
+           style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page >= total_pages else '' }}">
+            Sau <i class="fa-solid fa-chevron-right" style="margin-left: 4px;"></i>
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CLOUDINARY_CLOUD_NAME = 'dphbawbuk';
+const CLOUDINARY_UPLOAD_PRESET = 'salon_avatar_unsigned';
+const CSRF_TOKEN = typeof getCsrfToken === 'function' ? getCsrfToken() : (document.querySelector('meta[name="csrf-token"]')?.content || '');
+
+function triggerToast(msg, type = 'success') {
+    if (typeof showToast === 'function') {
+        showToast(msg, type);
+    } else {
+        console.log(`[Toast ${type.toUpperCase()}] ${msg}`);
+    }
+}
+
+async function uploadToCloudinary(fileInput, hiddenInputId, previewImgId) {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    triggerToast('Đang tải ảnh lên...', 'info');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    try {
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.secure_url) {
+            document.getElementById(hiddenInputId).value = data.secure_url;
+            const preview = document.getElementById(previewImgId);
+            if (preview) {
+                preview.src = data.secure_url;
+                preview.style.display = 'inline-block';
+            }
+            triggerToast('Đã tải ảnh thành công!', 'success');
+        } else {
+            triggerToast('Tải ảnh thất bại!', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        triggerToast('Lỗi kết nối Cloudinary!', 'error');
+    }
+}
+
+function toggleCreateServiceForm() {
+    const card = document.getElementById('createServiceCard');
+    card.style.display = (card.style.display === 'none' || card.style.display === '') ? 'block' : 'none';
+}
+
+function toggleEditServiceRow(serviceId) {
+    const row = document.getElementById(`edit_service_row_${serviceId}`);
+    row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none';
+}
+
+function toggleProductNormRow(serviceId) {
+    const row = document.getElementById(`norm_row_${serviceId}`);
+    if (row.style.display === 'none' || row.style.display === '') {
+        row.style.display = 'table-row';
+        loadServiceProducts(serviceId);
+    } else {
+        row.style.display = 'none';
+    }
+}
+
+document.getElementById('createServiceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch('/admin/services', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            triggerToast('Thêm dịch vụ mới thành công!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            triggerToast(data.error || 'Không thể thêm dịch vụ!', 'error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        triggerToast('Lỗi hệ thống khi tạo dịch vụ!', 'error');
+    });
+});
+
+function saveUpdateService(serviceId) {
+    const nameInput = document.getElementById(`edit_name_${serviceId}`);
+    const priceInput = document.getElementById(`edit_price_${serviceId}`);
+    const durationInput = document.getElementById(`edit_duration_${serviceId}`);
+    const descInput = document.getElementById(`edit_desc_${serviceId}`);
+    const avatarInput = document.getElementById(`edit_avatar_${serviceId}`);
+
+    const name = nameInput ? nameInput.value.trim() : '';
+    const price = priceInput ? priceInput.value : '';
+    const duration = durationInput ? durationInput.value : '';
+    const desc = descInput ? descInput.value.trim() : '';
+    const avatar = avatarInput ? avatarInput.value.trim() : '';
+
+    if (!name || price === '' || duration === '') {
+        triggerToast('Vui lòng nhập đầy đủ tên dịch vụ, giá và thời lượng!', 'error');
+        return;
+    }
+
+    fetch(`/admin/services/${serviceId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({
+            service_name: name,
+            price: parseFloat(price),
+            duration_minutes: parseInt(duration),
+            description: desc,
+            avatar: avatar
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            triggerToast('Cập nhật dịch vụ thành công!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            triggerToast(data.error || 'Không thể cập nhật!', 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        triggerToast('Lỗi kết nối máy chủ!', 'error');
+    });
+}
+
+function deleteService(serviceId, name) {
+    const performDelete = () => {
+        fetch(`/admin/services/${serviceId}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': CSRF_TOKEN }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                triggerToast('Đã xóa dịch vụ thành công!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                triggerToast(data.error || 'Không thể xóa dịch vụ này!', 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            triggerToast('Lỗi hệ thống khi xóa dịch vụ!', 'error');
+        });
+    };
+
+    if (typeof showConfirm === 'function') {
+        showConfirm(`Bạn có chắc muốn xóa dịch vụ "${name}"?`, performDelete);
+    } else {
+        if (confirm(`Bạn có chắc muốn xóa dịch vụ "${name}"?`)) performDelete();
+    }
+}
+
+function loadServiceProducts(serviceId) {
+    const container = document.getElementById(`norm_list_container_${serviceId}`);
+    fetch(`/admin/services/${serviceId}/products`)
+    .then(res => res.json())
+    .then(items => {
+        if (!Array.isArray(items) || items.length === 0) {
+            container.innerHTML = '<div style="color: #8C827A; font-size: 12px; font-style: italic;">Dịch vụ này chưa được gán định mức sản phẩm nào.</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        items.forEach(sp => {
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #FAF7F2; border: 1px solid #EAE0D5; border-radius: 6px;';
+            div.innerHTML = `
+                <div style="font-size: 13px; color: #2C2623;">
+                    <strong>${sp.product_name}</strong>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: #7A726D;">Định mức gợi ý:</span>
+                    <input type="number" value="${Math.round(sp.default_quantity)}" min="0" step="1" id="sp_qty_${sp.id}" style="width: 80px; text-align: center; padding: 4px; border: 1px solid #D8C8B8; border-radius: 4px; font-size: 12px;">
+                    <button type="button" onclick="updateServiceProduct(${sp.id}, ${serviceId})" style="background: #2C2623; color: #FFF; border: none; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer;">Lưu</button>
+                    <button type="button" onclick="deleteServiceProduct(${sp.id}, ${serviceId})" style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer;">Xóa</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        container.innerHTML = '<div style="color: red; font-size: 12px;">Lỗi tải định mức!</div>';
+    });
+}
+
+function addServiceProduct(serviceId) {
+    const productId = document.getElementById(`add_product_select_${serviceId}`).value;
+    const defaultQty = document.getElementById(`add_product_qty_${serviceId}`).value;
+
+    if (!productId) {
+        triggerToast('Vui lòng chọn sản phẩm!', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('service_id', serviceId);
+    formData.append('product_id', productId);
+    formData.append('default_quantity', defaultQty || 0);
+
+    fetch('/admin/service-products', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            triggerToast('Đã thêm định mức sản phẩm!', 'success');
+            loadServiceProducts(serviceId);
+            document.getElementById(`add_product_select_${serviceId}`).value = '';
+            document.getElementById(`add_product_qty_${serviceId}`).value = '';
+        } else {
+            triggerToast(data.error || 'Sản phẩm này đã có trong định mức!', 'error');
+        }
+    })
+    .catch(err => console.error(err));
+}
+
+function updateServiceProduct(spId, serviceId) {
+    const qty = document.getElementById(`sp_qty_${spId}`).value;
+    const formData = new FormData();
+    formData.append('default_quantity', qty);
+
+    fetch(`/admin/service-products/${spId}`, {
+        method: 'PUT',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            triggerToast('Cập nhật định mức thành công!', 'success');
+            loadServiceProducts(serviceId);
+        } else {
+            triggerToast(data.error || 'Không thể cập nhật!', 'error');
+        }
+    });
+}
+
+function deleteServiceProduct(spId, serviceId) {
+    const performDelete = () => {
+        fetch(`/admin/service-products/${spId}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': CSRF_TOKEN }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                triggerToast('Đã xóa khỏi định mức!', 'success');
+                loadServiceProducts(serviceId);
+            } else {
+                triggerToast(data.error || 'Không thể xóa!', 'error');
+            }
+        });
+    };
+
+    if (typeof showConfirm === 'function') {
+        showConfirm('Xóa sản phẩm này khỏi định mức dịch vụ?', performDelete);
+    } else {
+        if (confirm('Xóa sản phẩm này khỏi định mức dịch vụ?')) performDelete();
+    }
+}
+</script>
+{% endblock %}

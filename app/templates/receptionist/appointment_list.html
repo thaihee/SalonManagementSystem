@@ -1,0 +1,184 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Lịch Hẹn Cửa Hàng — Lễ Tân Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- HEADER BAR -->
+    <div class="staff-header-card mb-4">
+        <div>
+            <span class="sub-title"><i class="fa-solid fa-calendar-days"></i> RECEPTIONIST DASHBOARD</span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px;">Lịch Hẹn Cửa Hàng</h1>
+            <p class="section-subtext mb-0">Tra cứu thông tin khách hàng, thời gian hẹn và Stylist phụ trách.</p>
+        </div>
+    </div>
+
+    <!-- THANH LỌC & TÌM KIẾM NHANH -->
+    <div class="reception-toolbar">
+        <!-- Ô Tìm kiếm Tên/SĐT Khách -->
+        <div class="reception-search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="reception_apt_search" class="reception-search-input" 
+                   placeholder="Tìm Tên khách hàng, SĐT, Mã lịch hẹn..." autocomplete="off">
+        </div>
+
+        <!-- Lọc theo Stylist -->
+        <select id="stylist_apt_filter" class="reception-filter-select">
+            <option value="ALL">-- Tất cả Stylist --</option>
+            {% for st in staff_list %}
+                <option value="{{ st.full_name.lower() }}">{{ st.full_name }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Lọc theo Ngày -->
+        <form method="GET" action="{{ url_for('reception_appointments_view') }}" id="dateAptForm" style="margin: 0;">
+            <input type="date" id="date_apt_filter" name="date" value="{{ selected_date or '' }}" 
+                   class="reception-filter-select" onchange="document.getElementById('dateAptForm').submit()">
+        </form>
+    </div>
+
+    <!-- BẢNG DANH SÁCH LỊCH HẸN (ĐÃ FIX THẺ LỒNG BỊ SỤT TIÊU ĐỀ) -->
+    <div class="card-luxury p-0 overflow-hidden" style="max-height: 650px; overflow-y: auto;">
+        <div class="table-responsive">
+            <table class="table profile-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4 text-start">Giờ hẹn</th>
+                        <th class="text-start">Khách hàng</th>
+                        <th class="text-start">Dịch vụ đăng ký</th>
+                        <th class="text-start">Stylist phụ trách</th>
+                        <th class="text-start">Trạng thái</th>
+                        <th class="text-start pe-4">Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody id="apt-tbody">
+                    {% if appointments %}
+                        {% for apt in appointments %}
+                        <tr class="apt-row"
+                            data-customer-name="{{ apt.customer.full_name.lower() if apt.customer else '' }}"
+                            data-customer-phone="{{ apt.customer.phone if apt.customer else '' }}"
+                            data-staff-name="{{ apt.staff.full_name.lower() if apt.staff else '' }}">
+
+                            <!-- GIỜ & NGÀY HẸN -->
+                            <td class="ps-4 text-start">
+                                <div class="luxury-time-badge">
+                                    <i class="fa-regular fa-clock me-1"></i>{{ apt.appointment_date.strftime('%H:%M') }}
+                                </div>
+                                <span class="date-subtext">{{ apt.appointment_date.strftime('%d/%m/%Y') }}</span>
+                            </td>
+
+                            <!-- KHÁCH HÀNG -->
+                            <td class="text-start">
+                                <div style="font-weight: 700; color: var(--text-dark);">
+                                    <i class="fa-solid fa-user-check me-1 text-muted"></i>
+                                    {{ apt.customer.full_name if apt.customer else 'Khách vãng lai' }}
+                                </div>
+                                <small class="text-muted"><i class="fa-solid fa-phone me-1"></i>{{ apt.customer.phone if apt.customer else '---' }}</small>
+                            </td>
+
+                            <!-- DỊCH VỤ -->
+                            <td class="text-start">
+                                <strong style="color: var(--primary-accent);">{{ apt.service.service_name if apt.service else '---' }}</strong>
+                                <div class="small text-muted">{{ apt.service.duration_minutes if apt.service else '0' }} phút • {{ "{:,.0f}".format(apt.service.price) if apt.service else '0' }} đ</div>
+                            </td>
+
+                            <!-- STYLIST -->
+                            <td class="text-start">
+                                <div style="font-weight: 600; color: var(--text-dark);">
+                                    <i class="fa-solid fa-scissors me-1 text-muted"></i>
+                                    {{ apt.staff.full_name if apt.staff else 'Chưa chỉ định' }}
+                                </div>
+                            </td>
+
+                            <!-- TRẠNG THÁI -->
+                            <td class="text-start">
+                                {% if apt.status.name == 'CONFIRMED' %}
+                                    <span class="status-badge status-confirmed" style="font-size: 11px;">
+                                        <i class="fa-solid fa-calendar-check me-1"></i> Đã xác nhận
+                                    </span>
+                                {% elif apt.status.name == 'COMPLETED' %}
+                                    <span class="status-badge status-completed" style="font-size: 11px;">
+                                        <i class="fa-solid fa-circle-check me-1"></i> Hoàn thành
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-cancelled" style="font-size: 11px;">
+                                        <i class="fa-solid fa-ban me-1"></i> Đã hủy
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- GHI CHÚ -->
+                            <td class="text-start pe-4 text-muted" style="width: 200px; max-width: 200px;">
+                                <div style="max-height: 50px; overflow-y: auto; font-size: 12px; word-break: break-word; line-height: 1.4; padding-right: 4px;">
+                                    {{ apt.note or 'Không có ghi chú' }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-calendar-xmark fs-3 d-block mb-2"></i>
+                                Không có lịch hẹn nào trong thời gian này.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- THANH PHÂN TRANG -->
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination-wrap mt-4">
+        <a href="{{ url_for('reception_appointments_view', page=page-1, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page <= 1 else '' }}">
+            <i class="fa-solid fa-chevron-left"></i> Trước
+        </a>
+        <div class="page-numbers">
+            {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('reception_appointments_view', page=p, date=selected_date) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+                    {{ p }}
+                </a>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('reception_appointments_view', page=page+1, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page >= total_pages else '' }}">
+            Sau <i class="fa-solid fa-chevron-right"></i>
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('reception_apt_search');
+    const stylistSelect = document.getElementById('stylist_apt_filter');
+
+    function applyAptFilters() {
+        const kw = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        const selectedStylist = stylistSelect ? stylistSelect.value.toLowerCase() : 'all';
+        const rows = document.querySelectorAll('.apt-row');
+
+        rows.forEach(row => {
+            const cusName = row.dataset.customerName || '';
+            const cusPhone = row.dataset.customerPhone || '';
+            const staffName = row.dataset.staffName || '';
+
+            const matchesSearch = !kw || cusName.includes(kw) || cusPhone.includes(kw);
+            const matchesStylist = (selectedStylist === 'all' || staffName.includes(selectedStylist));
+
+            row.style.display = (matchesSearch && matchesStylist) ? '' : 'none';
+        });
+    }
+
+    if (searchInput) searchInput.addEventListener('input', applyAptFilters);
+    if (stylistSelect) stylistSelect.addEventListener('change', applyAptFilters);
+});
+</script>
+{% endblock %}

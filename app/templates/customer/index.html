@@ -1,0 +1,333 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Minimalist Muse — Salon & Spa Tối Giản Cao Cấp{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- 1. HERO SECTION (CÓ THANH TÌM KIẾM REAL-TIME) -->
+    <section class="hero-split">
+        <div class="hero-text-side">
+            <div class="luxury-tag">
+                <i class="fa-solid fa-sparkles"></i> HỆ THỐNG SALON CHĂM SÓC CAO CẤP
+            </div>
+            <h1 class="hero-heading">Chăm sóc vẻ đẹp <br><em>tinh tế & tự nhiên</em></h1>
+            <p class="hero-subtext">
+                Trải nghiệm liệu trình chăm sóc tóc, da & thư giãn trong không gian kiến trúc tối giản hiện đại.
+            </p>
+
+            <!-- THANH TÌM KIẾM DỊCH VỤ REAL-TIME -->
+            <div class="search-bar-luxury">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="realtimeSearchInput"
+                       value="{{ kw if kw else '' }}"
+                       placeholder="Nhập tên dịch vụ để tìm (VD: Cắt tóc, Nhuộm, Uốn...)..."
+                       class="search-input"
+                       onkeyup="filterServicesRealtime()"
+                       oninput="filterServicesRealtime()">
+                <button type="button" class="btn-search-primary" onclick="clearSearchInput()">
+                    <i class="fa-solid fa-xmark" id="searchBtnIcon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="hero-image-side">
+            <div class="image-wrapper">
+                <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1000&q=80" alt="Salon Interior" class="hero-img">
+                <div class="experience-badge">
+                    <div class="badge-num">4.9 ★</div>
+                    <div class="badge-text">Đánh giá từ +1,500 khách hàng</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. DANH SÁCH DỊCH VỤ (ĐƯỢC ĐƯA LÊN NGAY DƯỚI TÌM KIẾM) -->
+    <section class="services-wrapper" id="services" style="padding-top: 40px;">
+        <div class="section-title-wrap">
+            <span class="sub-title">OUR SERVICES</span>
+            <h2 class="main-title">Bảng Dịch Vụ Salon</h2>
+            <p class="section-subtext">Chọn dịch vụ phù hợp và đặt hẹn với Stylist bạn yêu thích</p>
+            <div class="divider-line"></div>
+        </div>
+
+        {% if services %}
+            <div class="services-grid-modern" id="servicesGrid">
+                {% for s in services %}
+                <div class="service-card-luxury service-item-card" data-name="{{ s.service_name.lower() }}">
+                    <div class="card-thumb">
+                        {% if s.avatar %}
+                            {% if s.avatar.startswith('http://') or s.avatar.startswith('https://') %}
+                                <img src="{{ s.avatar }}"
+                                     alt="{{ s.service_name }}"
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='https://res.cloudinary.com/dxxwcby8l/image/upload/v1683162354/placeholder-image_q8mpxv.png';">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='images/' + s.avatar) }}"
+                                     alt="{{ s.service_name }}"
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='https://res.cloudinary.com/dxxwcby8l/image/upload/v1683162354/placeholder-image_q8mpxv.png';">
+                            {% endif %}
+                        {% else %}
+                            <img src="https://res.cloudinary.com/dxxwcby8l/image/upload/v1683162354/placeholder-image_q8mpxv.png"
+                                 alt="{{ s.service_name }}"
+                                 loading="lazy">
+                        {% endif %}
+
+                        <span class="duration-tag">
+                            <i class="fa-regular fa-clock"></i> {{ s.duration_minutes }} phút
+                        </span>
+                    </div>
+
+                    <div class="card-details">
+                        <h3 class="service-title">{{ s.service_name }}</h3>
+                        <p class="service-description">
+                            {{ s.description if s.description else 'Liệu trình chăm sóc và tạo kiểu chuyên nghiệp bởi đội ngũ kinh nghiệm.' }}
+                        </p>
+
+                        <div class="card-footer-action">
+                            <div class="price-box">
+                                <span class="price-label">Giá dịch vụ</span>
+                                <span class="price-amount">{{ "{:,.0f}".format(s.price) }} <small>đ</small></span>
+                            </div>
+
+                            <!-- ẨN NÚT ĐẶT LỊCH NẾU KHÔNG PHẢI VAI TRÒ KHÁCH HÀNG -->
+                            {% if not current_user.is_authenticated or current_user.role.name == 'CUSTOMER' %}
+                                <a href="{{ url_for('booking_view', service_id=s.id) }}" class="btn-book-arrow" title="Đặt lịch {{ s.service_name }}">
+                                    <span>Đặt lịch</span>
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- KHỐI THÔNG BÁO KHÔNG TÌM THẤY DỊCH VỤ VỚI TÌM KIẾM REAL-TIME -->
+            <div id="noResultsBox" class="empty-search-box" style="display: none; margin-top: 30px;">
+                <i class="fa-solid fa-box-open empty-icon"></i>
+                <p>Không tìm thấy dịch vụ nào phù hợp với từ khóa "<strong id="searchKeywordLabel"></strong>"</p>
+                <button type="button" onclick="clearSearchInput()" class="btn-reset-filter" style="border: none; cursor: pointer;">
+                    <i class="fa-solid fa-arrows-rotate"></i> Xem lại tất cả dịch vụ
+                </button>
+            </div>
+
+            <!-- THANH PHÂN TRANG JINJA2 -->
+            {% if total_pages and total_pages > 1 %}
+            <div class="pagination-wrap">
+                {% if page > 1 %}
+                    <a href="{{ url_for('index', kw=kw, page=page-1) }}#services" class="page-btn prev-btn">
+                        <i class="fa-solid fa-chevron-left"></i> Trước
+                    </a>
+                {% else %}
+                    <span class="page-btn disabled"><i class="fa-solid fa-chevron-left"></i> Trước</span>
+                {% endif %}
+
+                <div class="page-numbers">
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == 1 or p == total_pages or (p >= page - 1 and p <= page + 1) %}
+                            {% if p == page %}
+                                <span class="page-num active">{{ p }}</span>
+                            {% else %}
+                                <a href="{{ url_for('index', kw=kw, page=p) }}#services" class="page-num">{{ p }}</a>
+                            {% endif %}
+                        {% elif p == page - 2 or p == page + 2 %}
+                            <span class="page-num-ellipsis">…</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                {% if page < total_pages %}
+                    <a href="{{ url_for('index', kw=kw, page=page+1) }}#services" class="page-btn next-btn">
+                        Sau <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                {% else %}
+                    <span class="page-btn disabled">Sau <i class="fa-solid fa-chevron-right"></i></span>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Trạng thái không tìm thấy dữ liệu ban đầu -->
+            <div class="empty-search-box">
+                <i class="fa-solid fa-box-open empty-icon"></i>
+                <p>Không tìm thấy dịch vụ nào phù hợp với từ khóa "<strong>{{ kw if kw else '' }}</strong>"</p>
+                <a href="{{ url_for('index') }}" class="btn-reset-filter">
+                    <i class="fa-solid fa-arrows-rotate"></i> Xem lại tất cả dịch vụ
+                </a>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- 3. THANH CAM KẾT THANH LỊCH -->
+    <section class="trust-features-seamless" style="margin-top: 40px;">
+        <div class="trust-item">
+            <div class="trust-icon"><i class="fa-solid fa-leaf"></i></div>
+            <div class="trust-info">
+                <h4>100% Organic Products</h4>
+                <p>Sản phẩm nội bộ hữu cơ thuần chay an toàn cho tóc & da</p>
+            </div>
+        </div>
+
+        <div class="trust-item">
+            <div class="trust-icon"><i class="fa-solid fa-award"></i></div>
+            <div class="trust-info">
+                <h4>Master Stylists</h4>
+                <p>Kỹ thuật viên lành nghề, tay nghề được kiểm duyệt</p>
+            </div>
+        </div>
+
+        <div class="trust-item">
+            <div class="trust-icon"><i class="fa-solid fa-shield-heart"></i></div>
+            <div class="trust-info">
+                <h4>Sanitized Equipment</h4>
+                <p>Khử trùng dụng cụ nghiêm ngặt trước mỗi ca phục vụ</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. VỀ CHÚNG TÔI -->
+    <section class="about-section" id="about">
+        <div class="about-grid">
+            <div class="about-img-box">
+                <img src="https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=800&q=80" alt="About Minimalist Muse">
+            </div>
+            <div class="about-content">
+                <span class="sub-title">OUR STORY</span>
+                <h2 class="about-heading">Vẻ đẹp khởi đầu từ sự cân bằng & thư thái</h2>
+                <p class="about-desc">
+                    <strong>Minimalist Muse</strong> được ra đời với triết lý tôn vinh nét đẹp nguyên bản. Mỗi dịch vụ được thiết kế chỉn chu từ thời gian thực hiện đến định mức sản phẩm tiêu chuẩn, mang đến sự an tâm tuyệt đối cho bạn.
+                </p>
+                <div class="about-features">
+                    <div class="af-item">
+                        <i class="fa-solid fa-check"></i> <span>Dụng cụ & sản phẩm định mức chuẩn hóa</span>
+                    </div>
+                    <div class="af-item">
+                        <i class="fa-solid fa-check"></i> <span>Không gian tối giản, riêng tư & êm dịu</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. ƯU ĐÃI ĐẶC BIỆT (KHUYẾN MÃI TỪ DATABASE) -->
+    <section class="promotions-section" id="promotions">
+        <div class="section-title-wrap">
+            <span class="sub-title">SPECIAL OFFERS</span>
+            <h2 class="main-title">Ưu Đãi Đặc Biệt Trong Tháng</h2>
+            <p class="section-subtext">Được áp dụng trực tiếp khi Lễ tân xác nhận hóa đơn thanh toán tại quầy</p>
+            <div class="divider-line"></div>
+        </div>
+
+        {% if promotions %}
+            <!-- Khối hiển thị dạng Grid linh hoạt chuẩn Salon -->
+            <div class="promo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;">
+                {% for p in promotions %}
+                <div class="promo-card highlight-card" style="margin: 0; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="promo-header">
+                            <h3 class="promo-title">
+                                {% if p.promo_type.name == 'PERCENT' %}
+                                    Giảm {{ "{:,.0f}".format(p.value) }}% Hóa Đơn
+                                {% else %}
+                                    Giảm {{ "{:,.0f}".format(p.value) }} đ
+                                {% endif %}
+                            </h3>
+                            <span class="promo-code-badge">{{ p.promo_code }}</span>
+                        </div>
+                        <p class="promo-desc">
+                            Áp dụng mã <strong>{{ p.promo_code }}</strong> khi thanh toán hóa đơn dịch vụ tại salon.
+                        </p>
+                    </div>
+
+                    <div class="promo-footer" style="margin-top: 16px;">
+                        <span class="promo-expiry">
+                            <i class="fa-regular fa-calendar"></i> {{ p.end_date.strftime('%d/%m/%Y') if p.end_date else 'Vô thời hạn' }}
+                        </span>
+
+                        {% if not current_user.is_authenticated or current_user.role.name == 'CUSTOMER' %}
+                            <a href="{{ url_for('booking_view') }}" class="btn-promo-apply">Đặt lịch ngay</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-search-box" style="padding: 30px;">
+                <i class="fa-solid fa-ticket empty-icon"></i>
+                <p>Hiện chưa có chương trình ưu đãi nào đang diễn ra.</p>
+            </div>
+        {% endif %}
+    </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let searchTimeout = null;
+
+function filterServicesRealtime() {
+    const input = document.getElementById('realtimeSearchInput');
+    const kw = input.value.trim();
+    const servicesGrid = document.getElementById('servicesGrid');
+    const noResultsBox = document.getElementById('noResultsBox');
+    const searchKeywordLabel = document.getElementById('searchKeywordLabel');
+    const paginationWrap = document.querySelector('.pagination-wrap');
+
+    // Chống spam request: Đợi người dùng gõ xong 300ms mới gửi request
+    clearTimeout(searchTimeout);
+
+    searchTimeout = setTimeout(() => {
+        // Gửi fetch API lấy toàn bộ dịch vụ khớp từ khóa từ server
+        fetch(`/?kw=${encodeURIComponent(kw)}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.text())
+        .then(html => {
+            // Tải lại nội dung trang ngầm để bóc tách thẻ dịch vụ
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newGrid = doc.getElementById('servicesGrid');
+            const newPagination = doc.querySelector('.pagination-wrap');
+
+            if (newGrid && newGrid.children.length > 0) {
+                if (servicesGrid) {
+                    servicesGrid.innerHTML = newGrid.innerHTML;
+                    servicesGrid.style.display = 'grid';
+                }
+                if (noResultsBox) noResultsBox.style.display = 'none';
+
+                // Cập nhật hoặc ẩn thanh phân trang
+                if (paginationWrap) {
+                    if (newPagination) {
+                        paginationWrap.innerHTML = newPagination.innerHTML;
+                        paginationWrap.style.display = 'flex';
+                    } else {
+                        paginationWrap.style.display = 'none';
+                    }
+                }
+            } else {
+                // Nếu không tìm thấy ở bất kỳ trang nào trong CSDL
+                if (servicesGrid) servicesGrid.style.display = 'none';
+                if (paginationWrap) paginationWrap.style.display = 'none';
+                if (noResultsBox) {
+                    noResultsBox.style.display = 'block';
+                    if (searchKeywordLabel) searchKeywordLabel.textContent = kw;
+                }
+            }
+        })
+        .catch(err => console.error('Lỗi tìm kiếm realtime:', err));
+    }, 300);
+}
+
+// Xóa nhanh từ khóa tìm kiếm
+function clearSearchInput() {
+    const input = document.getElementById('realtimeSearchInput');
+    input.value = '';
+    filterServicesRealtime();
+    input.focus();
+}
+</script>
+{% endblock %}

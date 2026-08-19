@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Minimalist Muse - Modern Beauty Salon{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- 1. Google Fonts (Playfair Display + Plus Jakarta Sans) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
 
     <!-- 2. FontAwesome 6 Pro Icons CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -30,6 +31,22 @@
 
     <!-- Footer -->
     {% include 'layout/footer.html' %}
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Tích hợp Flask Flash Message với JS showToast() -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            {% for category, message in messages %}
+              // Chuyển category của Flask ('success', 'error', 'danger'...) sang type của showToast
+              let toastType = '{{ category }}' === 'danger' ? 'error' : '{{ category }}';
+              showToast("{{ message }}", toastType);
+            {% endfor %}
+          });
+        </script>
+      {% endif %}
+    {% endwith %}
 
     {% block extra_js %}{% endblock %}
 </body>

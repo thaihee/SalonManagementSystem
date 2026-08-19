@@ -1,0 +1,250 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Thu Tiền Hóa Đơn #{{ invoice.id }} — Lễ Tân Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- HEADER TRANG -->
+    <div class="staff-header-card mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span class="sub-title" style="display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-cash-register"></i> XÁC NHẬN THANH TOÁN</span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px;">Hóa Đơn #{{ invoice.id }}</h1>
+            <p class="section-subtext mb-0">Đối chiếu dịch vụ, chọn phương thức thanh toán và chốt thu tiền.</p>
+        </div>
+        <div>
+            <a href="/reception/invoices" class="btn-cancel-modal" style="text-decoration: none; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+            </a>
+        </div>
+    </div>
+
+    <!-- KHUNG 2 CỘT TỰ ĐỘNG CÂN BẰNG TẬN DỤNG PURE CSS -->
+    <div style="display: flex; gap: 24px; align-items: flex-start; width: 100%;">
+
+        <!-- CỘT TRÁI: CHI TIẾT DỊCH VỤ & SẢN PHẨM TIÊU HAO -->
+        <div style="flex: 1; min-width: 0; background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-soft);">
+
+            <!-- TIÊU ĐỀ KHÔNG BỊ XÉN ICON -->
+            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-light); padding-bottom: 14px; margin-bottom: 20px;">
+                <i class="fa-solid fa-list-check" style="color: var(--primary-accent); font-size: 18px;"></i>
+                <h2 style="font-size: 18px; font-weight: 700; color: var(--text-dark); margin: 0; line-height: 1.4;">Chi Tiết Dịch Vụ & Vật Tư</h2>
+            </div>
+
+            <!-- THÔNG TIN CHUNG KHÁCH & STYLIST -->
+            <div style="display: flex; gap: 24px; background-color: #FAF7F5; border: 1px solid var(--border-light); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+                <div style="flex: 1;">
+                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Khách hàng:</div>
+                    <div style="font-size: 15px; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-user text-muted"></i>
+                        <span>{{ invoice.customer.full_name if invoice.customer else 'Khách vãng lai' }}</span>
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-phone"></i>
+                        <span>{{ invoice.customer.phone if invoice.customer else '---' }}</span>
+                    </div>
+                </div>
+
+                <div style="flex: 1;">
+                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Stylist thực hiện:</div>
+                    <div style="font-size: 15px; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-scissors text-muted"></i>
+                        <span>{{ invoice.staff.full_name if invoice.staff else '---' }}</span>
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-regular fa-clock"></i>
+                        <span>{{ invoice.invoice_date.strftime('%H:%M %d/%m/%Y') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BẢNG CHI TIẾT MỤC HÓA ĐƠN -->
+            <div class="table-responsive">
+                <table class="table profile-table mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3 text-start">Hạng mục</th>
+                            <th class="text-start">Loại</th>
+                            <th class="text-center">Số lượng</th>
+                            <th class="text-end">Đơn giá</th>
+                            <th class="text-end pe-3">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detail in invoice.details %}
+                        <tr>
+                            <td class="ps-3 text-start">
+                                <strong style="color: var(--text-dark);">
+                                    {% if detail.service %}
+                                        {{ detail.service.service_name }}
+                                    {% elif detail.product %}
+                                        {{ detail.product.product_name }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </strong>
+                            </td>
+                            <td class="text-start">
+                                {% if detail.item_type.name == 'SERVICE' %}
+                                    <span class="status-badge status-confirmed" style="font-size: 11px;">Dịch vụ</span>
+                                {% else %}
+                                    <span class="status-badge status-pending" style="font-size: 11px;">SP tiêu hao</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ detail.quantity|int }}</td>
+                            <td class="text-end">{{ "{:,.0f}".format(detail.unit_price) }} đ</td>
+                            <td class="text-end pe-3 fw-bold" style="color: var(--text-dark);">{{ "{:,.0f}".format(detail.subtotal) }} đ</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: THANH TOÁN (CỐ ĐỊNH RỘNG 400PX THOÁNG ĐÃNG) -->
+        <div style="width: 400px; flex-shrink: 0; background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-soft);">
+
+            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-light); padding-bottom: 14px; margin-bottom: 20px;">
+                <i class="fa-solid fa-receipt" style="color: var(--primary-accent); font-size: 18px;"></i>
+                <h2 style="font-size: 18px; font-weight: 700; color: var(--text-dark); margin: 0; line-height: 1.4;">Thanh Toán</h2>
+            </div>
+
+            <!-- TẠM TÍNH -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <span style="font-size: 14px; color: var(--text-muted);">Tổng tạm tính:</span>
+                <strong id="display-gross-total" data-amount="{{ invoice.total_amount }}" style="font-size: 16px; color: var(--text-dark);">
+                    {{ "{:,.0f}".format(invoice.total_amount) }} đ
+                </strong>
+            </div>
+
+            <!-- MÃ GIẢM GIÁ / KHUYẾN MÃI -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-dark); margin-bottom: 6px;">Ưu đãi / Khuyến mãi:</label>
+                <select id="checkout_promotion_id" class="reception-filter-select" style="width: 100%; box-sizing: border-box;" onchange="calculateFinalTotal()">
+                    <option value="" data-type="NONE" data-value="0">-- Không áp dụng --</option>
+                    {% for promo in promotions %}
+                        <option value="{{ promo.id }}" data-type="{{ promo.promo_type.name }}" data-value="{{ promo.value }}">
+                            {{ promo.promo_code }} (Giảm {% if promo.promo_type.name == 'PERCENT' %}{{ promo.value|int }}%{% else %}{{ "{:,.0f}".format(promo.value) }} đ{% endif %})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- PHƯƠNG THỨC THANH TOÁN -->
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-dark); margin-bottom: 10px;">
+                    Hình thức thanh toán <span style="color: #D32F2F;">*</span>:
+                </label>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 12px; background-color: #FAF8F6; cursor: pointer;">
+                        <input type="radio" name="payment_method" value="CASH" checked style="accent-color: var(--primary-accent); width: 18px; height: 18px; cursor: pointer;">
+                        <span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text-dark);">
+                            <i class="fa-solid fa-money-bill-wave" style="color: #2E7D32;"></i> Tiền mặt (CASH)
+                        </span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 12px; background-color: #FAF8F6; cursor: pointer;">
+                        <input type="radio" name="payment_method" value="BANK_TRANSFER" style="accent-color: var(--primary-accent); width: 18px; height: 18px; cursor: pointer;">
+                        <span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text-dark);">
+                            <i class="fa-solid fa-qrcode" style="color: #1976D2;"></i> Chuyển khoản (BANK)
+                        </span>
+                    </label>
+
+                    <!-- SỬA TỪ CREDIT_CARD THÀNH CARD -->
+                    <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 12px; background-color: #FAF8F6; cursor: pointer;">
+                        <input type="radio" name="payment_method" value="CARD" style="accent-color: var(--primary-accent); width: 18px; height: 18px; cursor: pointer;">
+                        <span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text-dark);">
+                            <i class="fa-solid fa-credit-card" style="color: #F57C00;"></i> Quẹt thẻ (CARD)
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid var(--border-light); margin: 20px 0;">
+
+            <!-- TỔNG TIỀN PHẢI THU -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <span style="font-size: 15px; font-weight: 700; color: var(--text-dark);">TỔNG THU:</span>
+                <span id="display-final-total" style="font-size: 22px; font-weight: 800; color: #C62828;">
+                    {{ "{:,.0f}".format(invoice.total_amount) }} đ
+                </span>
+            </div>
+
+            <!-- NÚT HOÀN TẤT THANH TOÁN -->
+            <button type="button" id="btn-confirm-checkout" class="btn-action-primary"
+                    style="width: 100%; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;"
+                    onclick="submitConfirmPayment({{ invoice.id }})">
+                <i class="fa-solid fa-check-circle"></i>
+                <span>XÁC NHẬN THANH TOÁN</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+}
+
+function calculateFinalTotal() {
+    const grossTotal = parseFloat(document.getElementById('display-gross-total').dataset.amount || 0);
+    const promoSelect = document.getElementById('checkout_promotion_id');
+    const selectedOption = promoSelect.options[promoSelect.selectedIndex];
+
+    const promoType = selectedOption.dataset.type;
+    const promoValue = parseFloat(selectedOption.dataset.value || 0);
+
+    let discountAmount = 0;
+
+    if (promoType === 'PERCENT') {
+        discountAmount = grossTotal * (promoValue / 100);
+    } else if (promoType === 'FIXED') {
+        discountAmount = promoValue;
+    }
+
+    const finalTotal = Math.max(0, grossTotal - discountAmount);
+
+    document.getElementById('display-final-total').innerText = formatCurrency(finalTotal);
+}
+
+async function submitConfirmPayment(invoiceId) {
+    const btn = document.getElementById('btn-confirm-checkout');
+    const paymentMethodEl = document.querySelector('input[name="payment_method"]:checked');
+    if (!paymentMethodEl) {
+        showToast("Vui lòng chọn hình thức thanh toán!", "error");
+        return;
+    }
+
+    const payment_method = paymentMethodEl.value;
+    const promotion_id = document.getElementById('checkout_promotion_id').value || null;
+
+    setButtonLoading(btn, true, 'Đang xử lý...');
+
+    try {
+        const response = await csrfFetch(`/invoices/${invoiceId}/confirm-payment`, {
+            method: 'PATCH',
+            body: JSON.stringify({ payment_method, promotion_id })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || "Xác nhận thanh toán thất bại!");
+        }
+
+        showToast("Xác nhận thanh toán thành công!", "success");
+        setTimeout(() => {
+            window.location.href = `/invoices/${invoiceId}`;
+        }, 800);
+
+    } catch (err) {
+        showToast(err.message, "error");
+        setButtonLoading(btn, false, '<i class="fa-solid fa-check-circle"></i><span>XÁC NHẬN THANH TOÁN</span>');
+    }
+}
+</script>
+{% endblock %}

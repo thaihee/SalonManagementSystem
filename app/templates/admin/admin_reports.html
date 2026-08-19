@@ -1,0 +1,230 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Báo Cáo Doanh Thu — Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- HEADER BAR -->
+    <div class="admin-header-card">
+        <div>
+            <span class="admin-header-subtitle"><i class="fa-solid fa-chart-line me-1"></i> ADMIN MANAGEMENT</span>
+            <h1 class="admin-header-title">Báo Cáo Doanh Thu</h1>
+            <p class="admin-header-subtext">Biểu đồ phân tích và thống kê hiệu suất kinh doanh salon.</p>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+            <!-- NÚT XUẤT EXCEL -->
+            <a href="/admin/reports/revenue/export?period_type={{ period_type }}&from_date={{ from_date or '' }}&to_date={{ to_date or '' }}" class="btn-export-excel">
+                <i class="fa-solid fa-file-excel"></i> Xuất File Excel
+            </a>
+
+            <!-- NÚT QUAY LẠI TRÒN -->
+            <a href="/admin" class="btn-back-circle">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- 2 THẺ TỔNG QUAN KPI -->
+    <div class="report-kpi-grid">
+        <div class="report-kpi-card">
+            <div>
+                <span class="report-kpi-title">TỔNG DOANH THU TRONG KỲ</span>
+                <div class="report-kpi-value-green">{{ "{:,.0f}".format(grand_total_revenue or 0) }} đ</div>
+            </div>
+            <div class="report-kpi-icon-box report-kpi-icon-green">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+        </div>
+
+        <div class="report-kpi-card">
+            <div>
+                <span class="report-kpi-title">TỔNG SỐ HÓA ĐƠN</span>
+                <div class="report-kpi-value-blue">{{ grand_total_invoices or 0 }} đơn</div>
+            </div>
+            <div class="report-kpi-icon-box report-kpi-icon-blue">
+                <i class="fa-solid fa-receipt"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHỐI BIỂU ĐỒ CHART.JS -->
+    <div class="report-panel-card" style="padding: 20px;">
+        <strong style="color: #2C2623; font-size: 15px; display: block; margin-bottom: 16px;">
+            <i class="fa-solid fa-chart-area me-2" style="color: #C5A880;"></i>Biểu Đồ Tăng Trưởng Doanh Thu
+        </strong>
+        <div style="height: 320px; position: relative;">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <!-- BẢNG BỘ LỌC VÀ CHI TIẾT -->
+    <div class="report-panel-card">
+        <div class="report-panel-header">
+            <strong style="color: #2C2623; font-size: 15px;">
+                <i class="fa-solid fa-list-check me-2" style="color: #C5A880;"></i>Bảng Số Liệu Chi Tiết
+            </strong>
+
+            <form method="GET" action="/admin/reports/revenue" id="revenueFilterForm" class="d-flex align-items-center gap-2 m-0">
+                <select name="period_type" onchange="document.getElementById('revenueFilterForm').submit()" class="form-control-luxury-sm">
+                    <option value="day" {% if period_type == 'day' %}selected{% endif %}>Theo Ngày</option>
+                    <option value="month" {% if period_type == 'month' %}selected{% endif %}>Theo Tháng</option>
+                    <option value="year" {% if period_type == 'year' %}selected{% endif %}>Theo Năm</option>
+                </select>
+
+                <input type="date" name="from_date" value="{{ from_date or '' }}" class="form-control-luxury-sm">
+                <input type="date" name="to_date" value="{{ to_date or '' }}" class="form-control-luxury-sm">
+
+                <button type="submit" class="btn-action-primary" style="padding: 8px 18px; border-radius: 20px;">
+                    <i class="fa-solid fa-filter me-1"></i> Lọc
+                </button>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Thời Gian</th>
+                        <th style="width: 20%; text-align: center;">Số Hóa Đơn</th>
+                        <th style="width: 25%; text-align: right;">Trung Bình / Đơn</th>
+                        <th style="width: 25%; text-align: right;">Tổng Doanh Thu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if report_data %}
+                        {% for item in report_data %}
+                        <tr>
+                            <td style="font-weight: 700;">
+                                <i class="fa-regular fa-calendar me-2" style="color: #C5A880;"></i>{{ item.period_label or item.period }}
+                            </td>
+                            <td style="text-align: center;">
+                                <span style="background: #FAF7F2; border: 1px solid #D8C8B8; padding: 3px 10px; border-radius: 12px; font-weight: 600;">
+                                    {{ item.total_invoices }} đơn
+                                </span>
+                            </td>
+                            <td style="text-align: right; color: #7A726D; font-weight: 600;">
+                                {% if item.total_invoices > 0 %}
+                                    {{ "{:,.0f}".format(item.total_revenue / item.total_invoices) }} đ
+                                {% else %}
+                                    0 đ
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right; font-weight: 700; color: #2E7D32; font-size: 14px;">
+                                {{ "{:,.0f}".format(item.total_revenue) }} đ
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 40px; color: #8C827A;">
+                                Không có dữ liệu doanh thu nào.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- THƯ VIỆN CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. Chuẩn bị dữ liệu từ Jinja2
+    const labels = [
+        {% if report_data %}
+            {% for item in report_data|reverse %}
+                "{{ item.period_label or item.period }}",
+            {% endfor %}
+        {% endif %}
+    ];
+
+    const dataRevenue = [
+        {% if report_data %}
+            {% for item in report_data|reverse %}
+                {{ item.total_revenue or 0 }},
+            {% endfor %}
+        {% endif %}
+    ];
+
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+
+    // Tạo hiệu ứng màu nền Gradient bên dưới đường Line
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(197, 168, 128, 0.4)');
+    gradient.addColorStop(1, 'rgba(197, 168, 128, 0.0)');
+
+    // 2. Khởi tạo Chart.js
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Doanh Thu (VNĐ)',
+                data: dataRevenue,
+                borderColor: '#C5A880',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.35, // Độ cong đường cong
+                pointBackgroundColor: '#2C2623',
+                pointBorderColor: '#FFF',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false // Ẩn nhãn chú thích vì đã có tiêu đề
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let value = context.raw || 0;
+                            return ' Doanh thu: ' + value.toLocaleString('vi-VN') + ' đ';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#7A726D',
+                        font: { size: 12 }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#F5EFE9'
+                    },
+                    ticks: {
+                        color: '#7A726D',
+                        font: { size: 12 },
+                        callback: function(value) {
+                            if (value >= 1000000) return (value / 1000000) + ' Tr';
+                            if (value >= 1000) return (value / 1000) + ' k';
+                            return value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

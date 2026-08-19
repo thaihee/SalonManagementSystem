@@ -1,0 +1,193 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Hóa Đơn Đã Lập — Stylist Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- HEADER BAR -->
+    <div class="staff-header-card mb-4">
+        <div>
+            <span class="sub-title"><i class="fa-solid fa-file-invoice-dollar"></i> STYLIST DASHBOARD</span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px;">Hóa Đơn Dịch Vụ Đã Lập</h1>
+            <p class="section-subtext mb-0">Theo dõi trạng thái thanh toán của các hóa đơn dịch vụ do bạn khởi tạo.</p>
+        </div>
+    </div>
+
+    <!-- KHỐI BỘ LỌC TRẠNG THÁI -->
+    <div class="stat-box-grid mb-3">
+        <div class="filter-box {{ 'active' if selected_status == 'ALL' else '' }}" onclick="filterByStatus('ALL')">
+            <div class="stat-label">TỔNG HÓA ĐƠN</div>
+            <div class="stat-num">{{ all_invoices|length }}</div>
+        </div>
+        <div class="filter-box {{ 'active' if selected_status == 'DRAFT' else '' }}" onclick="filterByStatus('DRAFT')">
+            <div class="stat-label">CHỜ LỄ TÂN THU TIỀN</div>
+            <div class="stat-num" style="color: #E65100;">{{ all_invoices|selectattr('status.name', 'equalto', 'DRAFT')|list|length }}</div>
+        </div>
+        <div class="filter-box {{ 'active' if selected_status == 'PAID' else '' }}" onclick="filterByStatus('PAID')">
+            <div class="stat-label">ĐÃ HOÀN TẤT (PAID)</div>
+            <div class="stat-num" style="color: #2E7D32;">{{ all_invoices|selectattr('status.name', 'equalto', 'PAID')|list|length }}</div>
+        </div>
+    </div>
+
+    <!-- THANH TÌM KIẾM & NGÀY -->
+    <div class="reception-toolbar">
+        <div class="reception-search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="staff_inv_search" class="reception-search-input" 
+                   placeholder="Mã HĐ, Tên hoặc SĐT Khách hàng..." autocomplete="off">
+        </div>
+
+        <form method="GET" action="{{ url_for('staff_invoices_view') }}" id="dateStaffInvForm" style="margin: 0;">
+            <input type="hidden" name="status" value="{{ selected_status }}">
+            <input type="date" name="date" value="{{ selected_date or '' }}" 
+                   class="reception-filter-select" onchange="document.getElementById('dateStaffInvForm').submit()">
+        </form>
+    </div>
+
+    <!-- BẢNG DANH SÁCH HÓA ĐƠN CỦA STYLIST -->
+    <div class="card-luxury p-0 overflow-hidden" style="max-height: 600px; overflow-y: auto;">
+        <div class="table-responsive">
+            <table class="table profile-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4 text-start">Mã HĐ</th>
+                        <th class="text-start">Thời gian tạo</th>
+                        <th class="text-start">Khách hàng</th>
+                        <th class="text-start">Các hạng mục</th>
+                        <th class="text-start">Trạng thái thu tiền</th>
+                        <th class="text-end pe-4">Tổng giá trị</th>
+                        <th class="text-center pe-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if invoices %}
+                        {% for inv in invoices %}
+                        <tr class="staff-inv-row" 
+                            data-inv-id="#{{ inv.id }}"
+                            data-customer-name="{{ inv.customer.full_name.lower() if inv.customer else '' }}"
+                            data-customer-phone="{{ inv.customer.phone if inv.customer else '' }}">
+
+                            <td class="ps-4 text-start" style="font-weight: 700; color: var(--text-dark);">#{{ inv.id }}</td>
+
+                            <td class="text-start">
+                                <div class="luxury-time-badge">
+                                    <i class="fa-regular fa-clock me-1"></i>{{ inv.invoice_date.strftime('%H:%M') }}
+                                </div>
+                                <span class="date-subtext">{{ inv.invoice_date.strftime('%d/%m/%Y') }}</span>
+                            </td>
+
+                            <td class="text-start">
+                                <div style="font-weight: 700; color: var(--text-dark);">
+                                    {{ inv.customer.full_name if inv.customer else 'Khách vãng lai' }}
+                                </div>
+                                <small class="text-muted">{{ inv.customer.phone if inv.customer else '---' }}</small>
+                            </td>
+
+                            <td class="text-start" style="font-size: 13px;">
+                                {% for detail in inv.details %}
+                                    {% if detail.service %}
+                                        <div style="line-height: 1.4; color: var(--text-dark); font-weight: 600;">
+                                            {{ detail.service.service_name }}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+
+                            <td class="text-start">
+                                {% if inv.status.name == 'DRAFT' %}
+                                    <span class="status-badge status-pending" style="font-size: 11px;">
+                                        <i class="fa-solid fa-clock me-1"></i> Chờ Lễ tân thu
+                                    </span>
+                                {% elif inv.status.name == 'PAID' %}
+                                    <span class="status-badge status-completed" style="font-size: 11px;">
+                                        <i class="fa-solid fa-circle-check me-1"></i> Đã thu tiền
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-cancelled" style="font-size: 11px;">
+                                        <i class="fa-solid fa-ban me-1"></i> Đã hủy
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <span style="font-weight: 700; color: #C62828; font-size: 15px;">
+                                    {{ "{:,.0f}".format(inv.total_amount) }} đ
+                                </span>
+                            </td>
+
+                            <td class="text-center pe-4">
+                                <a href="{{ url_for('get_invoice_detail_route', invoice_id=inv.id) }}"
+                                   class="btn-action-edit"
+                                   style="padding: 6px 12px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-eye"></i> Chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-folder-open fs-3 d-block mb-2"></i>
+                                Bạn chưa có hóa đơn nào trong khoảng thời gian này.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- THANH PHÂN TRANG -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrap mt-4">
+        <a href="{{ url_for('staff_invoices_view', page=page-1, status=selected_status, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page <= 1 else '' }}">
+            <i class="fa-solid fa-chevron-left"></i> Trước
+        </a>
+        <div class="page-numbers">
+            {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('staff_invoices_view', page=p, status=selected_status, date=selected_date) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+                    {{ p }}
+                </a>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('staff_invoices_view', page=page+1, status=selected_status, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page >= total_pages else '' }}">
+            Sau <i class="fa-solid fa-chevron-right"></i>
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterByStatus(status) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('status', status);
+    window.location.search = urlParams.toString();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('staff_inv_search');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const kw = searchInput.value.trim().toLowerCase();
+            const rows = document.querySelectorAll('.staff-inv-row');
+
+            rows.forEach(row => {
+                const invId = row.dataset.invId || '';
+                const cusName = row.dataset.customerName || '';
+                const cusPhone = row.dataset.customerPhone || '';
+
+                const matches = !kw || invId.toLowerCase().includes(kw) || cusName.includes(kw) || cusPhone.includes(kw);
+                row.style.display = matches ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

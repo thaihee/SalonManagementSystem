@@ -2,35 +2,129 @@
     <div class="header-inner">
         <!-- Logo thương hiệu -->
         <a href="/" class="brand-logo">
-            <!-- Icon Logo bự -->
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Minimalist Muse" class="logo-icon-img">
-
-            <!-- Cụm chữ thương hiệu bự & dài -->
             <div class="brand-text-group">
                 <span class="brand-text">MINIMALIST <span>MUSE</span></span>
                 <span class="brand-subtext">LUXURY SALON & SPA</span>
             </div>
         </a>
 
-        <!-- Menu Điều Hướng Chi Tiết -->
+        <!-- Menu Điều Hướng Chi Tiết (Bên trái) -->
         <nav class="nav-menu">
-            <a href="/" class="nav-item active">Trang chủ</a>
+            <a href="/" class="nav-item {{ 'active' if request.path == '/' else '' }}">Trang chủ</a>
             <a href="/#about" class="nav-item">Về chúng tôi</a>
             <a href="/#services" class="nav-item">Dịch vụ</a>
             <a href="/#promotions" class="nav-item">Ưu đãi</a>
             <a href="/#contact" class="nav-item">Liên hệ</a>
         </nav>
 
-        <!-- Góc Tài Khoản Người Dùng -->
-        <div class="account-actions">
+        <!-- Góc Tài Khoản Người Dùng & Nút Đặt Lịch -->
+        <div class="account-actions d-flex align-items-center gap-3">
+            <!-- Nút Đặt Lịch Nổi Bật (Chỉ hiện cho Khách chưa đăng nhập hoặc Khách hàng) -->
+            {% if not current_user.is_authenticated or current_user.role.name == 'CUSTOMER' %}
+            <a href="/booking" class="btn-booking-highlight {{ 'active' if request.path == '/booking' else '' }}">
+                <i class="fa-solid fa-calendar-plus"></i>
+                <span>Đặt lịch hẹn</span>
+            </a>
+            {% endif %}
+
             {% if current_user.is_authenticated %}
-                <a href="/users/me" class="btn-nav-login">
-                    <i class="fa-solid fa-user"></i>
-                    <span>{{ current_user.full_name }}</span>
-                </a>
-                <form action="/logout" method="POST" style="display:inline;">
-                    <button type="submit" class="btn-nav-register">Đăng xuất</button>
-                </form>
+                <!-- Dropdown Tài Khoản -->
+                <div class="dropdown user-dropdown">
+                    <button class="btn-nav-user d-flex align-items-center gap-2"
+                            type="button"
+                            id="userDropdownBtn"
+                            onclick="toggleUserMenu(event)">
+                        <i class="fa-solid fa-circle-user"></i>
+                        <span>{{ current_user.full_name }}</span>
+                    </button>
+
+                    <ul class="custom-dropdown-menu list-unstyled" id="userDropdownMenu">
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="/users/me">
+                                <i class="fa-regular fa-id-card"></i>
+                                <span>Hồ sơ cá nhân</span>
+                            </a>
+                        </li>
+
+                        <!-- Tab dành riêng cho Khách hàng -->
+                        {% if current_user.role.name == 'CUSTOMER' %}
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="/appointments/me">
+                                <i class="fa-regular fa-calendar-check"></i>
+                                <span>Lịch Hẹn Của Tôi</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="/invoices/me">
+                                <i class="fa-solid fa-receipt"></i>
+                                <span>Lịch sử thanh toán</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- Tab dành riêng cho Nhân viên (STAFF) -->
+                        {% if current_user.role.name == 'STAFF' %}
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="/staff/appointments">
+                                <i class="fa-solid fa-calendar-day"></i>
+                                <span>Lịch hẹn được giao</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="/staff/invoices">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                                <span>Hóa đơn đã lập</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- Tab dành riêng cho Lễ tân (RECEPTIONIST) -->
+                        {% if current_user.role.name == 'RECEPTIONIST' %}
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="/reception/appointments">
+                                <i class="fa-solid fa-calendar-check"></i>
+                                <span>Lịch hẹn cửa hàng</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- Tab dành riêng cho Lễ tân (RECEPTIONIST) và Admin -->
+                        {% if current_user.role.name in ['RECEPTIONIST', 'ADMIN'] %}
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="/reception/invoices">
+                                <i class="fa-solid fa-receipt"></i>
+                                <span>Quản lý hóa đơn</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- Tab dành riêng cho Quản lý (ADMIN) -->
+                        {% if current_user.role.name == 'ADMIN' %}
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 text-warning fw-bold" href="/admin">
+                                <i class="fa-solid fa-user-shield"></i>
+                                <span>Trang quản trị</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <li><hr class="dropdown-divider my-1"></li>
+
+                        <li>
+                            <form action="/logout" method="POST" class="m-0 p-0">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="dropdown-item text-danger border-0 bg-transparent w-100 text-start d-flex align-items-center gap-2">
+                                    <i class="fa-solid fa-right-from-bracket"></i>
+                                    <span>Đăng xuất</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
             {% else %}
                 <a href="/login" class="btn-nav-login">
                     <i class="fa-solid fa-user"></i>
@@ -43,3 +137,22 @@
         </div>
     </div>
 </header>
+
+<script>
+function toggleUserMenu(event) {
+    event.stopPropagation();
+    const menu = document.getElementById('userDropdownMenu');
+    if (menu) {
+        menu.classList.toggle('show');
+    }
+}
+
+// Ẩn menu khi click ra ngoài màn hình
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('userDropdownMenu');
+    const btn = document.getElementById('userDropdownBtn');
+    if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.remove('show');
+    }
+});
+</script>

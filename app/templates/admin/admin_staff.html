@@ -1,0 +1,362 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Quản Lý Nhân Viên & Tài Khoản — Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1200px; margin: 0 auto; padding: 20px 15px;">
+
+    <!-- HEADER BAR -->
+    <div class="staff-header-card mb-4" style="display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 20px; border-radius: 14px; border: 1px solid #EAE0D5;">
+        <div>
+            <span class="sub-title" style="color: #C5A880; font-size: 11px; font-weight: 700; letter-spacing: 1px;"><i class="fa-solid fa-users-gear me-1"></i> ADMIN MANAGEMENT</span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px; color: #2C2623;">Quản Lý Nhân Viên & Tài Khoản</h1>
+            <p class="section-subtext mb-0" style="color: #7A726D; font-size: 13px;">Tạo tài khoản Stylist/Lễ tân, cập nhật thông tin và quản lý quyền truy cập hệ thống.</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <!-- NÚT QUAY LẠI -->
+            <a href="/admin" style="width: 38px; height: 38px; background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s;">
+                <i class="fa-solid fa-arrow-left" style="font-size: 13px;"></i>
+            </a>
+
+            <!-- NÚT TẠO NHÂN VIÊN MỚI -->
+            <button type="button" class="btn-action-primary" onclick="toggleCreateStaffForm()" style="background: #2C2623; color: #FFF; border: none; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                <i class="fa-solid fa-user-plus me-1"></i> Tạo Nhân Viên Mới
+            </button>
+        </div>
+    </div>
+
+    <!-- KHU VỰC LỌC THEO VAI TRÒ (ROLE FILTER) -->
+    <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 12px; padding: 12px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 13px; font-weight: 600; color: #7A726D;"><i class="fa-solid fa-filter me-1" style="color: #C5A880;"></i> Lọc vai trò:</span>
+            <a href="/admin/users"
+               style="padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; text-decoration: none; {{ 'background: #2C2623; color: #FFF;' if not selected_role else 'background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8;' }}">
+                Tất cả
+            </a>
+            <a href="/admin/users?role=STAFF"
+               style="padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; text-decoration: none; {{ 'background: #2C2623; color: #FFF;' if selected_role == 'STAFF' else 'background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8;' }}">
+                Stylist
+            </a>
+            <a href="/admin/users?role=RECEPTIONIST"
+               style="padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; text-decoration: none; {{ 'background: #2C2623; color: #FFF;' if selected_role == 'RECEPTIONIST' else 'background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8;' }}">
+                Lễ Tân
+            </a>
+            <a href="/admin/users?role=CUSTOMER"
+               style="padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; text-decoration: none; {{ 'background: #2C2623; color: #FFF;' if selected_role == 'CUSTOMER' else 'background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8;' }}">
+                Khách Hàng
+            </a>
+        </div>
+        <span style="font-size: 12px; color: #8C827A;">Tổng cộng: <b>{{ total_items or users|length }}</b> tài khoản</span>
+    </div>
+
+    <!-- FORM TẠO NHÂN VIÊN MỚI -->
+    <div id="createStaffCard" style="display: none; background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+        <h6 style="font-size: 14px; font-weight: 700; color: #2C2623; margin-bottom: 16px;">
+            <i class="fa-solid fa-user-check" style="color: #C5A880; margin-right: 6px;"></i> Nhập Thông Tin Tài Khoản Mới
+        </h6>
+        <form id="createStaffForm">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Họ và tên <span style="color: red;">*</span></label>
+                    <input type="text" name="full_name" required placeholder="VD: Nguyễn Văn A"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Tên đăng nhập <span style="color: red;">*</span></label>
+                    <input type="text" name="username" required placeholder="VD: stylist_an"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Mật khẩu <span style="color: red;">*</span></label>
+                    <input type="password" name="password" required placeholder="Tối thiểu 8 ký tự, hoa, thường, số"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Vai trò <span style="color: red;">*</span></label>
+                    <select name="role" required style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none; background: #FFF;">
+                        <option value="STAFF">Stylist</option>
+                        <option value="RECEPTIONIST">Lễ Tân</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Số điện thoại <span style="color: red;">*</span></label>
+                    <input type="text" name="phone" required placeholder="VD: 0912345678"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Email <span style="color: red;">*</span></label>
+                    <input type="email" name="email" required placeholder="VD: an.nguyen@salon.com"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <button type="button" onclick="toggleCreateStaffForm()" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 8px 18px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 8px;">Hủy</button>
+                <button type="submit" style="background: #2C2623; color: #FFF; border: none; padding: 8px 24px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer;">Tạo Tài Khoản</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- BẢNG DANH SÁCH NHÂN VIÊN & NGƯỜI DÙNG -->
+    <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+        <div style="padding: 16px 20px; background: #FAF7F2; border-bottom: 1px solid #EAE0D5;">
+            <strong style="color: #2C2623; font-size: 15px;">
+                <i class="fa-solid fa-address-book" style="margin-right: 8px; color: #C5A880;"></i>Danh Sách Tài Khoản Hệ Thống
+            </strong>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background: #FFF; border-bottom: 1px solid #EAE0D5; font-size: 12px; color: #8C827A; text-transform: uppercase;">
+                        <th style="padding: 12px 20px; width: 6%;">ID</th>
+                        <th style="padding: 12px 20px; width: 22%;">Họ Và Tên</th>
+                        <th style="padding: 12px 20px; width: 16%;">Tên Đăng Nhập</th>
+                        <th style="padding: 12px 20px; width: 14%;">Vai Trò</th>
+                        <th style="padding: 12px 20px; width: 14%;">Số Điện Thoại</th>
+                        <th style="padding: 12px 20px; width: 16%;">Email</th>
+                        <th style="padding: 12px 20px; width: 12%; text-align: center;">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 13px; color: #2C2623;">
+                    {% if users %}
+                        {% for u in users %}
+                        <tr style="border-bottom: 1px solid #F5EFE9; vertical-align: middle; {{ 'opacity: 0.6; background: #FAF7F2;' if not u.active else '' }}">
+                            <td style="padding: 14px 20px; font-weight: 700; color: #8C827A;">#{{ u.id }}</td>
+                            <td style="padding: 14px 20px; font-weight: 700; color: #2C2623;">
+                                {{ u.full_name }}
+                                {% if not u.active %}
+                                    <span style="background: #FFEBEE; color: #C62828; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">Đã khóa</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 14px 20px; color: #7A726D; font-family: monospace;">{{ u.username }}</td>
+                            <td style="padding: 14px 20px;">
+                                {% if u.role.name == 'ADMIN' %}
+                                    <span style="background: #EDE7F6; color: #512DA8; border: 1px solid #D1C4E9; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">ADMIN</span>
+                                {% elif u.role.name == 'STAFF' %}
+                                    <span style="background: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">STYLIST</span>
+                                {% elif u.role.name == 'RECEPTIONIST' %}
+                                    <span style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">LỄ TÂN</span>
+                                {% else %}
+                                    <span style="background: #FAF7F2; color: #7A726D; border: 1px solid #D8C8B8; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">K.HÀNG</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 14px 20px; color: #2C2623;">{{ u.phone or '---' }}</td>
+                            <td style="padding: 14px 20px; color: #7A726D; font-size: 12px;">{{ u.email or '---' }}</td>
+
+                            <td style="padding: 14px 20px; text-align: center;">
+                                {% if u.role.name != 'ADMIN' %}
+                                    <div style="display: flex; justify-content: center; gap: 6px;">
+                                        {% if u.active %}
+                                            <button type="button" title="Chỉnh sửa thông tin"
+                                                    style="background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                                    onclick="toggleEditStaffRow({{ u.id }})">
+                                                <i class="fa-solid fa-pen"></i> Sửa
+                                            </button>
+
+                                            <button type="button" title="Vô hiệu hóa tài khoản"
+                                                    style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                                    onclick="toggleUserActive({{ u.id }}, '{{ u.full_name }}', false)">
+                                                <i class="fa-solid fa-user-slash"></i> Khóa
+                                            </button>
+                                        {% else %}
+                                            <button type="button" title="Kích hoạt lại tài khoản"
+                                                    style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                                    onclick="toggleUserActive({{ u.id }}, '{{ u.full_name }}', true)">
+                                                <i class="fa-solid fa-user-check"></i> Mở khóa
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span style="color: #B0BEC5; font-size: 11px; font-style: italic;">---</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- HÀNG CHỈNH SỬA THÔNG TIN (INLINE EDIT) -->
+                        {% if u.role.name != 'ADMIN' and u.active %}
+                        <tr id="edit_staff_row_{{ u.id }}" style="display: none; background: #FAF7F2; border-bottom: 2px solid #EAE0D5;">
+                            <td colspan="7" style="padding: 16px;">
+                                <form onsubmit="event.preventDefault(); saveUpdateStaff({{ u.id }});" style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 12px; padding: 16px;">
+                                    <strong style="color: #2C2623; font-size: 13px; display: block; margin-bottom: 12px;">
+                                        <i class="fa-solid fa-user-pen" style="color: #C5A880; margin-right: 6px;"></i> Cập Nhật Hồ Sơ #{{ u.id }} ({{ u.username }})
+                                    </strong>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Họ và tên</label>
+                                            <input type="text" id="edit_fullname_{{ u.id }}" value="{{ u.full_name }}" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Số điện thoại</label>
+                                            <input type="text" id="edit_phone_{{ u.id }}" value="{{ u.phone or '' }}" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Email</label>
+                                            <input type="email" id="edit_email_{{ u.id }}" value="{{ u.email or '' }}" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px;">
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <button type="button" onclick="toggleEditStaffRow({{ u.id }})" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 6px;">Hủy</button>
+                                        <button type="submit" style="background: #2C2623; color: #FFF; border: none; padding: 5px 18px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer;">Lưu Thay Đổi</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endif %}
+
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" style="padding: 30px; text-align: center; color: #8C827A;">
+                                <i class="fa-solid fa-users" style="font-size: 20px; display: block; margin-bottom: 8px;"></i>
+                                Không tìm thấy tài khoản nào.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- THANH PHÂN TRANG -->
+        {% if total_pages > 1 %}
+        <div class="pagination-wrap" style="display: flex; justify-content: center; align-items: center; gap: 8px; padding: 16px; background: #FAF7F2; border-top: 1px solid #EAE0D5;">
+            <!-- NÚT TRƯỚC -->
+            <a href="/admin/users?page={{ page - 1 }}{% if selected_role %}&role={{ selected_role }}{% endif %}"
+               style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page <= 1 else '' }}">
+                <i class="fa-solid fa-chevron-left" style="margin-right: 4px;"></i> Trước
+            </a>
+
+            <!-- CÁC NÚT TRANG -->
+            <div style="display: flex; gap: 4px;">
+                {% for p in range(1, total_pages + 1) %}
+                    <a href="/admin/users?page={{ p }}{% if selected_role %}&role={{ selected_role }}{% endif %}"
+                       style="padding: 6px 12px; border-radius: 50%; font-size: 12px; font-weight: 700; text-decoration: none; {{ 'background: #2C2623; color: #FFF;' if p == page else 'background: #FFF; color: #2C2623; border: 1px solid #D8C8B8;' }}">
+                        {{ p }}
+                    </a>
+                {% endfor %}
+            </div>
+
+            <!-- NÚT SAU -->
+            <a href="/admin/users?page={{ page + 1 }}{% if selected_role %}&role={{ selected_role }}{% endif %}"
+               style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page >= total_pages else '' }}">
+                Sau <i class="fa-solid fa-chevron-right" style="margin-left: 4px;"></i>
+            </a>
+        </div>
+        {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF_TOKEN = typeof getCsrfToken === 'function' ? getCsrfToken() : (document.querySelector('meta[name="csrf-token"]')?.content || '');
+
+function triggerToast(msg, type = 'success') {
+    if (typeof showToast === 'function') {
+        showToast(msg, type);
+    } else {
+        console.log(`[Toast ${type.toUpperCase()}] ${msg}`);
+    }
+}
+
+function toggleCreateStaffForm() {
+    const card = document.getElementById('createStaffCard');
+    card.style.display = (card.style.display === 'none' || card.style.display === '') ? 'block' : 'none';
+}
+
+function toggleEditStaffRow(id) {
+    const row = document.getElementById(`edit_staff_row_${id}`);
+    row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none';
+}
+
+// TẠO TÀI KHOẢN NHÂN VIÊN MỚI (POST /users)
+document.getElementById('createStaffForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch('/users', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            triggerToast('Tạo tài khoản nhân viên mới thành công!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            triggerToast(data.error || 'Không thể tạo tài khoản!', 'error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        triggerToast('Lỗi hệ thống khi tạo tài khoản!', 'error');
+    });
+});
+
+// CẬP NHẬT HỒ SƠ NHÂN VIÊN (PUT /users/<id>)
+function saveUpdateStaff(id) {
+    const fullName = document.getElementById(`edit_fullname_${id}`).value.trim();
+    const phone = document.getElementById(`edit_phone_${id}`).value.trim();
+    const email = document.getElementById(`edit_email_${id}`).value.trim();
+
+    if (!fullName || !phone || !email) {
+        triggerToast('Vui lòng điền đầy đủ họ tên, SĐT và email!', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('full_name', fullName);
+    formData.append('phone', phone);
+    formData.append('email', email);
+
+    fetch(`/users/${id}`, {
+        method: 'PUT',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            triggerToast('Cập nhật thông tin nhân viên thành công!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            triggerToast(data.error || 'Cập nhật thất bại!', 'error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        triggerToast('Lỗi kết nối khi cập nhật!', 'error');
+    });
+}
+
+// VÔ HIỆU HÓA TÀI KHOẢN (DELETE /users/<id>)
+function toggleUserActive(id, name, isUnlocking) {
+    const actionText = isUnlocking ? 'mở khóa' : 'vô hiệu hóa';
+
+    const performToggle = () => {
+        fetch(`/users/${id}/toggle-active`, {
+            method: 'PATCH',
+            headers: { 'X-CSRFToken': CSRF_TOKEN }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                triggerToast(`Đã ${actionText} tài khoản thành công!`, 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                triggerToast(data.error || `Không thể ${actionText} tài khoản!`, 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            triggerToast('Lỗi kết nối khi thay đổi trạng thái!', 'error');
+        });
+    };
+
+    if (typeof showConfirm === 'function') {
+        showConfirm(`Bạn có chắc muốn ${actionText} tài khoản của "${name}"?`, performToggle);
+    } else {
+        if (confirm(`Bạn có chắc muốn ${actionText} tài khoản của "${name}"?`)) performToggle();
+    }
+}
+</script>
+{% endblock %}

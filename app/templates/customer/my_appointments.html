@@ -1,0 +1,418 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Lịch Hẹn Của Tôi | Minimalist Muse{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="section-title-wrap">
+        <span class="sub-title">QUẢN LÝ CÁ NHÂN</span>
+        <h1 class="main-title">Lịch Hẹn Của Tôi</h1>
+        <div class="divider-line"></div>
+        <p class="section-subtext">Theo dõi, cập nhật hoặc hủy lịch hẹn trải nghiệm dịch vụ tại Salon.</p>
+    </div>
+
+    <!-- 1. BỘ LỌC NÂNG CAO (TÌM THEO TÊN DỊCH VỤ, TRẠNG THÁI, NGÀY THÁNG) -->
+    <form method="GET" action="{{ url_for('my_appointments_view') }}" class="reception-toolbar mb-4">
+        <!-- Ô Tìm kiếm theo Tên dịch vụ -->
+        <div class="reception-search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" name="kw" value="{{ kw or '' }}" class="reception-search-input"
+                   placeholder="Tìm theo tên dịch vụ..." autocomplete="off">
+        </div>
+
+        <!-- Lọc theo Trạng thái -->
+        <select name="status" class="reception-filter-select" onchange="this.form.submit()">
+            <option value="ALL" {{ 'selected' if selected_status == 'ALL' else '' }}>-- Tất cả trạng thái --</option>
+            <option value="CONFIRMED" {{ 'selected' if selected_status == 'CONFIRMED' else '' }}>Đã xác nhận</option>
+            <option value="COMPLETED" {{ 'selected' if selected_status == 'COMPLETED' else '' }}>Hoàn thành</option>
+            <option value="CANCELLED" {{ 'selected' if selected_status == 'CANCELLED' else '' }}>Đã hủy</option>
+        </select>
+
+        <!-- Lọc theo Ngày hẹn -->
+        <input type="date" name="date" value="{{ selected_date or '' }}" class="reception-filter-select" onchange="this.form.submit()">
+
+        <button type="submit" class="btn-action-primary" style="padding: 8px 16px; font-size: 13px;">
+            <i class="fa-solid fa-filter me-1"></i> Lọc
+        </button>
+        {% if kw or (selected_status and selected_status != 'ALL') or selected_date %}
+            <a href="{{ url_for('my_appointments_view') }}" class="btn-cancel-modal" style="text-decoration: none; padding: 8px 14px; font-size: 13px;">
+                <i class="fa-solid fa-rotate-left me-1"></i> Xóa lọc
+            </a>
+        {% endif %}
+    </form>
+
+    <!-- 2. BẢNG DANH SÁCH LỊCH HẸN -->
+    <div class="card-luxury p-0 overflow-hidden">
+        {% if appointments %}
+        <div class="table-responsive">
+            <table class="table profile-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Mã LH</th>
+                        <th>Dịch vụ</th>
+                        <th>Kỹ thuật viên</th>
+                        <th>Thời gian hẹn</th>
+                        <th>Trạng thái</th>
+                        <th>Ghi chú</th>
+                        <th class="text-end pe-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in appointments %}
+                    <tr id="row-appt-{{ appt.id }}">
+                        <td class="ps-4"><strong>#{{ appt.id }}</strong></td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ appt.service.service_name if appt.service else 'N/A' }}</span>
+                            <br><small class="text-muted">{{ "{:,.0f}".format(appt.service.price) if appt.service else 0 }}đ</small>
+                        </td>
+                        <td>{{ appt.staff.full_name if appt.staff else 'Salon sắp xếp' }}</td>
+                        <td>
+                            <div class="fw-bold">{{ appt.appointment_date.strftime('%d/%m/%Y') }}</div>
+                            <small class="badge bg-light text-dark border">{{ appt.appointment_date.strftime('%H:%M') }}</small>
+                        </td>
+                        <td>
+                            {% if appt.status.name == 'CONFIRMED' %}
+                                <span class="status-badge status-confirmed"><i class="fa-solid fa-circle-check"></i> Đã xác nhận</span>
+                            {% elif appt.status.name == 'COMPLETED' %}
+                                <span class="status-badge status-completed"><i class="fa-solid fa-check-double"></i> Hoàn thành</span>
+                            {% elif appt.status.name == 'CANCELLED' %}
+                                <span class="status-badge status-cancelled"><i class="fa-solid fa-ban"></i> Đã hủy</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- CỘT GHI CHÚ CỐ ĐỊNH CHIỀU CAO + CHO PHÉP CUỘN MƯỢT MÀ -->
+                        <td style="width: 180px; max-width: 180px;">
+                            <div style="max-height: 50px; overflow-y: auto; font-size: 12px; color: var(--text-dark); word-break: break-word; line-height: 1.4; padding-right: 4px;">
+                                {{ appt.note or '-' }}
+                            </div>
+                        </td>
+
+                        <td class="text-end pe-4">
+                            <!-- TÍNH TOÁN RÀNG BUỘC 2 GIỜ BẰNG JINJA2 -->
+                            {% set now = datetime.now() if datetime is defined else none %}
+                            {% set is_editable = (appt.status.name == 'CONFIRMED') and (not appt.has_invoice) and (appt.appointment_date > (now + timedelta(hours=2)) if now else true) %}
+
+                            {% if is_editable %}
+                            <div class="d-inline-flex gap-2">
+                                <button type="button" class="btn-action-edit btn-edit-trigger"
+                                        data-id="{{ appt.id }}"
+                                        data-service-id="{{ appt.service_id }}"
+                                        data-staff-id="{{ appt.staff_id or '' }}"
+                                        data-date="{{ appt.appointment_date.strftime('%Y-%m-%d') }}"
+                                        data-time="{{ appt.appointment_date.strftime('%H:%M') }}"
+                                        data-note="{{ appt.note or '' }}">
+                                    <i class="fa-solid fa-pen"></i> Sửa
+                                </button>
+                                <button type="button" class="btn-action-cancel" onclick="cancelAppointment({{ appt.id }})">
+                                    <i class="fa-solid fa-xmark"></i> Hủy
+                                </button>
+                            </div>
+                            {% else %}
+                            <span class="text-muted small" title="Không thể chỉnh sửa/hủy trực tuyến (Cần trước giờ hẹn 2 tiếng và chưa lập hóa đơn)">
+                                <i class="fa-solid fa-lock"></i> Đã khóa
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-history-box py-5">
+            <i class="fa-regular fa-calendar-xmark empty-icon"></i>
+            <h3>Không tìm thấy lịch hẹn phù hợp</h3>
+            <p class="text-muted">Thử thay đổi bộ lọc hoặc đặt lịch trải nghiệm dịch vụ mới tại Minimalist Muse.</p>
+            <a href="/booking" class="btn-luxury mt-3"><i class="fa-solid fa-calendar-plus"></i> Đặt lịch ngay</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 3. THANH PHÂN TRANG -->
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination-wrap mt-4">
+        <a href="{{ url_for('my_appointments_view', page=page-1, kw=kw, status=selected_status, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page <= 1 else '' }}">
+            <i class="fa-solid fa-chevron-left"></i> Trước
+        </a>
+        <div class="page-numbers">
+            {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('my_appointments_view', page=p, kw=kw, status=selected_status, date=selected_date) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+                    {{ p }}
+                </a>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('my_appointments_view', page=page+1, kw=kw, status=selected_status, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page >= total_pages else '' }}">
+            Sau <i class="fa-solid fa-chevron-right"></i>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Cập nhật lịch hẹn -->
+<div id="editAppointmentModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog-compact">
+        <div class="modal-header-compact">
+            <h5 class="modal-title-compact"><i class="fa-regular fa-calendar-pen"></i> Thay đổi lịch hẹn</h5>
+            <button type="button" class="btn-close-modal" onclick="closeEditModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="editAppointmentForm" class="modal-form-compact">
+            <input type="hidden" id="edit_appt_id">
+
+            <div class="form-group-sm">
+                <label>Dịch vụ <span class="required-star">*</span></label>
+                <select id="edit_service_id" name="service_id" class="form-control-luxury-sm" required onchange="fetchAvailableSlots()">
+                    <option value="">-- Chọn dịch vụ --</option>
+                    {% for svc in services %}
+                    <option value="{{ svc.id }}">{{ svc.service_name }} — {{ "{:,.0f}".format(svc.price) }}đ ({{ svc.duration_minutes }} phút)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group-sm">
+                <label>Kỹ thuật viên / Stylist</label>
+                <select id="edit_staff_id" name="staff_id" class="form-control-luxury-sm" onchange="fetchAvailableSlots()">
+                    <option value="">-- Ngẫu nhiên / Chọn Stylist --</option>
+                    {% for s in staff %}
+                    <option value="{{ s.id }}">{{ s.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row-2col">
+                <div class="form-group-sm">
+                    <label>Ngày hẹn <span class="required-star">*</span></label>
+                    <input type="date" id="edit_date" name="date" class="form-control-luxury-sm" required onchange="fetchAvailableSlots()">
+                </div>
+
+                <div class="form-group-sm">
+                    <label>Giờ trống khả dụng <span class="required-star">*</span></label>
+                    <input type="hidden" id="edit_time" name="time" required>
+                    <div id="edit_slots_container" class="slots-scroll-container">
+                        <p class="slot-msg">Vui lòng chọn ngày</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group-sm">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label style="margin: 0;">Ghi chú đặc biệt</label>
+                    <small id="edit_char_counter" class="text-muted" style="font-size: 11px;">0/255</small>
+                </div>
+                <textarea id="edit_note" name="note" class="form-control-luxury-sm" rows="2" maxlength="255" placeholder="Ghi chú thêm (tối đa 255 ký tự)..." oninput="updateEditCharCount(this)"></textarea>
+            </div>
+
+            <div class="modal-footer-action">
+                <button type="button" class="btn-cancel-modal" onclick="closeEditModal()">Hủy bỏ</button>
+                <button type="submit" class="btn-submit-modal" id="btnSubmitEdit">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.btn-edit-trigger').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const serviceId = this.dataset.serviceId;
+                const staffId = this.dataset.staffId;
+                const date = this.dataset.date;
+                const time = this.dataset.time;
+                const note = this.dataset.note;
+                openEditModal(id, serviceId, staffId, date, time, note);
+            });
+        });
+    });
+
+    const modal = document.getElementById('editAppointmentModal');
+    let originalDateStr = "";
+    let originalTimeStr = "";
+
+    function updateEditCharCount(el) {
+        document.getElementById('edit_char_counter').innerText = `${el.value.length}/255`;
+    }
+
+    function openEditModal(id, serviceId, staffId, dateStr, timeStr, note) {
+        document.getElementById('edit_appt_id').value = id;
+        document.getElementById('edit_service_id').value = serviceId;
+        document.getElementById('edit_staff_id').value = staffId || "";
+        document.getElementById('edit_date').value = dateStr;
+        document.getElementById('edit_time').value = timeStr;
+
+        const noteInput = document.getElementById('edit_note');
+        noteInput.value = note || "";
+        updateEditCharCount(noteInput);
+
+        originalDateStr = dateStr;
+        originalTimeStr = timeStr;
+
+        const todayObj = new Date();
+        const todayStr = todayObj.toLocaleDateString('sv-SE');
+        const maxDateObj = new Date();
+        maxDateObj.setDate(todayObj.getDate() + 30);
+
+        const dateEl = document.getElementById('edit_date');
+        dateEl.min = todayStr;
+        dateEl.max = maxDateObj.toLocaleDateString('sv-SE');
+
+        modal.style.display = 'flex';
+        fetchAvailableSlots();
+    }
+
+    function closeEditModal() {
+        modal.style.display = 'none';
+    }
+
+    function cancelAppointment(appointmentId) {
+        showConfirm('Bạn có chắc chắn muốn hủy lịch hẹn này?', async () => {
+            try {
+                const res = await csrfFetch(`/appointments/${appointmentId}/cancel`, {
+                    method: 'PATCH'
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast('Hủy lịch hẹn thành công!', 'success');
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    showToast(data.error || 'Không thể hủy lịch hẹn!', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Đã xảy ra lỗi hệ thống khi hủy lịch!', 'error');
+            }
+        });
+    }
+
+    async function fetchAvailableSlots() {
+        const apptId = document.getElementById('edit_appt_id').value;
+        const serviceId = document.getElementById('edit_service_id').value;
+        const staffId = document.getElementById('edit_staff_id').value;
+        const date = document.getElementById('edit_date').value;
+        const container = document.getElementById('edit_slots_container');
+        const hiddenTimeInput = document.getElementById('edit_time');
+
+        if (!serviceId || !date) {
+            container.innerHTML = '<p class="slot-msg">Vui lòng chọn Dịch vụ & Ngày</p>';
+            hiddenTimeInput.value = '';
+            return;
+        }
+
+        container.innerHTML = '<p class="slot-msg"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải giờ...</p>';
+
+        let url = `/appointments/available-slots?service_id=${serviceId}&date=${date}`;
+        if (staffId) url += `&staff_id=${staffId}`;
+        if (apptId) url += `&appointment_id=${apptId}`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (!res.ok) {
+                container.innerHTML = `<p class="slot-msg text-danger">${data.error || 'Lỗi tải giờ'}</p>`;
+                hiddenTimeInput.value = '';
+                return;
+            }
+
+            let slots = data.available_slots || [];
+
+            if (date === originalDateStr && originalTimeStr && !slots.includes(originalTimeStr)) {
+                slots.push(originalTimeStr);
+                slots.sort();
+            }
+
+            if (slots.length === 0) {
+                container.innerHTML = '<p class="slot-msg">Khung giờ đã kín. Chọn ngày khác!</p>';
+                hiddenTimeInput.value = '';
+                return;
+            }
+
+            container.innerHTML = '';
+            slots.forEach(slot => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'slot-pill-btn';
+                btn.textContent = slot;
+
+                if (hiddenTimeInput.value === slot || (date === originalDateStr && slot === originalTimeStr && !hiddenTimeInput.value)) {
+                    btn.classList.add('active');
+                    hiddenTimeInput.value = slot;
+                }
+
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.slot-pill-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    hiddenTimeInput.value = slot;
+                });
+
+                container.appendChild(btn);
+            });
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = '<p class="slot-msg text-danger">Lỗi kết nối tải giờ trống!</p>';
+            hiddenTimeInput.value = '';
+        }
+    }
+
+    document.getElementById('editAppointmentForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const selectedTime = document.getElementById('edit_time').value;
+        if (!selectedTime) {
+            showToast('Vui lòng chọn một khung giờ hẹn!', 'error');
+            return;
+        }
+
+        const noteVal = document.getElementById('edit_note').value;
+        if (noteVal.length > 255) {
+            showToast('Ghi chú không được vượt quá 255 ký tự!', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btnSubmitEdit');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+
+        const id = document.getElementById('edit_appt_id').value;
+        const payload = {
+            service_id: parseInt(document.getElementById('edit_service_id').value),
+            staff_id: document.getElementById('edit_staff_id').value ? parseInt(document.getElementById('edit_staff_id').value) : null,
+            date: document.getElementById('edit_date').value,
+            time: selectedTime,
+            note: noteVal
+        };
+
+        try {
+            const response = await csrfFetch(`/appointments/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                showToast(data.message || 'Cập nhật lịch hẹn thành công!', 'success');
+                setTimeout(() => window.location.reload(), 1200);
+            } else {
+                showToast(data.error || 'Cập nhật thất bại!', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi';
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Đã xảy ra lỗi hệ thống!', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi';
+        }
+    });
+</script>
+{% endblock %}

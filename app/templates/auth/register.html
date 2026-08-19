@@ -23,7 +23,7 @@
 
         <!-- Tab Chuyển đổi Đăng nhập / Đăng ký -->
         <div class="auth-tab-group">
-            <a href="/login" class="auth-tab-btn">Đăng nhập</a>
+            <a href="/login{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}" class="auth-tab-btn">Đăng nhập</a>
             <a href="/register" class="auth-tab-btn active">Đăng ký</a>
         </div>
 
@@ -43,6 +43,7 @@
 
         <!-- Form Đăng ký -->
         <form action="/register" method="POST" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <!-- Họ và tên -->
             <div class="form-group-luxury">
                 <label for="full_name">Họ và tên</label>

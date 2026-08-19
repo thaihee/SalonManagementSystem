@@ -1,0 +1,255 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Đặt Lịch Hẹn — Minimalist Muse{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="booking-wrapper">
+        <div class="booking-header text-center">
+            <span class="sub-title">RESERVATION</span>
+            <h1 class="main-title">Đặt Lịch Trải Nghiệm Dịch Vụ</h1>
+            <p class="section-subtext">Vui lòng chọn dịch vụ và khung giờ phù hợp với lịch trình của bạn</p>
+            <div class="divider-line"></div>
+        </div>
+
+        <form id="booking-form" class="booking-form-card">
+            
+            <!-- 1. CHỌN DỊCH VỤ (KHUNG CUỘN CUSTOM GỌN GÀNG) -->
+            <div class="form-group-luxury">
+                <label><i class="fa-solid fa-scissors"></i> Chọn Dịch Vụ <span class="required-star">*</span></label>
+
+                <div class="custom-select-scroll-box" id="service-card-list">
+                    {% for s in services %}
+                    <div class="service-select-card {% if selected_service_id == s.id %}active{% endif %}" data-id="{{ s.id }}">
+                        <div class="svc-info">
+                            <span class="svc-title">{{ s.service_name }}</span>
+                            <span class="svc-sub"><i class="fa-regular fa-clock"></i> {{ s.duration_minutes }} phút</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="svc-price">{{ "{:,.0f}".format(s.price) }}đ</span>
+                            <i class="fa-solid {% if selected_service_id == s.id %}fa-circle-check{% else %}fa-circle{% endif %} svc-radio-icon"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Field ẩn lưu service_id được chọn -->
+                <input type="hidden" id="service_id" name="service_id" value="{{ selected_service_id or '' }}" required>
+            </div>
+
+            <!-- 2. CHỌN NHÂN VIÊN (STYLIST) -->
+            <div class="form-group-luxury">
+                <label for="staff_id"><i class="fa-solid fa-user-tie"></i> Chọn Kỹ Thuật Viên / Stylist (Tùy chọn)</label>
+                <select id="staff_id" name="staff_id" class="form-control-luxury">
+                    <option value="">-- Ngẫu nhiên / Salon tự xếp --</option>
+                    {% for st in staff %}
+                        <option value="{{ st.id }}">{{ st.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 3. CHỌN NGÀY -->
+            <div class="form-group-luxury">
+                <label for="date"><i class="fa-solid fa-calendar-day"></i> Chọn Ngày Hẹn <span class="required-star">*</span></label>
+                <input type="date" id="date" name="date" min="{{ min_date }}" value="{{ min_date }}" class="form-control-luxury" required>
+            </div>
+
+            <!-- 4. CHỌN KHUNG GIỜ KHẢ DỤNG -->
+            <div class="form-group-luxury">
+                <label><i class="fa-solid fa-clock"></i> Khung Giờ Còn Trống <span class="required-star">*</span></label>
+                <div id="slots-container" class="slots-grid">
+                    <p class="slot-placeholder">Vui lòng chọn Dịch vụ, Stylist và Ngày để xem giờ còn trống.</p>
+                </div>
+                <input type="hidden" id="selected_time" name="time" required>
+            </div>
+
+            <!-- 5. GHI CHÚ BỔ SUNG -->
+            <div class="form-group-luxury">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label for="note" style="margin: 0;"><i class="fa-solid fa-pen-note"></i> Ghi Chú Đặc Biệt (Nếu có)</label>
+                    <small id="char_counter" class="text-muted" style="font-size: 11px;">0/255</small>
+                </div>
+                <textarea id="note" name="note" rows="3" class="form-control-luxury" maxlength="255" placeholder="Yêu cầu cụ thể về dịch vụ hoặc tình trạng sức khỏe da/tóc (tối đa 255 ký tự)..." oninput="updateCharCount(this)"></textarea>
+            </div>
+
+            <div class="form-action-center">
+                <button type="submit" id="btn-submit-booking" class="btn-submit-luxury" disabled>
+                    <i class="fa-solid fa-check"></i> Xác Nhận Đặt Lịch
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Khai báo phần tử DOM
+    const serviceInput = document.getElementById('service_id');
+    const serviceCards = document.querySelectorAll('.service-select-card');
+    const staffSelect = document.getElementById('staff_id');
+    const dateInput = document.getElementById('date');
+    const slotsContainer = document.getElementById('slots-container');
+    const selectedTimeInput = document.getElementById('selected_time');
+    const submitBtn = document.getElementById('btn-submit-booking');
+
+    // 2. RÀNG BUỘC NGÀY: Giới hạn chọn từ Hôm nay đến tối đa 30 ngày tới
+    const todayObj = new Date();
+    const todayStr = todayObj.toLocaleDateString('sv-SE');
+
+    const maxDateObj = new Date();
+    maxDateObj.setDate(todayObj.getDate() + 30);
+    const maxDateStr = maxDateObj.toLocaleDateString('sv-SE');
+
+    dateInput.min = todayStr;
+    dateInput.max = maxDateStr;
+    if (!dateInput.value) {
+        dateInput.value = todayStr;
+    }
+
+    // 3. Xử lý click chọn Card Dịch vụ (Custom UI)
+    serviceCards.forEach(card => {
+        card.addEventListener('click', function () {
+            serviceCards.forEach(c => {
+                c.classList.remove('active');
+                const icon = c.querySelector('.svc-radio-icon');
+                if (icon) {
+                    icon.classList.remove('fa-circle-check');
+                    icon.classList.add('fa-circle');
+                }
+            });
+
+            this.classList.add('active');
+            const currentIcon = this.querySelector('.svc-radio-icon');
+            if (currentIcon) {
+                currentIcon.classList.remove('fa-circle');
+                currentIcon.classList.add('fa-circle-check');
+            }
+
+            serviceInput.value = this.dataset.id;
+            fetchAvailableSlots();
+        });
+    });
+
+    // 4. Bắt sự kiện thay đổi của Stylist và Ngày
+    staffSelect.addEventListener('change', fetchAvailableSlots);
+    dateInput.addEventListener('change', fetchAvailableSlots);
+
+    // BỔ SUNG MỚI: Tự động chọn Dịch vụ đầu tiên nếu chưa có service_id
+    if (!serviceInput.value && serviceCards.length > 0) {
+        serviceCards[0].click(); // Giả lập click chọn thẻ dịch vụ đầu tiên
+    } else if (serviceInput.value) {
+        fetchAvailableSlots();
+    }
+
+    // 5. Hàm Fetch danh sách khung giờ trống (8:00 - 20:00)
+    async function fetchAvailableSlots() {
+        const serviceId = serviceInput.value;
+        const staffId = staffSelect.value;
+        const dateStr = dateInput.value;
+
+        selectedTimeInput.value = '';
+        submitBtn.disabled = true;
+
+        if (!serviceId || !dateStr) {
+            slotsContainer.innerHTML = '<p class="slot-placeholder">Vui lòng chọn Dịch vụ và Ngày để xem lịch trống.</p>';
+            return;
+        }
+
+        slotsContainer.innerHTML = '<p class="slot-placeholder"><i class="fa-solid fa-spinner fa-spin"></i> Đang kiểm tra lịch trống (8:00 - 20:00)...</p>';
+
+        try {
+            let url = `/appointments/available-slots?service_id=${serviceId}&date=${dateStr}`;
+            if (staffId) url += `&staff_id=${staffId}`;
+
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (!res.ok) {
+                slotsContainer.innerHTML = `<p class="slot-error">${data.error || 'Không thể lấy khung giờ trống'}</p>`;
+                return;
+            }
+
+            if (!data.available_slots || data.available_slots.length === 0) {
+                slotsContainer.innerHTML = '<p class="slot-empty">Khung giờ trong ngày này đã kín hoặc đã qua giờ làm việc (8:00-20:00). Vui lòng chọn ngày khác!</p>';
+                return;
+            }
+
+            // Render danh sách nút chọn giờ
+            slotsContainer.innerHTML = data.available_slots.map(slot => `
+                <button type="button" class="slot-btn" data-time="${slot}">
+                    ${slot}
+                </button>
+            `).join('');
+
+            // Sự kiện click chọn từng ô giờ
+            document.querySelectorAll('.slot-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedTimeInput.value = this.dataset.time;
+                    submitBtn.disabled = false;
+                });
+            });
+
+        } catch (err) {
+            console.error(err);
+            slotsContainer.innerHTML = '<p class="slot-error">Lỗi kết nối khi tải khung giờ!</p>';
+        }
+    }
+
+    // 6. Submit form Đặt lịch
+    document.getElementById('booking-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        if (!serviceInput.value) {
+            showToast('Vui lòng chọn 1 dịch vụ!', 'error');
+            return;
+        }
+
+        if (!selectedTimeInput.value) {
+            showToast('Vui lòng chọn một khung giờ còn trống!', 'error');
+            return;
+        }
+
+        const noteInput = document.getElementById('note');
+        if (noteInput && noteInput.value.length > 255) {
+            showToast('Ghi chú không được vượt quá 255 ký tự!', 'error');
+            return;
+        }
+
+        // Payload chuẩn ăn khớp models.py (staff_id = null khi chọn Ngẫu nhiên)
+        const payload = {
+            service_id: parseInt(serviceInput.value),
+            staff_id: staffSelect.value ? parseInt(staffSelect.value) : null,
+            date: dateInput.value,
+            time: selectedTimeInput.value,
+            note: noteInput ? noteInput.value : ''
+        };
+
+        try {
+            const res = await csrfFetch('/appointments', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                showToast(data.message || 'Đặt lịch thành công!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1200);
+            } else {
+                showToast(data.error || 'Đặt lịch thất bại, vui lòng thử lại!', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Lỗi hệ thống khi tạo lịch hẹn!', 'error');
+        }
+    });
+});
+</script>
+{% endblock %}

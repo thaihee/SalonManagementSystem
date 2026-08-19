@@ -1,0 +1,263 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Biên Nhận Hóa Đơn #{{ invoice.id }} — Minimalist Muse{% endblock %}
+
+{% block content %}
+
+<div class="page-container" style="max-width: 900px; margin: 0 auto; padding: 20px 15px;">
+
+    <!-- BAR THAO TÁC CẤP TRÊN (ẨN KHI IN) -->
+    <div class="staff-header-card mb-4 no-print" style="display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 20px; border-radius: 14px; border: 1px solid #EAE0D5;">
+        <div>
+            <span class="sub-title" style="color: #C5A880; font-size: 11px; font-weight: 700; letter-spacing: 1px;"><i class="fa-solid fa-receipt me-1"></i> BIÊN NHẬN THANH TOÁN</span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px; color: #2C2623;">Hóa Đơn #{{ invoice.id }}</h1>
+            <p class="section-subtext mb-0" style="color: #7A726D; font-size: 13px;">Hóa đơn điện tử ghi nhận dịch vụ tại Minimalist Muse Spa & Salon.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            {% if current_user.role.name in ['RECEPTIONIST', 'ADMIN'] %}
+                <a href="/reception/invoices" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
+                </a>
+            {% elif current_user.role.name == 'STAFF' %}
+                <a href="/staff/invoices" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-arrow-left"></i> Danh sách hóa đơn
+                </a>
+            {% elif current_user.role.name == 'CUSTOMER' %}
+                <a href="/invoices/me" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-arrow-left"></i> Lịch sử thanh toán
+                </a>
+            {% endif %}
+
+            <button type="button" onclick="window.print()" style="background: #2C2623; color: #FFF; border: none; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-print"></i> In hóa đơn
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. GIAO DIỆN HIỂN THỊ TRÊN MÀN HÌNH MÁY TÍNH (LUXURY CARD - ẨN KHI IN) -->
+    <div class="invoice-paper-card no-print" style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; padding: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+
+        <!-- HEADER HÓA ĐƠN -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+            <div>
+                <div style="font-size: 22px; font-weight: 800; color: #2C2623; letter-spacing: 1px;">MINIMALIST <span style="color: #C5A880;">MUSE</span></div>
+                <div style="font-size: 11px; font-weight: 700; color: #8C827A; letter-spacing: 1.5px; margin-top: 2px;">LUXURY SALON & SPA</div>
+                <div style="font-size: 12px; color: #7A726D; margin-top: 8px;"><i class="fa-solid fa-location-dot me-1"></i> 123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh</div>
+                <div style="font-size: 12px; color: #7A726D;"><i class="fa-solid fa-phone me-1"></i> Hotline: (028) 3822 9999</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 12px; font-weight: 700; color: #C5A880; letter-spacing: 1px;">PHIẾU THU BÁN HÀNG</div>
+                <div style="font-size: 20px; font-weight: 800; color: #2C2623; margin-top: 2px;">#{{ invoice.id }}</div>
+                <div style="font-size: 12px; color: #7A726D; margin-top: 4px;">Ngày tạo nháp: {{ invoice.invoice_date.strftime('%d/%m/%Y %H:%M') }}</div>
+                {% if invoice.status.name == 'PAID' %}
+                    <div style="font-size: 12px; color: #7A726D;">Thanh toán lúc: {{ invoice.updated_date.strftime('%d/%m/%Y %H:%M') }}</div>
+                {% endif %}
+                <div style="margin-top: 8px;">
+                    {% if invoice.status.name == 'PAID' %}
+                        <span style="background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-circle-check me-1"></i> ĐÃ THANH TOÁN</span>
+                    {% elif invoice.status.name == 'DRAFT' %}
+                        <span style="background: #FFF3E0; color: #E65100; border: 1px solid #FFE0B2; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-clock me-1"></i> HÓA ĐƠN NHÁP</span>
+                    {% else %}
+                        <span style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-ban me-1"></i> ĐÃ HỦY</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px dashed #EAE0D5; margin: 24px 0;">
+
+        <!-- THÔNG TIN KHÁCH HÀNG & NHÂN VIÊN -->
+        <div style="display: flex; justify-content: space-between; gap: 24px; margin-bottom: 28px;">
+            <div style="flex: 1;">
+                <div style="font-size: 11px; font-weight: 700; color: #8C827A; letter-spacing: 0.5px; margin-bottom: 4px;">KHÁCH HÀNG:</div>
+                <div style="font-size: 15px; font-weight: 700; color: #2C2623;">{{ invoice.customer.full_name if invoice.customer else 'Khách vãng lai' }}</div>
+                <div style="font-size: 12px; color: #7A726D;">SĐT: {{ invoice.customer.phone if invoice.customer else '---' }}</div>
+                <div style="font-size: 12px; color: #7A726D;">Email: {{ invoice.customer.email if invoice.customer else '---' }}</div>
+            </div>
+            <div style="flex: 1;">
+                <div style="font-size: 11px; font-weight: 700; color: #8C827A; letter-spacing: 0.5px; margin-bottom: 4px;">STYLIST THỰC HIỆN:</div>
+                <div style="font-size: 15px; font-weight: 700; color: #2C2623;">{{ invoice.staff.full_name if invoice.staff else '---' }}</div>
+                <div style="font-size: 12px; color: #7A726D;">Mã NV: #ST{{ invoice.staff_id }}</div>
+            </div>
+            <div style="flex: 1; text-align: right;">
+                <div style="font-size: 11px; font-weight: 700; color: #8C827A; letter-spacing: 0.5px; margin-bottom: 4px;">LỄ TÂN THU TIỀN:</div>
+                <div style="font-size: 15px; font-weight: 700; color: #2C2623;">{{ invoice.receptionist.full_name if invoice.receptionist else '---' }}</div>
+                <div style="font-size: 12px; color: #7A726D;">Phương thức: <strong>{{ invoice.payment_method.name if invoice.payment_method else 'Chưa chọn' }}</strong></div>
+            </div>
+        </div>
+
+        <!-- BẢNG DỊCH VỤ -->
+        <div style="margin-bottom: 24px; overflow-x: auto;">
+            <div style="font-size: 13px; font-weight: 700; color: #2C2623; margin-bottom: 8px;">DỊCH VỤ THỰC HIỆN:</div>
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background: #FAF7F2; border-bottom: 1px solid #EAE0D5; font-size: 12px; color: #8C827A; text-transform: uppercase;">
+                        <th style="padding: 10px 14px; width: 8%;">STT</th>
+                        <th style="padding: 10px 14px; width: 42%;">Dịch vụ</th>
+                        <th style="padding: 10px 14px; width: 15%; text-align: center;">Số lượng</th>
+                        <th style="padding: 10px 14px; width: 18%; text-align: right;">Đơn giá</th>
+                        <th style="padding: 10px 14px; width: 17%; text-align: right;">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 13px; color: #2C2623;">
+                    {% set ns = namespace(stt=0) %}
+                    {% for detail in invoice.details %}
+                        {% if detail.item_type.name == 'SERVICE' %}
+                            {% set ns.stt = ns.stt + 1 %}
+                            <tr style="border-bottom: 1px solid #F5EFE9;">
+                                <td style="padding: 12px 14px; color: #8C827A;">{{ ns.stt }}</td>
+                                <td style="padding: 12px 14px; font-weight: 700; color: #2C2623;">
+                                    {{ detail.service.service_name if detail.service else 'N/A' }}
+                                </td>
+                                <td style="padding: 12px 14px; text-align: center;">{{ detail.quantity|int }}</td>
+                                <td style="padding: 12px 14px; text-align: right;">{{ "{:,.0f}".format(detail.unit_price) }} đ</td>
+                                <td style="padding: 12px 14px; text-align: right; font-weight: 700; color: #2C2623;">
+                                    {{ "{:,.0f}".format(detail.subtotal) }} đ
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TỔNG TÍNH & KHUYẾN MÃI -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 32px;">
+            <div style="width: 340px;">
+                {% if invoice.promotion %}
+                <div style="display: flex; justify-content: space-between; font-size: 13px; color: #7A726D; margin-bottom: 6px;">
+                    <span>Ưu đãi áp dụng ({{ invoice.promotion.promo_code }}):</span>
+                    <span style="font-weight: 700; color: #2E7D32;">
+                        {% if invoice.promotion.promo_type.name == 'PERCENT' %}
+                            -{{ invoice.promotion.value|int }}%
+                        {% else %}
+                            -{{ "{:,.0f}".format(invoice.promotion.value) }} đ
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 2px solid #EAE0D5; padding-top: 12px;">
+                    <span style="font-size: 15px; font-weight: 700; color: #2C2623;">TỔNG THỰC THU:</span>
+                    <span style="font-size: 22px; font-weight: 800; color: #C62828;">{{ "{:,.0f}".format(invoice.total_amount) }} đ</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER TỜ IN MÀN HÌNH -->
+        <div style="text-align: center; border-top: 1px dashed #EAE0D5; padding-top: 20px; color: #7A726D; font-size: 12px;">
+            <p style="font-style: italic; margin-bottom: 4px;">Cảm ơn Quý khách đã tin tưởng và sử dụng dịch vụ tại Minimalist Muse!</p>
+            <p style="margin: 0;">Hẹn gặp lại Quý khách trong lần làm đẹp tiếp theo</p>
+        </div>
+    </div>
+
+
+    <!-- 2. KHỐI NỘI DUNG ẨN TRÊN MÀN HÌNH - CHỈ XUẤT HIỆN KHI BẤM IN BILL (RECEIPT 80MM) -->
+    <!-- KHỐI IN BILL 80MM ĐẦY ĐỦ THÔNG TIN & CĂN CHỈNH NÉT CHUẨN -->
+    <div class="receipt-print-wrapper">
+        <div class="receipt-title">MINIMALIST MUSE SALON</div>
+        <div class="receipt-sub">123 Nguyen Trai, Q.1, TP.HCM</div>
+        <div class="receipt-sub">Tel: 0123 456 789</div>
+        <div class="receipt-sub">Email: info@minimalistmuse.com</div>
+
+        <div class="receipt-divider-solid"></div>
+
+        <div class="receipt-title" style="font-size: 14px;">HOA DON THANH TOAN</div>
+
+        <div class="receipt-divider-dashed"></div>
+
+        <div>Ma HD: #HD{{ "%d"|format(invoice.id) }}</div>
+        <div>Ngay: {{ invoice.invoice_date.strftime('%H:%M %d/%m/%Y') }}</div>
+        <div>Thu ngan: {{ invoice.receptionist.full_name if invoice.receptionist else (invoice.staff.full_name if invoice.staff else 'Nhan vien 01') }}</div>
+
+        <div class="receipt-divider-dashed"></div>
+
+        <div>Khach hang: {{ invoice.customer.full_name if invoice.customer else 'Khach vang lai' }}</div>
+        <div>SDT: {{ invoice.customer.phone if invoice.customer else '---' }}</div>
+
+        <div class="receipt-divider-dashed"></div>
+
+        <div style="font-weight: bold; margin-bottom: 6px;">CHI TIET DICH VU:</div>
+
+        {% for detail in invoice.details %}
+            {% if detail.item_type.name == 'SERVICE' %}
+            <div style="margin-bottom: 8px;">
+                <div class="flex-between" style="font-weight: bold;">
+                    <span>{{ detail.service.service_name if detail.service else 'Dich vu' }}</span>
+                    <span>{{ "{:,.0f}".format(detail.subtotal) }}d</span>
+                </div>
+                <div style="padding-left: 8px; font-size: 11px;">
+                    <div>- Stylist: {{ invoice.staff.full_name if invoice.staff else 'Chua chi dinh' }}</div>
+                    {% if invoice.appointment %}
+                        <div>- Ngay hen: {{ invoice.appointment.appointment_date.strftime('%d/%m/%Y') }}</div>
+                        <div>- Gio hen: {{ invoice.appointment.appointment_date.strftime('%H:%M') }}</div>
+                    {% endif %}
+                    {% if detail.service and detail.service.duration_minutes %}
+                        <div>- Thoi gian: {{ detail.service.duration_minutes }} minut</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="receipt-divider-dashed"></div>
+
+        <div class="flex-between">
+            <span>Tong tien dich vu:</span>
+            <span>{{ "{:,.0f}".format(invoice.total_amount) }}d</span>
+        </div>
+
+        {% if invoice.promotion %}
+        <div class="flex-between">
+            <span>Uu dai ({{ invoice.promotion.promo_code }}):</span>
+            <span>
+                {% if invoice.promotion.promo_type.name == 'PERCENT' %}
+                    -{{ invoice.promotion.value|int }}%
+                {% else %}
+                    -{{ "{:,.0f}".format(invoice.promotion.value) }}d
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+
+        <div class="receipt-divider-solid"></div>
+
+        <div class="flex-between" style="font-weight: bold; font-size: 14px;">
+            <span>TONG THANH TOAN:</span>
+            <span>{{ "{:,.0f}".format(invoice.total_amount) }}d</span>
+        </div>
+
+        <div class="flex-between">
+            <span>Hinh thuc TT:</span>
+            <span>{{ invoice.payment_method.name if invoice.payment_method else 'Tien mat' }}</span>
+        </div>
+
+        <div class="flex-between">
+            <span>Trang thai:</span>
+            <span>{% if invoice.status.name == 'PAID' %}DA THANH TOAN{% else %}HOA DON NHAP{% endif %}</span>
+        </div>
+
+        <div class="receipt-divider-solid"></div>
+
+        <div style="text-align: center; margin-top: 12px; line-height: 1.5;">
+            <div style="font-weight: bold;">CAM ON QUY KHACH!</div>
+            <div style="font-weight: bold;">HEN GAP LAI!</div>
+
+            <div style="margin-top: 8px; font-size: 11px;">
+                Luu y:<br>
+                - Vui long den dung gio<br>
+                - Huy lich truoc 2h<br>
+                - Giu hoa don de bao hanh
+            </div>
+        </div>
+
+        <div class="receipt-divider-dashed"></div>
+
+        <div style="text-align: center; font-size: 11px;">
+            <div>Website: minimalistmuse.com</div>
+            <div>Facebook: @MinimalistMuseSalon</div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

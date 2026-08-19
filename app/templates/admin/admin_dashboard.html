@@ -1,0 +1,249 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Dashboard Quản Trị — Minimalist Muse{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1200px; margin: 0 auto; padding: 20px 15px;">
+
+    <!-- HEADER DASHBOARD TONE SÁNG LUXURY -->
+    <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: left;">
+        <span style="color: #C5A880; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+            <i class="fa-solid fa-chart-line" style="margin-right: 6px;"></i> ADMIN DASHBOARD
+        </span>
+        <h1 style="font-size: 24px; font-weight: 700; color: #2C2623; margin: 6px 0 4px 0;">Tổng Quan Vận Hành Salon</h1>
+        <p style="color: #7A726D; font-size: 13px; margin: 0;">
+            Xin chào <strong>{{ current_user.full_name }}</strong>, đây là báo cáo hoạt động trong ngày.
+        </p>
+    </div>
+
+    <!-- 4 THẺ CHỈ SỐ NHANH -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 24px;">
+
+        <!-- Doanh thu hôm nay -->
+        <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between; min-height: 110px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 11px; font-weight: 700; color: #8C827A; letter-spacing: 0.5px;">DOANH THU HÔM NAY</span>
+                <div style="background: #E8F5E9; color: #2E7D32; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-coins" style="font-size: 14px;"></i>
+                </div>
+            </div>
+            <div style="font-size: 22px; font-weight: 800; color: #2E7D32;">
+                {{ "{:,.0f}".format(today_revenue) }} đ
+            </div>
+        </div>
+
+        <!-- Lịch hẹn hôm nay -->
+        <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between; min-height: 110px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 11px; font-weight: 700; color: #8C827A; letter-spacing: 0.5px;">LỊCH HẸN HÔM NAY</span>
+                <div style="background: #E3F2FD; color: #1565C0; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-calendar-check" style="font-size: 14px;"></i>
+                </div>
+            </div>
+            <div style="font-size: 22px; font-weight: 800; color: #1565C0;">
+                {{ today_appointments|length }} ca
+            </div>
+        </div>
+
+        <!-- Hóa đơn nháp chờ thu -->
+        <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between; min-height: 110px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 11px; font-weight: 700; color: #8C827A; letter-spacing: 0.5px;">HÓA ĐƠN NHÁP (DRAFT)</span>
+                <div style="background: #FFF3E0; color: #E65100; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-clock" style="font-size: 14px;"></i>
+                </div>
+            </div>
+            <div style="font-size: 22px; font-weight: 800; color: #E65100;">
+                {{ pending_drafts|length }} đơn
+            </div>
+        </div>
+
+        <!-- Cảnh báo tồn kho -->
+        <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between; min-height: 110px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 11px; font-weight: 700; color: #8C827A; letter-spacing: 0.5px;">CẢNH BÁO TỒN KHO</span>
+                <div style="background: #FFEBEE; color: #C62828; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 14px;"></i>
+                </div>
+            </div>
+            <div style="font-size: 22px; font-weight: 800; color: #C62828;">
+                {{ low_stock_products|length }} mặt hàng
+            </div>
+        </div>
+
+    </div>
+
+    <!-- THANH LỐI TRUY CẬP NHANH (QUICK NAV) -->
+    <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); text-align: left;">
+        <h6 style="font-size: 13px; font-weight: 700; color: #2C2623; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0;">
+            <i class="fa-solid fa-compass" style="color: #C5A880; margin-right: 8px;"></i>Chức năng quản lý nhanh
+        </h6>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <a href="/admin/services" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;">
+                <i class="fa-solid fa-scissors" style="margin-right: 6px; color: #8C7355;"></i> Quản lý Dịch vụ & Định mức
+            </a>
+            <a href="/admin/products" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;">
+                <i class="fa-solid fa-boxes-stacked" style="margin-right: 6px; color: #8C7355;"></i> Quản lý Kho & Sản phẩm
+            </a>
+            <a href="/admin/users" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;">
+                <i class="fa-solid fa-users-gear" style="margin-right: 6px; color: #8C7355;"></i> Quản lý Nhân sự
+            </a>
+            <a href="/admin/promotions" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;">
+                <i class="fa-solid fa-ticket" style="margin-right: 6px; color: #8C7355;"></i> Quản lý Khuyến mãi
+            </a>
+            <a href="/admin/reports/revenue" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;">
+                <i class="fa-solid fa-chart-pie" style="margin-right: 6px; color: #8C7355;"></i> Báo cáo Doanh thu
+            </a>
+        </div>
+    </div>
+
+    <!-- BẢNG LỊCH HẸN KÈM BỘ LỌC ĐẦY ĐỦ -->
+    <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+
+        <!-- HEADER BẢNG & THANH CÔNG CỤ BỘ LỌC -->
+        <div style="padding: 16px 20px; background: #FAF7F2; border-bottom: 1px solid #EAE0D5; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <strong style="color: #2C2623; font-size: 15px;">
+                    <i class="fa-solid fa-list-check" style="margin-right: 8px; color: #C5A880;"></i>Danh Sách Lịch Hẹn ({{ total_appointments_count }})
+                </strong>
+            </div>
+
+            <!-- FORM BỘ LỌC ĐỒNG BỘ NGUYÊN TRANG -->
+            <form method="GET" action="/admin" id="adminFilterForm" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0;">
+                <input type="hidden" name="page" value="1"> <!-- Reset về trang 1 khi lọc -->
+
+                <!-- Ô tìm kiếm từ khóa (Server Side) -->
+                <div style="position: relative; min-width: 220px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #8C827A; font-size: 12px;"></i>
+                    <input type="text" name="kw" value="{{ kw or '' }}" placeholder="Tìm Khách, Stylist, Dịch vụ..."
+                           style="padding: 6px 12px 6px 32px; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; outline: none; width: 100%; background: #FFF;">
+                </div>
+
+                <!-- Chọn Ngày -->
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 12px; color: #7A726D; font-weight: 600;">Ngày:</span>
+                    <input type="date" name="date" value="{{ selected_date or '' }}" onchange="document.getElementById('adminFilterForm').submit()"
+                           style="padding: 5px 12px; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; outline: none; background: #FFF; color: #2C2623; font-weight: 600;">
+                </div>
+
+                <!-- Chọn Trạng thái -->
+                <select name="status" onchange="document.getElementById('adminFilterForm').submit()"
+                        style="padding: 5px 12px; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; outline: none; background: #FFF; color: #2C2623; font-weight: 600;">
+                    <option value="ALL" {% if selected_status == 'ALL' %}selected{% endif %}>-- Tất cả trạng thái --</option>
+                    <option value="CONFIRMED" {% if selected_status == 'CONFIRMED' %}selected{% endif %}>Đã xác nhận</option>
+                    <option value="COMPLETED" {% if selected_status == 'COMPLETED' %}selected{% endif %}>Đã hoàn thành</option>
+                    <option value="CANCELLED" {% if selected_status == 'CANCELLED' %}selected{% endif %}>Đã hủy</option>
+                </select>
+
+                <button type="submit" style="padding: 5px 14px; background: #C5A880; color: #FFF; border: none; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                    Lọc
+                </button>
+            </form>
+        </div>
+
+        <!-- BẢNG DỮ LIỆU LỊCH HẸN -->
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
+                <thead>
+                    <tr style="background: #FFF; border-bottom: 1px solid #EAE0D5; font-size: 12px; color: #8C827A; text-transform: uppercase;">
+                        <th style="padding: 12px 20px; width: 12%;">Giờ hẹn</th>
+                        <th style="padding: 12px 20px; width: 25%;">Khách hàng</th>
+                        <th style="padding: 12px 20px; width: 25%;">Dịch vụ</th>
+                        <th style="padding: 12px 20px; width: 20%;">Stylist</th>
+                        <th style="padding: 12px 20px; width: 18%; text-align: center;">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 13px; color: #2C2623;">
+                    {% if today_appointments %}
+                        {% for apt in today_appointments %}
+                        <tr class="admin-apt-row" style="border-bottom: 1px solid #F5EFE9; vertical-align: middle;"
+                            data-search="{{ (apt.customer.full_name if apt.customer else '') ~ ' ' ~ (apt.customer.phone if apt.customer else '') ~ ' ' ~ (apt.service.service_name if apt.service else '') ~ ' ' ~ (apt.staff.full_name if apt.staff else '') }}">
+                            <td style="padding: 14px 20px; font-weight: 700;">{{ apt.appointment_date.strftime('%H:%M') }}</td>
+                            <td style="padding: 14px 20px;">
+                                <div style="font-weight: 700;">{{ apt.customer.full_name if apt.customer else 'Khách vãng lai' }}</div>
+                                <small style="color: #8C827A;">{{ apt.customer.phone if apt.customer else '' }}</small>
+                            </td>
+                            <td style="padding: 14px 20px; font-weight: 700; color: #A87C4F;">{{ apt.service.service_name if apt.service else '---' }}</td>
+                            <td style="padding: 14px 20px;">{{ apt.staff.full_name if apt.staff else 'Chưa chỉ định' }}</td>
+                            <td style="padding: 14px 20px; text-align: center;">
+                                {% if apt.status.name == 'CONFIRMED' %}
+                                    <span style="background: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Đã xác nhận</span>
+                                {% elif apt.status.name == 'COMPLETED' %}
+                                    <span style="background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Đã hoàn thành</span>
+                                {% else %}
+                                    <span style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Đã hủy</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="padding: 30px; text-align: center; color: #8C827A;">
+                                <i class="fa-regular fa-calendar-xmark" style="font-size: 20px; display: block; margin-bottom: 8px;"></i>
+                                Không tìm thấy lịch hẹn nào phù hợp.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- KHỐI PHÂN TRANG HOÀN CHỈNH -->
+        {% if total_pages > 1 %}
+        <div style="padding: 16px 20px; background: #FAF7F2; border-top: 1px solid #EAE0D5; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 13px; color: #7A726D;">
+                Trang <strong>{{ page }}</strong> / <strong>{{ total_pages }}</strong>
+            </div>
+            <ul style="display: flex; gap: 6px; list-style: none; margin: 0; padding: 0;">
+                <!-- Nút Trang trước -->
+                <li>
+                    <a href="{{ url_for('admin_dashboard_view', page=page-1, date=selected_date or '', status=selected_status, kw=kw) }}"
+                       style="padding: 6px 12px; border: 1px solid #D8C8B8; border-radius: 8px; background: #FFF; color: #2C2623; text-decoration: none; font-size: 12px; {% if page <= 1 %}pointer-events: none; opacity: 0.5;{% endif %}">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+                </li>
+
+                <!-- Danh sách số trang -->
+                {% for p in range(1, total_pages + 1) %}
+                <li>
+                    <a href="{{ url_for('admin_dashboard_view', page=p, date=selected_date or '', status=selected_status, kw=kw) }}"
+                       style="padding: 6px 12px; border: 1px solid #D8C8B8; border-radius: 8px; text-decoration: none; font-size: 12px; {% if p == page %}background: #C5A880; color: #FFF; font-weight: 700;{% else %}background: #FFF; color: #2C2623;{% endif %}">
+                        {{ p }}
+                    </a>
+                </li>
+                {% endfor %}
+
+                <!-- Nút Trang sau -->
+                <li>
+                    <a href="{{ url_for('admin_dashboard_view', page=page+1, date=selected_date or '', status=selected_status, kw=kw) }}"
+                       style="padding: 6px 12px; border: 1px solid #D8C8B8; border-radius: 8px; background: #FFF; color: #2C2623; text-decoration: none; font-size: 12px; {% if page >= total_pages %}pointer-events: none; opacity: 0.5;{% endif %}">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('admin_apt_search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const kw = this.value.trim().toLowerCase();
+            const rows = document.querySelectorAll('.admin-apt-row');
+
+            rows.forEach(row => {
+                const text = (row.dataset.search || '').toLowerCase();
+                row.style.display = (!kw || text.includes(kw)) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

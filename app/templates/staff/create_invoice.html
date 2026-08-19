@@ -1,0 +1,412 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Tạo Hóa Đơn Nháp — Minimalist Muse{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- HEADER BAR TRANG LẬP HÓA ĐƠN -->
+    <div class="staff-header-card mb-4">
+        <div>
+            <span class="sub-title"><i class="fa-solid fa-file-invoice-dollar"></i> STYLIST DASHBOARD</span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px;">Lập Hóa Đơn Nháp (DRAFT)</h1>
+            <p class="section-subtext mb-0">Ghi nhận dịch vụ thực hiện & tiêu hao sản phẩm định mức cho Lễ tân xác nhận.</p>
+        </div>
+        <a href="{{ url_for('staff_appointments_view') }}" class="btn-cancel-modal">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại lịch hẹn
+        </a>
+    </div>
+
+    <form id="createInvoiceForm">
+        <input type="hidden" id="appointment_id" value="{{ selected_appointment_id or '' }}">
+        <input type="hidden" id="customer_id" value="{{ selected_customer.id if selected_customer else '' }}" required>
+
+        <div class="create-invoice-grid">
+
+            <!-- CỘT TRÁI: THÔNG TIN KHÁCH, DỊCH VỤ & SẢN PHẨM TIÊU HAO -->
+            <div class="invoice-left-col">
+
+                <!-- 1. THÔNG TIN KHÁCH HÀNG (CỐ ĐỊNH TỪ LỊCH HẸN) -->
+                <div class="invoice-section-card">
+                    <h5 class="invoice-section-title">
+                        <i class="fa-solid fa-user-check"></i> 1. Thông tin Khách hàng
+                    </h5>
+
+                    {% if selected_customer %}
+                    <div class="customer-selected-card" style="margin-top: 0;">
+                        <div class="customer-selected-info">
+                            <div class="customer-selected-icon">
+                                <i class="fa-solid fa-user-check"></i>
+                            </div>
+                            <div class="customer-selected-text">
+                                <span class="customer-selected-name">
+                                    {{ selected_customer.full_name }} — SĐT: {{ selected_customer.phone }}
+                                </span>
+                                <span class="customer-selected-id">
+                                    Mã KH: #{{ selected_customer.id }} {% if selected_appointment_id %}| Mã Lịch Hẹn: #{{ selected_appointment_id }}{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger mb-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Không tìm thấy thông tin Khách hàng! Vui lòng tạo hóa đơn từ <strong>Trang Lịch Hẹn Được Giao</strong>.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- 2. DỊCH VỤ THỰC HIỆN (SERVICE) -->
+                <div class="invoice-section-card">
+                    <h5 class="invoice-section-title"><i class="fa-solid fa-scissors"></i> 2. Dịch vụ thực hiện (Có tính tiền)</h5>
+                    <div class="form-group-sm" style="margin-bottom: 16px;">
+                        <label>Chọn dịch vụ salon <span class="required-star">*</span></label>
+                        <select id="service_selector" class="form-control-luxury-sm">
+                            <option value="">-- Chọn dịch vụ salon --</option>
+                            {% for svc in services %}
+                            <option value="{{ svc.id }}"
+                                    data-name="{{ svc.service_name }}"
+                                    data-price="{{ svc.price }}"
+                                    {% if selected_service_id == svc.id %}selected{% endif %}>
+                                {{ svc.service_name }} — {{ "{:,.0f}".format(svc.price) }}đ
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table invoice-table" style="table-layout: fixed; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-start" style="width: 40%;">Dịch vụ</th>
+                                    <th class="text-start" style="width: 25%;">Đơn giá</th>
+                                    <th class="text-center" style="width: 15%;">Số lượng</th>
+                                    <th class="text-end" style="width: 20%;">Thành tiền</th>
+                                    <th style="width: 40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="selectedServicesBody">
+                                <!-- JS render bảng dịch vụ -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. SẢN PHẨM TIÊU HAO ĐỊNH MỨC (TỰ ĐỘNG TỪ DỊCH VỤ) -->
+                <div class="invoice-section-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h5 class="invoice-section-title" style="margin-bottom: 0;">
+                            <i class="fa-solid fa-pump-soap"></i> 3. Sản phẩm tiêu hao theo định mức
+                        </h5>
+                        <span class="badge bg-secondary" style="font-size: 11px;">Tự động theo Dịch vụ</span>
+                    </div>
+                    <p class="section-subtext mb-3" style="font-size: 12px; color: var(--text-muted);">
+                        Sản phẩm được cố định theo định lượng của Dịch vụ. Stylist chỉ điền số lượng tiêu hao thực tế.
+                    </p>
+
+                    <div class="table-responsive">
+                        <table class="table invoice-table mb-0" style="table-layout: fixed; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-start" style="width: 40%; vertical-align: middle;">Sản phẩm định mức</th>
+                                    <th class="text-center" style="width: 15%; vertical-align: middle;">Đơn vị</th>
+                                    <th class="text-center" style="width: 25%; vertical-align: middle;">Tiêu hao thực tế</th>
+                                    <th class="text-center" style="width: 20%; vertical-align: middle;">Định mức chuẩn</th>
+                                </tr>
+                            </thead>
+                            <tbody id="selectedProductsBody">
+                                <!-- JS render bảng sản phẩm định mức -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CỘT PHẢI: TÓM TẮT HÓA ĐƠN NHÁP (STICKY) -->
+            <div class="invoice-right-col">
+                <div class="summary-card-sticky">
+                    <h5 class="invoice-section-title"><i class="fa-solid fa-calculator"></i> Tóm tắt Hóa đơn Nháp</h5>
+
+                    <div class="summary-details-box">
+                        <div class="summary-row">
+                            <span class="text-muted">Trạng thái tạo:</span>
+                            <span class="status-badge status-pending"><i class="fa-solid fa-clock"></i> DRAFT (Nháp)</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="text-muted">Stylist thực hiện:</span>
+                            <strong class="text-dark">{{ current_user.full_name }}</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span class="text-muted">Mục Dịch vụ:</span>
+                            <strong id="service_count_text">0 mục</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span class="text-muted">Sản phẩm tiêu hao:</span>
+                            <strong id="product_count_text">0 mục</strong>
+                        </div>
+                        <div style="height: 1px; background: var(--border-light); margin: 6px 0;"></div>
+                        <div class="summary-row">
+                            <span style="font-weight: 700; color: var(--text-dark);">TỔNG TIỀN DỊCH VỤ:</span>
+                            <span class="summary-total-price" id="grand_total_text">0 đ</span>
+                        </div>
+                    </div>
+
+                    <div class="invoice-note-alert">
+                        <i class="fa-solid fa-circle-info" style="margin-top: 2px;"></i>
+                        <div>Hóa đơn lưu ở dạng <strong>Nháp</strong>. Lễ tân sẽ xác nhận thu tiền và trừ kho theo lượng tiêu hao thực tế.</div>
+                    </div>
+
+                    <button type="submit" class="btn-submit-modal" style="width: 100%; height: 50px;" id="btnSubmitDraft" {% if not selected_customer %}disabled{% endif %}>
+                        <i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Lưu Hóa Đơn Nháp
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Nhận bản đồ ServiceProduct từ Backend
+const serviceProductsMap = {{ service_products_map | tojson }};
+
+document.addEventListener('DOMContentLoaded', () => {
+    let selectedServices = {};
+    let selectedProducts = {}; // Key: product_id -> Object thông tin tiêu hao
+
+    const serviceSelector = document.getElementById('service_selector');
+    const customerIdInput = document.getElementById('customer_id');
+    const btnSubmit = document.getElementById('btnSubmitDraft');
+
+    // Nếu có service_id mặc định từ Lịch hẹn
+    if (serviceSelector.value) {
+        addServiceFromSelect();
+    }
+
+    serviceSelector.addEventListener('change', addServiceFromSelect);
+
+    function addServiceFromSelect() {
+        const val = serviceSelector.value;
+        if (!val) return;
+
+        const opt = serviceSelector.options[serviceSelector.selectedIndex];
+        const name = opt.dataset.name;
+        const price = parseFloat(opt.dataset.price);
+
+        if (!selectedServices[val]) {
+            selectedServices[val] = { id: val, name: name, price: price, quantity: 1 };
+        } else {
+            selectedServices[val].quantity += 1;
+        }
+
+        serviceSelector.value = '';
+        renderServicesTable();
+        rebuildProductsFromServices();
+    }
+
+    // Tái cấu trúc lại danh sách sản phẩm định mức khi chọn/xóa dịch vụ
+    function rebuildProductsFromServices() {
+        selectedProducts = {};
+        const serviceIds = Object.keys(selectedServices);
+
+        serviceIds.forEach(sId => {
+            const svcQty = selectedServices[sId].quantity;
+            const prods = serviceProductsMap[sId] || [];
+
+            prods.forEach(p => {
+                if (!selectedProducts[p.product_id]) {
+                    selectedProducts[p.product_id] = {
+                        id: p.product_id,
+                        name: p.product_name,
+                        unit: p.unit_name,
+                        default_qty: p.default_quantity * svcQty,
+                        quantity: p.default_quantity * svcQty,
+                        stock: p.stock_quantity
+                    };
+                } else {
+                    selectedProducts[p.product_id].default_qty += (p.default_quantity * svcQty);
+                    selectedProducts[p.product_id].quantity += (p.default_quantity * svcQty);
+                }
+            });
+        });
+
+        renderProductsTable();
+    }
+
+    // Render Bảng Dịch vụ
+    function renderServicesTable() {
+        const tbody = document.getElementById('selectedServicesBody');
+        const serviceKeys = Object.keys(selectedServices);
+
+        if (serviceKeys.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Chưa chọn dịch vụ nào</td></tr>`;
+            document.getElementById('service_count_text').innerText = '0 mục';
+            calculateGrandTotal();
+            return;
+        }
+
+        tbody.innerHTML = '';
+        serviceKeys.forEach(key => {
+            const s = selectedServices[key];
+            const subtotal = s.price * s.quantity;
+            tbody.innerHTML += `
+                <tr style="vertical-align: middle;">
+                    <td class="text-start" style="font-weight: 600; vertical-align: middle;">${s.name}</td>
+                    <td class="text-start" style="vertical-align: middle;">${formatCurrency(s.price)}</td>
+                    <td class="text-center" style="vertical-align: middle;">
+                        <input type="number" min="1" value="${s.quantity}" class="form-control-luxury-sm" style="height: 32px; width: 65px; text-align: center; margin: 0 auto; padding: 2px;" onchange="updateServiceQty(${s.id}, this.value)">
+                    </td>
+                    <td class="text-end" style="font-weight: 700; vertical-align: middle;">${formatCurrency(subtotal)}</td>
+                    <td class="text-center" style="vertical-align: middle;">
+                        <button type="button" class="btn-action-cancel" style="padding: 4px 8px;" onclick="removeService(${s.id})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('service_count_text').innerText = `${serviceKeys.length} mục`;
+        calculateGrandTotal();
+    }
+
+    // Render Bảng Sản phẩm tiêu hao định mức
+    function renderProductsTable() {
+        const tbody = document.getElementById('selectedProductsBody');
+        const productKeys = Object.keys(selectedProducts);
+
+        if (productKeys.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3"><i class="fa-solid fa-circle-info me-1"></i> Không có sản phẩm tiêu hao cho dịch vụ này</td></tr>`;
+            document.getElementById('product_count_text').innerText = '0 mục';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        productKeys.forEach(key => {
+            const p = selectedProducts[key];
+            tbody.innerHTML += `
+                <tr style="vertical-align: middle;">
+                    <td class="text-start" style="font-weight: 600; color: var(--text-dark); vertical-align: middle;">${p.name}</td>
+                    <td class="text-center" style="vertical-align: middle;">
+                        <span class="status-badge status-pending" style="font-size: 10px; display: inline-block;">${p.unit}</span>
+                    </td>
+                    <td class="text-center" style="vertical-align: middle;">
+                        <input type="number" min="0.01" step="any" value="${p.quantity}" class="form-control-luxury-sm" style="height: 32px; width: 80px; text-align: center; margin: 0 auto; padding: 2px;" onchange="updateProductQty(${p.id}, this.value)">
+                    </td>
+                    <td class="text-center" style="vertical-align: middle;">
+                        <span style="font-weight: 700; color: var(--text-dark); font-size: 13px;">${p.default_qty} ${p.unit}</span>
+                    </td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('product_count_text').innerText = `${productKeys.length} mục`;
+    }
+
+    // Hàm cập nhật số lượng Dịch vụ
+    window.updateServiceQty = function(id, qty) {
+        qty = parseFloat(qty);
+        if (qty <= 0) qty = 1;
+        if (selectedServices[id]) {
+            selectedServices[id].quantity = qty;
+            renderServicesTable();
+            rebuildProductsFromServices();
+        }
+    };
+
+    window.removeService = function(id) {
+        delete selectedServices[id];
+        renderServicesTable();
+        rebuildProductsFromServices();
+    };
+
+    // Hàm cập nhật số lượng tiêu hao thực tế của Sản phẩm
+    window.updateProductQty = function(id, qty) {
+        qty = parseFloat(qty);
+        if (qty < 0) qty = 0;
+        if (selectedProducts[id]) {
+            selectedProducts[id].quantity = qty;
+        }
+    };
+
+    // Tính tổng tiền Dịch vụ
+    function calculateGrandTotal() {
+        let total = 0;
+        Object.values(selectedServices).forEach(s => {
+            total += s.price * s.quantity;
+        });
+        document.getElementById('grand_total_text').innerText = formatCurrency(total);
+    }
+
+    // Submit Form Lưu Hóa Đơn Nháp
+    document.getElementById('createInvoiceForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const cusId = customerIdInput.value;
+        if (!cusId) {
+            showToast('Vui lòng chọn Khách hàng!', 'error');
+            return;
+        }
+
+        const serviceList = Object.values(selectedServices);
+        if (serviceList.length === 0) {
+            showToast('Hóa đơn phải có ít nhất 1 dịch vụ (SERVICE)!', 'error');
+            return;
+        }
+
+        const details = [];
+        // 1. Thêm Dịch vụ
+        serviceList.forEach(s => {
+            details.push({
+                item_type: 'SERVICE',
+                item_id: parseInt(s.id),
+                quantity: s.quantity
+            });
+        });
+
+        // 2. Thêm Sản phẩm tiêu hao định mức thực tế
+        Object.values(selectedProducts).forEach(p => {
+            if (p.quantity > 0) {
+                details.push({
+                    item_type: 'PRODUCT_USED',
+                    item_id: parseInt(p.id),
+                    quantity: p.quantity
+                });
+            }
+        });
+
+        const apptId = document.getElementById('appointment_id').value;
+        const payload = {
+            customer_id: parseInt(cusId),
+            appointment_id: apptId ? parseInt(apptId) : null,
+            details: details
+        };
+
+        setButtonLoading(btnSubmit, true);
+
+        try {
+            const res = await csrfFetch('/invoices', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                showToast(data.message || 'Tạo hóa đơn nháp thành công!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/staff/appointments';
+                }, 1200);
+            } else {
+                showToast(data.error || 'Tạo hóa đơn nháp thất bại!', 'error');
+                setButtonLoading(btnSubmit, false, '<i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Lưu Hóa Đơn Nháp');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Đã xảy ra lỗi hệ thống khi lập hóa đơn!', 'error');
+            setButtonLoading(btnSubmit, false, '<i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Lưu Hóa Đơn Nháp');
+        }
+    });
+});
+</script>
+{% endblock %}

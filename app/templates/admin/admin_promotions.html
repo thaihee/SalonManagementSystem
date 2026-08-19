@@ -1,0 +1,330 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Quản Lý Khuyến Mãi — Minimalist Muse Admin{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1200px; margin: 0 auto; padding: 20px 15px;">
+
+    <!-- HEADER BAR ĐỒNG BỘ CHUẨN ADMIN -->
+    <div class="staff-header-card mb-4" style="display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 20px; border-radius: 14px; border: 1px solid #EAE0D5;">
+        <div>
+            <span class="sub-title" style="color: #C5A880; font-size: 11px; font-weight: 700; letter-spacing: 1px;">
+                <i class="fa-solid fa-ticket me-1"></i> ADMIN MANAGEMENT
+            </span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px; color: #2C2623;">Quản Lý Khuyến Mãi</h1>
+            <p class="section-subtext mb-0" style="color: #7A726D; font-size: 13px;">Tạo và quản lý các mã giảm giá áp dụng cho hóa đơn toàn hệ thống.</p>
+        </div>
+
+        <!-- CỤM NÚT THAO TÁC -->
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <!-- NÚT QUAY LẠI TRÒN -->
+            <a href="/admin" style="width: 38px; height: 38px; background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s;">
+                <i class="fa-solid fa-arrow-left" style="font-size: 13px;"></i>
+            </a>
+
+            <!-- NÚT THÊM MÃ MỚI -->
+            <button type="button" class="btn-action-primary" onclick="openCreateModal()" style="background: #2C2623; color: #FFF; border: none; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                <i class="fa-solid fa-plus me-1"></i> Thêm Mã Mới
+            </button>
+        </div>
+    </div>
+
+    <!-- BẢNG DANH SÁCH MÃ KHUYẾN MÃI -->
+    <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+        <div style="padding: 16px 20px; background: #FAF7F2; border-bottom: 1px solid #EAE0D5; text-align: left;">
+            <strong style="color: #2C2623; font-size: 15px;">
+                <i class="fa-solid fa-list-ul" style="margin-right: 8px; color: #C5A880;"></i>Danh Sách Chương Trình Khuyến Mãi ({{ total_items or promotions|length }})
+            </strong>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
+                <thead>
+                    <tr style="background: #FFF; border-bottom: 1px solid #EAE0D5; font-size: 12px; color: #8C827A; text-transform: uppercase;">
+                        <th style="padding: 12px 20px; width: 6%;">ID</th>
+                        <th style="padding: 12px 20px; width: 16%;">Mã Promotion</th>
+                        <th style="padding: 12px 20px; width: 18%;">Loại Giảm Giá</th>
+                        <th style="padding: 12px 20px; width: 15%;">Giá Trị</th>
+                        <th style="padding: 12px 20px; width: 23%;">Thời Gian Áp Dụng</th>
+                        <th style="padding: 12px 20px; width: 14%;">Trạng Thái</th>
+                        <th style="padding: 12px 20px; width: 12%; text-align: right;">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="promoTableBody" style="font-size: 13px; color: #2C2623;">
+                    {% if promotions %}
+                        {% for p in promotions %}
+                        <tr style="border-bottom: 1px solid #F5EFE9; vertical-align: middle;">
+                            <td style="padding: 14px 20px; font-weight: 700; color: #8C827A;">#{{ p.id }}</td>
+                            <td style="padding: 14px 20px;">
+                                <span style="background: #FAF7F2; border: 1px solid #D8C8B8; color: #2C2623; font-weight: 700; padding: 4px 12px; border-radius: 6px; font-size: 12px; letter-spacing: 0.5px;">
+                                    {{ p.promo_code }}
+                                </span>
+                            </td>
+                            <td style="padding: 14px 20px;">
+                                {% if p.promo_type.name == 'PERCENT' %}
+                                    <span style="background: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Theo Phần Trăm (%)</span>
+                                {% else %}
+                                    <span style="background: #FFF3E0; color: #E65100; border: 1px solid #FFE0B2; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Số Tiền Cố Định</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 14px 20px;">
+                                <strong style="color: #2E7D32; font-size: 14px;">
+                                    {% if p.promo_type.name == 'PERCENT' %}
+                                        Giảm {{ "{:,.0f}".format(p.value) }}%
+                                    {% else %}
+                                        Giảm {{ "{:,.0f}".format(p.value) }} đ
+                                    {% endif %}
+                                </strong>
+                            </td>
+                            <td style="padding: 14px 20px;">
+                                <div style="font-size: 12px; color: #2C2623; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-regular fa-calendar" style="color: #C5A880;"></i>
+                                    <span>{{ p.start_date.strftime('%d/%m/%Y') if p.start_date else 'N/A' }}</span>
+                                    <i class="fa-solid fa-arrow-right-long" style="font-size: 10px; color: #8C827A;"></i>
+                                    <span>{{ p.end_date.strftime('%d/%m/%Y') if p.end_date else 'N/A' }}</span>
+                                </div>
+                            </td>
+                            <td style="padding: 14px 20px;">
+                                {% if p.active %}
+                                    <span style="background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Đang Hoạt Động</span>
+                                {% else %}
+                                    <span style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Đã Vô Hiệu Hóa</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 14px 20px; text-align: right;">
+                                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                    {% if p.active %}
+                                        <button type="button" title="Chỉnh sửa"
+                                                style="background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                                onclick="openEditModal({{ p.id }}, '{{ p.promo_code }}', '{{ p.promo_type.name }}', {{ p.value }}, '{{ p.start_date.strftime('%Y-%m-%d') if p.start_date else '' }}', '{{ p.end_date.strftime('%Y-%m-%d') if p.end_date else '' }}')">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <button type="button" title="Xóa"
+                                                style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                                onclick="deletePromotion({{ p.id }})">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="button" title="Mã đã bị vô hiệu hóa" disabled style="background: #ECEFF1; color: #90A4AE; border: 1px solid #CFD8DC; padding: 5px 10px; border-radius: 20px; font-size: 11px; opacity: 0.6; cursor: not-allowed;">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <button type="button" title="Mã đã bị vô hiệu hóa" disabled style="background: #ECEFF1; color: #90A4AE; border: 1px solid #CFD8DC; padding: 5px 10px; border-radius: 20px; font-size: 11px; opacity: 0.6; cursor: not-allowed;">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #8C827A;">
+                                <i class="fa-solid fa-ticket" style="font-size: 20px; display: block; margin-bottom: 8px;"></i>
+                                Chưa có chương trình khuyến mãi nào. Bấm nút <strong>"Thêm Mã Mới"</strong> để bắt đầu!
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- THANH PHÂN TRANG CHUẨN ADMIN -->
+        {% if total_pages > 1 %}
+        <div class="pagination-wrap" style="display: flex; justify-content: center; align-items: center; gap: 8px; padding: 16px; background: #FAF7F2; border-top: 1px solid #EAE0D5;">
+            <!-- NÚT TRƯỚC -->
+            <a href="/admin/promotions?page={{ page - 1 }}"
+               style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page <= 1 else '' }}">
+                <i class="fa-solid fa-chevron-left" style="margin-right: 4px;"></i> Trước
+            </a>
+
+            <!-- CÁC NÚT TRANG -->
+            <div style="display: flex; gap: 4px;">
+                {% for p in range(1, total_pages + 1) %}
+                    <a href="/admin/promotions?page={{ p }}"
+                       style="padding: 6px 12px; border-radius: 50%; font-size: 12px; font-weight: 700; text-decoration: none; {{ 'background: #2C2623; color: #FFF;' if p == page else 'background: #FFF; color: #2C2623; border: 1px solid #D8C8B8;' }}">
+                        {{ p }}
+                    </a>
+                {% endfor %}
+            </div>
+
+            <!-- NÚT SAU -->
+            <a href="/admin/promotions?page={{ page + 1 }}"
+               style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page >= total_pages else '' }}">
+                Sau <i class="fa-solid fa-chevron-right" style="margin-left: 4px;"></i>
+            </a>
+        </div>
+        {% endif %}
+</div>
+
+<!-- MODAL THÊM / SỬA KHUYẾN MÃI -->
+<div id="promoModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog-compact">
+        <div class="modal-header-compact">
+            <h3 class="modal-title-compact" id="modalTitle">Thêm Mã Khuyến Mãi Mới</h3>
+            <button type="button" class="btn-close-modal" onclick="closePromoModal()">&times;</button>
+        </div>
+
+        <form id="promoForm" onsubmit="savePromotion(event)" class="modal-form-compact">
+            <input type="hidden" id="promo_id">
+
+            <div class="form-row-2col">
+                <div class="form-group-sm">
+                    <label>Mã Khuyến Mãi (Promo Code) <span style="color: red;">*</span></label>
+                    <input type="text" id="promo_code" class="form-control-sm" style="padding-left: 14px !important; text-transform: uppercase;" placeholder="VD: SALON10" required>
+                </div>
+                <div class="form-group-sm">
+                    <label>Loại Giảm Giá <span style="color: red;">*</span></label>
+                    <select id="promo_type" class="form-control-sm" style="padding-left: 14px !important;">
+                        <option value="PERCENT">PERCENT (Theo %)</option>
+                        <option value="FIXED">FIXED (Số tiền cố định)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group-sm">
+                <label>Giá Trị Giảm <span style="color: red;">*</span></label>
+                <input type="number" id="value" class="form-control-sm" style="padding-left: 14px !important;" placeholder="VD: 10 (cho 10%) hoặc 50000 (cho 50k)" min="1" step="any" required>
+            </div>
+
+            <div class="form-row-2col">
+                <div class="form-group-sm">
+                    <label>Ngày Bắt Đầu <span style="color: red;">*</span></label>
+                    <input type="date" id="start_date" class="form-control-sm" style="padding-left: 14px !important;" required>
+                </div>
+                <div class="form-group-sm">
+                    <label>Ngày Kết Thúc <span style="color: red;">*</span></label>
+                    <input type="date" id="end_date" class="form-control-sm" style="padding-left: 14px !important;" required>
+                </div>
+            </div>
+
+            <div class="modal-footer-action">
+                <button type="button" class="btn-cancel-modal" onclick="closePromoModal()">Hủy Bỏ</button>
+                <button type="submit" id="btnSubmitForm" style="background: #2C2623; color: #FFF; border: none; padding: 8px 24px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;">Lưu Thay Đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openCreateModal() {
+    document.getElementById('promo_id').value = '';
+    document.getElementById('promo_code').value = '';
+    document.getElementById('promo_type').value = 'PERCENT';
+    document.getElementById('value').value = '';
+
+    const today = new Date();
+    const nextMonth = new Date();
+    nextMonth.setMonth(today.getMonth() + 1);
+
+    const formatDate = (d) => d.toISOString().split('T')[0];
+
+    document.getElementById('start_date').value = formatDate(today);
+    document.getElementById('end_date').value = formatDate(nextMonth);
+
+    document.getElementById('modalTitle').innerText = 'Thêm Mã Khuyến Mãi Mới';
+    document.getElementById('promoModal').style.display = 'flex';
+}
+
+function openEditModal(id, code, type, val, start, end) {
+    document.getElementById('promo_id').value = id;
+    document.getElementById('promo_code').value = code;
+    document.getElementById('promo_type').value = type;
+    document.getElementById('value').value = val;
+    document.getElementById('start_date').value = start;
+    document.getElementById('end_date').value = end;
+
+    document.getElementById('modalTitle').innerText = 'Chỉnh Sửa Mã Khuyến Mãi';
+    document.getElementById('promoModal').style.display = 'flex';
+}
+
+function closePromoModal() {
+    document.getElementById('promoModal').style.display = 'none';
+}
+
+async function savePromotion(e) {
+    e.preventDefault();
+    const id = document.getElementById('promo_id').value;
+    const isEdit = Boolean(id);
+    const btnSubmit = document.getElementById('btnSubmitForm');
+
+    const payload = {
+        promo_code: document.getElementById('promo_code').value.trim().toUpperCase(),
+        promo_type: document.getElementById('promo_type').value,
+        value: parseFloat(document.getElementById('value').value),
+        start_date: document.getElementById('start_date').value,
+        end_date: document.getElementById('end_date').value
+    };
+
+    const url = isEdit ? `/admin/promotions/${id}` : '/admin/promotions';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    if (typeof setButtonLoading === 'function') {
+        setButtonLoading(btnSubmit, true, 'Lưu Thay Đổi');
+    }
+
+    try {
+        const res = typeof csrfFetch === 'function'
+            ? await csrfFetch(url, { method: method, body: JSON.stringify(payload) })
+            : await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': typeof getCsrfToken === 'function' ? getCsrfToken() : ''
+                },
+                body: JSON.stringify(payload)
+            });
+
+        const data = await res.json();
+
+        if (data.success) {
+            if (typeof showToast === 'function') showToast(isEdit ? 'Đã cập nhật khuyến mãi thành công!' : 'Đã thêm mã mới thành công!', 'success');
+            else alert(isEdit ? 'Đã cập nhật thành công!' : 'Đã thêm thành công!');
+
+            setTimeout(() => location.reload(), 600);
+        } else {
+            if (typeof showToast === 'function') showToast(data.error || 'Thao tác thất bại!', 'error');
+            else alert(data.error || 'Có lỗi xảy ra!');
+
+            if (typeof setButtonLoading === 'function') setButtonLoading(btnSubmit, false, 'Lưu Thay Đổi');
+        }
+    } catch (err) {
+        console.error("LỖI PROMOTION:", err);
+        if (typeof showToast === 'function') showToast('Lỗi kết nối máy chủ!', 'error');
+        if (typeof setButtonLoading === 'function') setButtonLoading(btnSubmit, false, 'Lưu Thay Đổi');
+    }
+}
+
+function deletePromotion(id) {
+    const doDelete = async () => {
+        try {
+            const res = typeof csrfFetch === 'function'
+                ? await csrfFetch(`/admin/promotions/${id}`, { method: 'DELETE' })
+                : await fetch(`/admin/promotions/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': typeof getCsrfToken === 'function' ? getCsrfToken() : '' }
+                });
+
+            const data = await res.json();
+            if (data.success) {
+                if (typeof showToast === 'function') showToast('Đã xóa khuyến mãi thành công!', 'success');
+                else alert('Đã xóa thành công!');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                if (typeof showToast === 'function') showToast(data.error || 'Không thể xóa mã này!', 'error');
+                else alert(data.error || 'Lỗi khi xóa!');
+            }
+        } catch (err) {
+            console.error(err);
+            if (typeof showToast === 'function') showToast('Lỗi hệ thống khi xóa!', 'error');
+        }
+    };
+
+    if (typeof showConfirm === 'function') {
+        showConfirm('Bạn có chắc chắn muốn xóa mã khuyến mãi này?', doDelete);
+    } else {
+        if (confirm('Bạn có chắc chắn muốn xóa mã khuyến mãi này?')) doDelete();
+    }
+}
+</script>
+{% endblock %}

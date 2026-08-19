@@ -1,0 +1,284 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Lịch Hẹn Được Giao — Staff Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- HEADER BAR TRANG NHÂN VIÊN -->
+    <div class="staff-header-card mb-4">
+        <div>
+            <span class="sub-title"><i class="fa-solid fa-user-tie"></i> DASHBOARD NHÂN VIÊN</span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px;">Lịch Hẹn Được Giao</h1>
+            <p class="section-subtext mb-0">Theo dõi ca làm việc và lập hóa đơn dịch vụ cho khách hàng.</p>
+        </div>
+
+        <!-- BỘ LỌC NGÀY & TÌM KHÁCH HÀNG -->
+        <div class="staff-filter-group">
+            <div class="search-customer-input-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="staff_customer_search" class="search-customer-input" placeholder="Tìm tên hoặc SĐT khách..." autocomplete="off">
+            </div>
+
+            <form method="GET" action="{{ url_for('staff_appointments_view') }}" class="staff-date-picker-wrap" id="dateFilterForm">
+                <label for="date_filter" class="picker-label"><i class="fa-regular fa-calendar-days"></i> Ngày:</label>
+                <input type="date" id="date_filter" name="date" value="{{ selected_date }}"
+                       class="luxury-date-input" onchange="document.getElementById('dateFilterForm').submit()">
+            </form>
+        </div>
+    </div>
+
+    <!-- KHỐI THỐNG KÊ LỊCH HẸN TRONG NGÀY -->
+    {% set count_total = appointments|length %}
+    {% set count_confirmed = appointments|selectattr('status.name', 'equalto', 'CONFIRMED')|list|length %}
+    {% set count_completed = appointments|selectattr('status.name', 'equalto', 'COMPLETED')|list|length %}
+    {% set count_cancelled = appointments|selectattr('status.name', 'equalto', 'CANCELLED')|list|length %}
+
+    <div class="stat-box-grid">
+        <div class="filter-box active" onclick="filterAppointments('ALL', this)">
+            <div class="stat-label">TỔNG LỊCH HẸN</div>
+            <div class="stat-num">{{ count_total }}</div>
+        </div>
+        <div class="filter-box" onclick="filterAppointments('CONFIRMED', this)">
+            <div class="stat-label">ĐÃ XÁC NHẬN</div>
+            <div class="stat-num">{{ count_confirmed }}</div>
+        </div>
+        <div class="filter-box" onclick="filterAppointments('COMPLETED', this)">
+            <div class="stat-label">HOÀN THÀNH</div>
+            <div class="stat-num">{{ count_completed }}</div>
+        </div>
+        <div class="filter-box" onclick="filterAppointments('CANCELLED', this)">
+            <div class="stat-label">ĐÃ HỦY</div>
+            <div class="stat-num">{{ count_cancelled }}</div>
+        </div>
+    </div>
+
+    <!-- DANH SÁCH LỊCH HẸN -->
+    <div class="card-luxury p-0 overflow-hidden" style="max-height: 600px; overflow-y: auto;">
+        <div class="table-responsive">
+            <table class="table profile-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Mã LH</th>
+                        <th>Giờ hẹn</th>
+                        <th>Tên khách hàng</th>
+                        <th>Dịch vụ thực hiện</th>
+                        <th>Ghi chú</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end pe-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="appointments-tbody">
+                    {% if appointments %}
+                        {% for appt in appointments %}
+                        <tr class="appt-row"
+                            data-status="{{ appt.status.name }}"
+                            data-customer-name="{{ appt.customer.full_name.lower() if appt.customer else '' }}"
+                            data-customer-phone="{{ appt.customer.phone if appt.customer else '' }}">
+
+                            <td class="ps-4" style="font-weight: 700; color: var(--text-muted);">#{{ appt.id }}</td>
+
+                            <!-- CỘT GIỜ HẸN CÓ ĐỆM KHOẢNG CÁCH DÒNG NGÀY -->
+                            <td>
+                                <div class="luxury-time-badge">
+                                    <i class="fa-regular fa-clock" style="margin-right: 4px;"></i>{{ appt.appointment_date.strftime('%H:%M') }}
+                                </div>
+                                <span class="date-subtext">{{ appt.appointment_date.strftime('%d/%m/%Y') }}</span>
+                            </td>
+
+                            <td>
+                                <div class="customer-name" style="font-weight: 600;">
+                                    <i class="fa-solid fa-user-check" style="margin-right: 4px; color: var(--text-muted);"></i>
+                                    {{ appt.customer.full_name if appt.customer else 'Khách vãng lai' }}
+                                </div>
+                                <small class="text-muted"><i class="fa-solid fa-phone" style="margin-right: 4px;"></i>{{ appt.customer.phone if appt.customer else '' }}</small>
+                            </td>
+
+                            <td>
+                                <div class="service-name">{{ appt.service.service_name if appt.service else 'Dịch vụ Salon' }}</div>
+                                <small class="text-muted">
+                                    {{ "{:,.0f}".format(appt.service.price) if appt.service else 0 }}đ
+                                    ({{ appt.service.duration_minutes if appt.service else 30 }} phút)
+                                </small>
+                            </td>
+
+                            <td style="max-width: 180px;">
+                                <div style="max-height: 55px; overflow-y: auto; font-size: 13px; color: var(--text-dark); word-break: break-word; padding-right: 4px; line-height: 1.4;">
+                                    {{ appt.note or '-' }}
+                                </div>
+                            </td>
+
+                            <td>
+                                {% if appt.status.name == 'CONFIRMED' %}
+                                    <span class="status-badge status-confirmed"><i class="fa-solid fa-calendar-check" style="margin-right: 4px;"></i> Đã xác nhận</span>
+                                {% elif appt.status.name == 'COMPLETED' %}
+                                    <span class="status-badge status-completed"><i class="fa-solid fa-circle-check" style="margin-right: 4px;"></i> Hoàn thành</span>
+                                {% elif appt.status.name == 'CANCELLED' %}
+                                    <span class="status-badge status-cancelled"><i class="fa-solid fa-ban" style="margin-right: 4px;"></i> Đã hủy</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <div style="display: inline-flex; gap: 8px;">
+                                    <!-- SỬA TẠI ĐÂY: KIỂM TRA ĐÃ CÓ HÓA ĐƠN HOẶC ĐÃ COMPLETED CHƯA -->
+                                    {% set is_done = (appt.status.name == 'COMPLETED') or (appt.has_invoice is defined and appt.has_invoice) %}
+
+                                    {% if appt.status.name != 'CANCELLED' %}
+                                        {% if not is_done %}
+                                            <a href="{{ url_for('create_invoice_view', appointment_id=appt.id, customer_id=appt.customer_id, service_id=appt.service_id) }}"
+                                               class="btn-action-primary">
+                                                <i class="fa-solid fa-file-invoice-dollar"></i> Tạo hóa đơn
+                                            </a>
+                                        {% else %}
+                                            <span class="badge bg-light text-muted border p-2" style="font-size: 12px;">
+                                                <i class="fa-solid fa-check-double text-success me-1"></i> Đã xong & Lập HĐ
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted small"><i class="fa-solid fa-lock"></i> Đã hủy</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr id="empty-data-row">
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-calendar-xmark fs-3 d-block mb-2"></i>
+                                Không có lịch hẹn nào trong ngày {{ selected_date }}.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- THANH PHÂN TRANG CHUẨN CỦA HỆ THỐNG -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrap mt-4">
+        <a href="{{ url_for('staff_appointments_view', page=page-1, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page <= 1 else '' }}">
+            <i class="fa-solid fa-chevron-left"></i> Trước
+        </a>
+        <div class="page-numbers">
+            {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('staff_appointments_view', page=p, date=selected_date) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+                    {{ p }}
+                </a>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('staff_appointments_view', page=page+1, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page >= total_pages else '' }}">
+            Sau <i class="fa-solid fa-chevron-right"></i>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- CUSTOM MODAL POPUP THUẦN (PURE CSS/JS) -->
+<div class="custom-modal-backdrop" id="updateStatusModal">
+    <div class="custom-modal-dialog">
+        <div class="custom-modal-header">
+            <div class="custom-modal-title"><i class="fa-solid fa-pen-to-square" style="margin-right: 8px;"></i> Thông tin Lịch Hẹn</div>
+            <button type="button" class="btn-close-modal" onclick="closeUpdateModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="form-group-sm" style="margin-bottom: 16px;">
+            <input type="hidden" id="modal-appointment-id">
+            <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Trạng thái hiện tại:</label>
+            <input type="text" id="modal-status-display" class="form-control-luxury-sm" readonly style="background-color: #FAF8F6;">
+        </div>
+
+        <div class="form-group-sm" style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <label style="font-size: 13px; font-weight: 600; margin: 0;">Ghi chú công việc:</label>
+                <small id="char-count" class="text-muted" style="font-size: 11px;">0/255</small>
+            </div>
+            <textarea id="modal-note-input" class="form-control-luxury-sm" rows="3" maxlength="255" readonly style="background-color: #FAF8F6;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button type="button" class="btn-cancel-modal" onclick="closeUpdateModal()">Đóng</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let activeFilter = 'ALL';
+let searchQuery = '';
+
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. Tìm kiếm Realtime theo Tên / SĐT Khách hàng
+    const searchInput = document.getElementById("staff_customer_search");
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            searchQuery = this.value.trim().toLowerCase();
+            applyFilters();
+        });
+    }
+});
+
+// 2. Lọc danh sách trực tiếp trên DOM theo Tab Trạng thái
+function filterAppointments(status, element) {
+    activeFilter = status;
+    document.querySelectorAll('.filter-box').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    applyFilters();
+}
+
+function applyFilters() {
+    const rows = document.querySelectorAll('.appt-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowStatus = row.dataset.status;
+        const name = row.dataset.customerName || '';
+        const phone = row.dataset.customerPhone || '';
+
+        const matchesStatus = (activeFilter === 'ALL' || rowStatus === activeFilter);
+        const matchesSearch = !searchQuery || name.includes(searchQuery) || phone.includes(searchQuery);
+
+        if (matchesStatus && matchesSearch) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Nếu lọc không ra kết quả nào -> Hiển thị dòng thông báo rỗng
+    const tbody = document.getElementById('appointments-tbody');
+    let emptyRow = document.getElementById('filter-empty-row');
+
+    if (visibleCount === 0 && rows.length > 0) {
+        if (!emptyRow) {
+            emptyRow = document.createElement('tr');
+            emptyRow.id = 'filter-empty-row';
+            emptyRow.innerHTML = `<td colspan="7" class="text-center py-5 text-muted"><i class="fa-regular fa-folder-open fs-3 d-block mb-2"></i>Không có lịch hẹn nào khớp với bộ lọc hiện tại.</td>`;
+            tbody.appendChild(emptyRow);
+        }
+        emptyRow.style.display = '';
+    } else if (emptyRow) {
+        emptyRow.style.display = 'none';
+    }
+}
+
+// 3. Quản lý Popup Modal xem thông tin chi tiết
+function openUpdateModal(id, currentStatus, currentNote) {
+    document.getElementById("modal-appointment-id").value = id;
+    document.getElementById("modal-status-display").value = currentStatus;
+    const noteInput = document.getElementById("modal-note-input");
+    noteInput.value = currentNote;
+    updateCharCount(noteInput, 'char-count');
+    document.getElementById('updateStatusModal').classList.add('active');
+}
+
+function closeUpdateModal() {
+    document.getElementById('updateStatusModal').classList.remove('active');
+}
+</script>
+{% endblock %}

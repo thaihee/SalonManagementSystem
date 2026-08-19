@@ -1,0 +1,380 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Hồ sơ cá nhân — Minimalist Muse{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="profile-layout-grid">
+        
+        <!-- 1. CỘT TRÁI: THÔNG TIN THÀNH VIÊN & AVATAR -->
+        <aside class="profile-sidebar-card">
+            <div class="avatar-wrapper">
+                <div class="avatar-circle" id="avatar-preview-circle"
+                     style="{% if current_user.avatar %}background-image:url('{{ current_user.avatar }}');background-size:cover;background-position:center;{% endif %}">
+                    {% if not current_user.avatar %}
+                    <span>{{ current_user.full_name[0] | upper if current_user.full_name else 'U' }}</span>
+                    {% endif %}
+                </div>
+                <label for="avatar-upload-input" class="avatar-upload-btn" title="Đổi ảnh đại diện">
+                    <i class="fa-solid fa-camera"></i>
+                </label>
+                <input type="file" id="avatar-upload-input" accept="image/*" style="display:none;">
+                <div class="member-role-badge">
+                    <i class="fa-solid fa-crown"></i>
+                    <span>{{ current_user.role.name if current_user.role else 'CUSTOMER' }}</span>
+                </div>
+            </div>
+
+            <div class="user-summary">
+                <h3 class="user-display-name">{{ current_user.full_name }}</h3>
+                <p class="user-username">@{{ current_user.username }}</p>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <div class="user-meta-info">
+                <div class="meta-item">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <div>
+                        <span class="meta-label">Ngày tham gia</span>
+                        <span class="meta-val">{{ current_user.created_date.strftime('%d/%m/%Y') if current_user.created_date else 'Vừa tham gia' }}</span>
+                    </div>
+                </div>
+                <div class="meta-item">
+                    <i class="fa-solid fa-phone"></i>
+                    <div>
+                        <span class="meta-label">Số điện thoại</span>
+                        <span class="meta-val">{{ current_user.phone }}</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 2. CỘT PHẢI: FORM CHỈNH SỬA THÔNG TIN & ĐỔI MẬT KHẨU & LỊCH HẸN -->
+        <main class="profile-main-content">
+
+            <!-- THÔNG BÁO THÀNH CÔNG / LỖI FROM BACKEND -->
+            {% if succ_msg %}
+                <div class="profile-alert alert-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>{{ succ_msg }}</span>
+                </div>
+            {% endif %}
+
+            {% if err_msg %}
+                <div class="profile-alert alert-error">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>{{ err_msg }}</span>
+                </div>
+            {% endif %}
+
+            <!-- FORM CẬP NHẬT THÔNG TIN CÁ NHÂN -->
+            <div class="profile-card-box">
+                <div class="card-box-header">
+                    <div>
+                        <h2 class="card-box-title">Thông tin cá nhân</h2>
+                        <p class="card-box-sub">Cập nhật chi tiết thông tin tài khoản của bạn</p>
+                    </div>
+                </div>
+
+                <form id="profile-form" class="profile-form">
+                    <input type="hidden" id="avatar" name="avatar" value="{{ current_user.avatar or '' }}">
+                    <div class="form-row-2col">
+                        <!-- Họ và tên -->
+                        <div class="form-group-luxury">
+                            <label for="full_name">Họ và tên</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-id-card input-icon"></i>
+                                <input type="text" id="full_name" name="full_name"
+                                       value="{{ current_user.full_name }}" class="form-control-luxury" required>
+                            </div>
+                        </div>
+
+                        <!-- Tên đăng nhập (Chỉ xem - Không cho sửa) -->
+                        <div class="form-group-luxury">
+                            <label for="username">Tên đăng nhập</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-user input-icon"></i>
+                                <input type="text" id="username" value="{{ current_user.username }}"
+                                       class="form-control-luxury readonly-input" readonly disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2col">
+                        <!-- Số điện thoại -->
+                        <div class="form-group-luxury">
+                            <label for="phone">Số điện thoại</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-phone input-icon"></i>
+                                <input type="tel" id="phone" name="phone"
+                                       value="{{ current_user.phone }}"
+                                       maxlength="10"
+                                       pattern="0[0-9]{9}"
+                                       placeholder="VD: 0912345678"
+                                       class="form-control-luxury" required>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group-luxury">
+                            <label for="email">Email liên hệ</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-envelope input-icon"></i>
+                                <input type="email" id="email" name="email"
+                                       value="{{ current_user.email if current_user.email else '' }}"
+                                       placeholder="Chưa cập nhật email" class="form-control-luxury">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-action-right">
+                        <button type="submit" class="btn-save-profile">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Lưu thay đổi</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- FORM ĐỔI MẬT KHẨU CÓ MẮT XEM MẬT KHẨU -->
+            <div class="profile-card-box">
+                <div class="card-box-header">
+                    <div>
+                        <h2 class="card-box-title">Đổi mật khẩu</h2>
+                        <p class="card-box-sub">Cập nhật mật khẩu định kỳ để bảo vệ tài khoản an toàn</p>
+                    </div>
+                </div>
+
+                <form id="change-password-form" class="profile-form">
+                    <!-- Mật khẩu hiện tại -->
+                    <div class="form-group-luxury">
+                        <label for="old_password">Mật khẩu hiện tại <span style="color: red;">*</span></label>
+                        <div class="input-icon-wrapper" style="position: relative;">
+                            <i class="fa-solid fa-lock input-icon"></i>
+                            <input type="password" id="old_password" name="old_password"
+                                   placeholder="••••••••" class="form-control-luxury" style="padding-right: 40px !important;" required>
+                            <i class="fa-solid fa-eye toggle-password-btn" onclick="togglePasswordVisibility('old_password', this)"
+                               style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #8C827A;"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2col">
+                        <!-- Mật khẩu mới -->
+                        <div class="form-group-luxury">
+                            <label for="new_password">Mật khẩu mới <span style="color: red;">*</span></label>
+                            <div class="input-icon-wrapper" style="position: relative;">
+                                <i class="fa-solid fa-key input-icon"></i>
+                                <input type="password" id="new_password" name="new_password"
+                                       placeholder="Tối thiểu 8 ký tự, hoa, thường, số" class="form-control-luxury" style="padding-right: 40px !important;" required>
+                                <i class="fa-solid fa-eye toggle-password-btn" onclick="togglePasswordVisibility('new_password', this)"
+                                   style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #8C827A;"></i>
+                            </div>
+                        </div>
+
+                        <!-- Xác nhận mật khẩu mới -->
+                        <div class="form-group-luxury">
+                            <label for="confirm_password">Xác nhận mật khẩu mới <span style="color: red;">*</span></label>
+                            <div class="input-icon-wrapper" style="position: relative;">
+                                <i class="fa-solid fa-shield-halved input-icon"></i>
+                                <input type="password" id="confirm_password" name="confirm_password"
+                                       placeholder="Nhập lại mật khẩu mới" class="form-control-luxury" style="padding-right: 40px !important;" required>
+                                <i class="fa-solid fa-eye toggle-password-btn" onclick="togglePasswordVisibility('confirm_password', this)"
+                                   style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #8C827A;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-action-right">
+                        <button type="submit" class="btn-save-profile" style="background: #2C2623;">
+                            <i class="fa-solid fa-key"></i>
+                            <span>Cập nhật mật khẩu</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- CHỈ HIỂN THỊ KHỐI "LỊCH HẸN GẦN ĐÂY" CHO VAI TRÒ KHÁCH HÀNG (CUSTOMER) -->
+            {% if current_user.role.name == 'CUSTOMER' %}
+            <div class="profile-card-box">
+                <div class="card-box-header">
+                    <div>
+                        <h2 class="card-box-title">Lịch hẹn gần đây</h2>
+                        <p class="card-box-sub">Danh sách các dịch vụ bạn đã đặt lịch trải nghiệm</p>
+                    </div>
+                    <a href="/booking" class="btn-new-booking">
+                        <i class="fa-solid fa-plus"></i> Đặt lịch mới
+                    </a>
+                </div>
+
+                {% if current_user.appointments_as_customer %}
+                    <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                        <table class="profile-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mã LH</th>
+                                    <th>Thời gian</th>
+                                    <th>Dịch vụ</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appt in current_user.appointments_as_customer %}
+                                <tr>
+                                    <td><strong>#{{ appt.id }}</strong></td>
+                                    <td>{{ appt.appointment_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ appt.service.service_name if appt.service else 'Dịch vụ Salon' }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ appt.status.name.lower() }}">
+                                            {{ appt.status.name }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-history-box">
+                        <i class="fa-solid fa-calendar-xmark empty-icon"></i>
+                        <p>Bạn chưa có lịch hẹn nào tại Salon.</p>
+                        <a href="/booking" class="btn-book-now-link">Đặt lịch dịch vụ ngay</a>
+                    </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CLOUDINARY_CLOUD_NAME = 'dphbawbuk';
+const CLOUDINARY_UPLOAD_PRESET = 'salon_avatar_unsigned';
+
+// 1) Chọn ảnh -> Upload Cloudinary
+document.getElementById('avatar-upload-input').addEventListener('change', async function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    try {
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.secure_url) {
+            document.getElementById('avatar').value = data.secure_url;
+
+            const previewCircle = document.getElementById('avatar-preview-circle');
+            previewCircle.style.backgroundImage = `url('${data.secure_url}')`;
+            previewCircle.style.backgroundSize = 'cover';
+            previewCircle.style.backgroundPosition = 'center';
+
+            const defaultSpan = previewCircle.querySelector('span');
+            if (defaultSpan) defaultSpan.style.display = 'none';
+
+            showToast('Đã tải ảnh lên! Bấm "Lưu thay đổi" để hoàn tất.', 'success');
+        } else {
+            showToast('Tải ảnh thất bại: ' + (data.error?.message || 'Lỗi Upload Preset'), 'error');
+        }
+    } catch (err) {
+        showToast('Lỗi kết nối khi tải ảnh lên!', 'error');
+    }
+});
+
+// 2) Submit form Cập nhật thông tin cá nhân
+document.getElementById('profile-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const payload = {
+        full_name: document.getElementById('full_name').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        avatar: document.getElementById('avatar').value
+    };
+
+    try {
+        const res = await csrfFetch('/users/me', {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast(data.message || 'Cập nhật thông tin thành công!', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1200);
+        } else {
+            showToast(data.error || 'Cập nhật thất bại, vui lòng kiểm tra lại!', 'error');
+        }
+    } catch (err) {
+        console.error('Lỗi chi tiết:', err);
+        showToast('Không thể kết nối đến máy chủ!', 'error');
+    }
+});
+
+// 3) Submit form Đổi mật khẩu
+document.getElementById('change-password-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const oldPassword = document.getElementById('old_password').value;
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+
+    if (newPassword !== confirmPassword) {
+        showToast('Mật khẩu mới xác nhận không khớp!', 'error');
+        return;
+    }
+
+    // Gửi JSON thay vì FormData
+    const payload = {
+        old_password: oldPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+    };
+
+    try {
+        const res = await csrfFetch('/users/change-password', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(data.message || 'Đổi mật khẩu thành công!', 'success');
+            document.getElementById('change-password-form').reset();
+        } else {
+            showToast(data.error || 'Không thể đổi mật khẩu!', 'error');
+        }
+    } catch (err) {
+        console.error('Lỗi chi tiết:', err);
+        showToast('Có lỗi hệ thống xảy ra khi đổi mật khẩu!', 'error');
+    }
+});
+
+// Hàm chuyển đổi ẩn/hiện mật khẩu
+function togglePasswordVisibility(inputId, iconElem) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        iconElem.classList.remove('fa-eye');
+        iconElem.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        iconElem.classList.remove('fa-eye-slash');
+        iconElem.classList.add('fa-eye');
+    }
+}
+</script>
+{% endblock %}

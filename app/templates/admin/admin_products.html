@@ -1,0 +1,419 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Quản Lý Sản Phẩm & Tồn Kho — Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1200px; margin: 0 auto; padding: 20px 15px;">
+
+    <!-- HEADER BAR -->
+    <div class="staff-header-card mb-4" style="display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 20px; border-radius: 14px; border: 1px solid #EAE0D5;">
+        <div>
+            <span class="sub-title" style="color: #C5A880; font-size: 11px; font-weight: 700; letter-spacing: 1px;"><i class="fa-solid fa-boxes-stacked me-1"></i> ADMIN INVENTORY</span>
+            <h1 class="main-title text-start mb-1" style="font-size: 24px; color: #2C2623;">Quản Lý Sản Phẩm & Tồn Kho</h1>
+            <p class="section-subtext mb-0" style="color: #7A726D; font-size: 13px;">Theo dõi lượng tồn kho, nhập/xuất kho và cấu hình hạn mức cảnh báo sản phẩm tiêu hao.</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <!-- NÚT QUAY LẠI -->
+            <a href="/admin" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;">
+                <i class="fa-solid fa-arrow-left me-1"></i>
+            </a>
+
+            <!-- NÚT THÊM SẢN PHẨM MỚI -->
+            <button type="button" class="btn-action-primary" onclick="toggleCreateProductForm()" style="background: #2C2623; color: #FFF; border: none; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                <i class="fa-solid fa-plus me-1"></i> Thêm Sản Phẩm Mới
+            </button>
+        </div>
+    </div>
+
+    <!-- CẢNH BÁO TỒN KHO THẤP (NẾU CÓ) -->
+    {% if low_stock %}
+    <div style="background: #FFF3E0; border: 1px solid #FFE0B2; border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-triangle-exclamation" style="color: #E65100; font-size: 20px;"></i>
+        <div>
+            <strong style="color: #E65100; font-size: 13px; display: block;">Cảnh báo tồn kho thấp ({{ low_stock|length }} sản phẩm)</strong>
+            <span style="color: #6D4C41; font-size: 12px;">Các sản phẩm sau đã chạm hoặc dưới mức tồn kho tối thiểu: 
+                <b>{% for p in low_stock %}{{ p.product_name }} (Tồn: {{ p.stock_quantity | int }} {{ p.unit.name }}){% if not loop.last %}, {% endif %}{% endfor %}</b>
+            </span>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- FORM THÊM SẢN PHẨM MỚI -->
+    <div id="createProductCard" style="display: none; background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+        <h6 style="font-size: 14px; font-weight: 700; color: #2C2623; margin-bottom: 16px;">
+            <i class="fa-solid fa-circle-plus" style="color: #C5A880; margin-right: 6px;"></i> Nhập Thông Tin Sản Phẩm Mới
+        </h6>
+        <form id="createProductForm">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Tên sản phẩm <span style="color: red;">*</span></label>
+                    <input type="text" name="product_name" required placeholder="VD: Dầu gội Keratin 500ml"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Đơn vị tính <span style="color: red;">*</span></label>
+                    <select name="unit" required style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none; background: #FFF;">
+                        <option value="CHAI">Chai (CHAI)</option>
+                        <option value="GOI">Gói (GOI)</option>
+                        <option value="ML">Mili-lít (ML)</option>
+                        <option value="GRAM">Gram (GRAM)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Tồn kho ban đầu <span style="color: red;">*</span></label>
+                    <input type="number" name="stock_quantity" required min="0" step="any" value="0"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Tồn tối thiểu (Cảnh báo) <span style="color: red;">*</span></label>
+                    <input type="number" name="min_stock_level" required min="0" step="any" value="5"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <button type="button" onclick="toggleCreateProductForm()" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 8px 18px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 8px;">Hủy</button>
+                <button type="submit" style="background: #2C2623; color: #FFF; border: none; padding: 8px 24px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer;">Lưu Sản Phẩm</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- BẢNG DANH SÁCH SẢN PHẨM -->
+    <div style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+        <div style="padding: 16px 20px; background: #FAF7F2; border-bottom: 1px solid #EAE0D5;">
+            <strong style="color: #2C2623; font-size: 15px;">
+                <i class="fa-solid fa-list" style="margin-right: 8px; color: #C5A880;"></i>Kho Sản Phẩm Tiêu Hao ({{ products|length }})
+            </strong>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background: #FFF; border-bottom: 1px solid #EAE0D5; font-size: 12px; color: #8C827A; text-transform: uppercase;">
+                        <th style="padding: 12px 20px; width: 6%;">ID</th>
+                        <th style="padding: 12px 20px; width: 28%;">Tên Sản Phẩm</th>
+                        <th style="padding: 12px 20px; width: 12%;">Đơn Vị</th>
+                        <th style="padding: 12px 20px; width: 16%;">Số Lượng Tồn</th>
+                        <th style="padding: 12px 20px; width: 16%;">Tồn Tối Thiểu</th>
+                        <th style="padding: 12px 20px; width: 22%; text-align: center;">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 13px; color: #2C2623;">
+                    {% if products %}
+                        {% for p in products %}
+                        {% set is_low = p.stock_quantity <= p.min_stock_level %}
+                        <tr style="border-bottom: 1px solid #F5EFE9; vertical-align: middle; {{ 'background: #FFF8F6;' if is_low else '' }}">
+                            <td style="padding: 14px 20px; font-weight: 700; color: #8C827A;">#{{ p.id }}</td>
+                            <td style="padding: 14px 20px; font-weight: 700; color: #2C2623;">
+                                {{ p.product_name }}
+                                {% if not p.active %}
+                                    <span style="background: #ECEFF1; color: #607D8B; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Đã khóa</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 14px 20px;">
+                                <span style="background: #FAF7F2; border: 1px solid #D8C8B8; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                                    {{ p.unit.name }}
+                                </span>
+                            </td>
+                            <!-- Cột SỐ LƯỢNG TỒN -->
+                            <td style="padding: 14px 20px; font-weight: 700; {{ 'color: #D32F2F;' if is_low else 'color: #2E7D32;' }}">
+                                {{ "{:,.0f}".format(p.stock_quantity) }}
+                                {% if is_low %}
+                                    <i class="fa-solid fa-circle-exclamation" title="Cảnh báo tồn kho thấp!" style="margin-left: 4px;"></i>
+                                {% endif %}
+                            </td>
+
+                            <!-- Cột TỒN TỐI THIỂU -->
+                            <td style="padding: 14px 20px; color: #7A726D;">{{ "{:,.0f}".format(p.min_stock_level) }}</td>
+
+                            <td style="padding: 14px 20px; text-align: center;">
+                                <div style="display: flex; justify-content: center; gap: 6px;">
+                                    <button type="button" title="Nhập kho"
+                                            style="background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                            onclick="openStockModal({{ p.id }}, '{{ p.product_name }}', 'import')">
+                                        <i class="fa-solid fa-arrow-down"></i> Nhập
+                                    </button>
+
+                                    <button type="button" title="Xuất kho"
+                                            style="background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                            onclick="openStockModal({{ p.id }}, '{{ p.product_name }}', 'export')">
+                                        <i class="fa-solid fa-arrow-up"></i> Xuất
+                                    </button>
+
+                                    <button type="button" title="Sửa thông tin"
+                                            style="background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                            onclick="toggleEditProductRow({{ p.id }})">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+
+                                    <button type="button" title="Xóa sản phẩm"
+                                            style="background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;"
+                                            onclick="deleteProduct({{ p.id }}, '{{ p.product_name }}')">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- HÀNG CHỈNH SỬA SẢN PHẨM (INLINE EDIT) -->
+                        <tr id="edit_product_row_{{ p.id }}" style="display: none; background: #FAF7F2; border-bottom: 2px solid #EAE0D5;">
+                            <td colspan="6" style="padding: 16px;">
+                                <form onsubmit="event.preventDefault(); saveUpdateProduct({{ p.id }});" style="background: #FFF; border: 1px solid #EAE0D5; border-radius: 12px; padding: 16px;">
+                                    <strong style="color: #2C2623; font-size: 13px; display: block; margin-bottom: 12px;">
+                                        <i class="fa-solid fa-pen-to-square" style="color: #C5A880; margin-right: 6px;"></i> Cập Nhật Sản Phẩm #{{ p.id }}
+                                    </strong>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Tên sản phẩm</label>
+                                            <input type="text" id="edit_name_{{ p.id }}" value="{{ p.product_name }}" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Đơn vị tính</label>
+                                            <select id="edit_unit_{{ p.id }}" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px; background: #FFF;">
+                                                <option value="CHAI" {% if p.unit.name == 'CHAI' %}selected{% endif %}>Chai (CHAI)</option>
+                                                <option value="GOI" {% if p.unit.name == 'GOI' %}selected{% endif %}>Gói (GOI)</option>
+                                                <option value="ML" {% if p.unit.name == 'ML' %}selected{% endif %}>Mili-lít (ML)</option>
+                                                <option value="GRAM" {% if p.unit.name == 'GRAM' %}selected{% endif %}>Gram (GRAM)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; font-weight: 600; color: #7A726D;">Tồn tối thiểu</label>
+                                            <input type="number" id="edit_min_stock_{{ p.id }}" value="{{ p.min_stock_level | int }}" min="0" step="1" style="width: 100%; padding: 6px 10px; border: 1px solid #D8C8B8; border-radius: 6px; font-size: 12px;">
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <button type="button" onclick="toggleEditProductRow({{ p.id }})" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 6px;">Hủy</button>
+                                        <button type="submit" style="background: #2C2623; color: #FFF; border: none; padding: 5px 18px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer;">Lưu Đổi Thay</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" style="padding: 30px; text-align: center; color: #8C827A;">
+                                <i class="fa-solid fa-boxes-stacked" style="font-size: 20px; display: block; margin-bottom: 8px;"></i>
+                                Chưa có sản phẩm nào trong kho.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- THANH PHÂN TRANG -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrap" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px;">
+        <!-- Nút Trước -->
+        <a href="{{ url_for('list_products', page=page-1) }}"
+           style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page <= 1 else '' }}">
+            <i class="fa-solid fa-chevron-left" style="margin-right: 4px;"></i> Trước
+        </a>
+
+        <!-- Danh sách Số trang -->
+        <div style="display: flex; gap: 4px;">
+            {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('list_products', page=p) }}"
+                   style="padding: 6px 12px; border-radius: 50%; font-size: 12px; font-weight: 700; text-decoration: none; {{ 'background: #2C2623; color: #FFF;' if p == page else 'background: #FFF; color: #2C2623; border: 1px solid #D8C8B8;' }}">
+                    {{ p }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <!-- Nút Sau -->
+        <a href="{{ url_for('list_products', page=page+1) }}"
+           style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page >= total_pages else '' }}">
+            Sau <i class="fa-solid fa-chevron-right" style="margin-left: 4px;"></i>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- MODAL NHẬP / XUẤT KHO -->
+<div id="stockActionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: #FFF; border-radius: 14px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <h5 id="modalTitle" style="font-size: 16px; font-weight: 700; color: #2C2623; margin-bottom: 8px;">Nhập/Xuất Kho</h5>
+        <p id="modalSubTitle" style="font-size: 12px; color: #7A726D; margin-bottom: 16px;">Sản phẩm: ...</p>
+
+        <form id="stockActionForm">
+            <input type="hidden" id="modalProductId">
+            <input type="hidden" id="modalActionType">
+
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 12px; font-weight: 600; color: #7A726D; display: block; margin-bottom: 6px;">Số lượng <span style="color: red;">*</span></label>
+                <input type="number" id="modalQuantity" required min="1" step="any" placeholder="Nhập số lượng..."
+                       style="width: 100%; padding: 8px 12px; border: 1px solid #D8C8B8; border-radius: 8px; font-size: 13px; outline: none;">
+            </div>
+
+            <div style="text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
+                <button type="button" onclick="closeStockModal()" style="background: #FAF7F2; color: #2C2623; border: 1px solid #D8C8B8; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer;">Hủy</button>
+                <button type="submit" id="modalSubmitBtn" style="background: #2C2623; color: #FFF; border: none; padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer;">Xác Nhận</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF_TOKEN = typeof getCsrfToken === 'function' ? getCsrfToken() : (document.querySelector('meta[name="csrf-token"]')?.content || '');
+
+function triggerToast(msg, type = 'success') {
+    if (typeof showToast === 'function') {
+        showToast(msg, type);
+    } else {
+        console.log(`[Toast ${type.toUpperCase()}] ${msg}`);
+    }
+}
+
+function toggleCreateProductForm() {
+    const card = document.getElementById('createProductCard');
+    card.style.display = (card.style.display === 'none' || card.style.display === '') ? 'block' : 'none';
+}
+
+function toggleEditProductRow(id) {
+    const row = document.getElementById(`edit_product_row_${id}`);
+    row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none';
+}
+
+// THÊM SẢN PHẨM MỚI (POST /admin/products)
+document.getElementById('createProductForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch('/admin/products', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            triggerToast('Thêm sản phẩm mới thành công!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            triggerToast(data.error || 'Không thể thêm sản phẩm!', 'error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        triggerToast('Lỗi hệ thống khi tạo sản phẩm!', 'error');
+    });
+});
+
+// CẬP NHẬT SẢN PHẨM (PUT /admin/products/<id>)
+function saveUpdateProduct(id) {
+    const name = document.getElementById(`edit_name_${id}`).value.trim();
+    const unit = document.getElementById(`edit_unit_${id}`).value;
+    const minStock = document.getElementById(`edit_min_stock_${id}`).value;
+
+    if (!name) {
+        triggerToast('Tên sản phẩm không được để trống!', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('product_name', name);
+    formData.append('unit', unit);
+    formData.append('min_stock_level', minStock);
+
+    fetch(`/admin/products/${id}`, {
+        method: 'PUT',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            triggerToast('Cập nhật sản phẩm thành công!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            triggerToast(data.error || 'Không thể cập nhật!', 'error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        triggerToast('Lỗi kết nối máy chủ!', 'error');
+    });
+}
+
+// XÓA SẢN PHẨM (DELETE /admin/products/<id>)
+function deleteProduct(id, name) {
+    const performDelete = () => {
+        fetch(`/admin/products/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': CSRF_TOKEN }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                triggerToast('Đã xóa sản phẩm thành công!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                triggerToast(data.error || 'Không thể xóa sản phẩm!', 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            triggerToast('Lỗi hệ thống khi xóa sản phẩm!', 'error');
+        });
+    };
+
+    if (typeof showConfirm === 'function') {
+        showConfirm(`Bạn có chắc muốn xóa sản phẩm "${name}"?`, performDelete);
+    } else {
+        if (confirm(`Bạn có chắc muốn xóa sản phẩm "${name}"?`)) performDelete();
+    }
+}
+
+// MODAL NHẬP / XUẤT KHO
+function openStockModal(id, name, action) {
+    document.getElementById('modalProductId').value = id;
+    document.getElementById('modalActionType').value = action;
+    document.getElementById('modalQuantity').value = '';
+    
+    const title = action === 'import' ? 'Nhập Kho Sản Phẩm' : 'Xuất Kho Sản Phẩm';
+    const btnText = action === 'import' ? 'Xác Nhận Nhập' : 'Xác Nhận Xuất';
+    
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalSubTitle').innerText = `Sản phẩm: ${name}`;
+    document.getElementById('modalSubmitBtn').innerText = btnText;
+    
+    document.getElementById('stockActionModal').style.display = 'flex';
+}
+
+function closeStockModal() {
+    document.getElementById('stockActionModal').style.display = 'none';
+}
+
+document.getElementById('stockActionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('modalProductId').value;
+    const action = document.getElementById('modalActionType').value;
+    const qty = document.getElementById('modalQuantity').value;
+
+    const formData = new FormData();
+    formData.append('quantity', qty);
+
+    fetch(`/admin/products/${id}/${action}`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            triggerToast(`${action === 'import' ? 'Nhập' : 'Xuất'} kho thành công! Tồn hiện tại: ${data.stock_quantity}`, 'success');
+            closeStockModal();
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            triggerToast(data.error || 'Thao tác kho thất bại!', 'error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        triggerToast('Lỗi kết nối khi cập nhật kho!', 'error');
+    });
+});
+</script>
+{% endblock %}

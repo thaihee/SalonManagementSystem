@@ -1,0 +1,141 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Lịch Sử Thanh Toán — Minimalist Muse{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- TIÊU ĐỀ TRANG -->
+    <div class="section-title-wrap">
+        <span class="sub-title">TRANSACTIONS</span>
+        <h1 class="main-title">Lịch Sử Thanh Toán</h1>
+        <div class="divider-line"></div>
+        <p class="section-subtext">Tra cứu chi tiết các hóa đơn thanh toán trải nghiệm dịch vụ của bạn tại Minimalist Muse.</p>
+    </div>
+
+    <!-- 1. BỘ LỌC TÌM KIẾM HÓA ĐƠN (GOM VỀ BÊN PHẢI) -->
+    <form method="GET" action="{{ url_for('my_invoices_view') }}"
+          class="reception-toolbar mb-4"
+          style="display: flex; justify-content: flex-end; align-items: center; gap: 12px;">
+
+        <!-- Lọc theo Trạng thái -->
+        <select name="status" class="reception-filter-select" style="width: auto;" onchange="this.form.submit()">
+            <option value="ALL" {{ 'selected' if selected_status == 'ALL' else '' }}>-- Tất cả trạng thái --</option>
+            <option value="PAID" {{ 'selected' if selected_status == 'PAID' else '' }}>Đã thanh toán</option>
+            <option value="DRAFT" {{ 'selected' if selected_status == 'DRAFT' else '' }}>Chờ xác nhận</option>
+            <option value="CANCELLED" {{ 'selected' if selected_status == 'CANCELLED' else '' }}>Đã hủy</option>
+        </select>
+
+        <!-- Lọc theo Ngày lập -->
+        <input type="date" name="date" value="{{ selected_date or '' }}"
+               class="reception-filter-select" style="width: auto;" onchange="this.form.submit()">
+
+        <!-- Nút Lọc -->
+        <button type="submit" class="btn-action-primary" style="padding: 8px 18px; font-size: 13px;">
+            <i class="fa-solid fa-filter me-1"></i> Lọc
+        </button>
+
+        {% if (selected_status and selected_status != 'ALL') or selected_date %}
+            <a href="{{ url_for('my_invoices_view') }}" class="btn-cancel-modal"
+               style="text-decoration: none; padding: 8px 14px; font-size: 13px;">
+                <i class="fa-solid fa-rotate-left me-1"></i> Xóa lọc
+            </a>
+        {% endif %}
+    </form>
+
+    <!-- 2. BẢNG DANH SÁCH HÓA ĐƠN -->
+    <div class="card-luxury p-0 overflow-hidden">
+        {% if invoices %}
+        <div class="table-responsive">
+            <table class="table profile-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Mã HĐ</th>
+                        <th>Ngày lập</th>
+                        <th>Người thực hiện</th>
+                        <th>Hình thức TT</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end pe-4">Chi tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td class="ps-4"><strong>#{{ inv.id }}</strong></td>
+                        <td>
+                            <div>{{ inv.invoice_date.strftime('%d/%m/%Y') }}</div>
+                            <small class="text-muted">{{ inv.invoice_date.strftime('%H:%M') }}</small>
+                        </td>
+                        <td>
+                            <i class="fa-solid fa-user-tie text-muted"></i>
+                            {{ inv.staff.full_name if inv.staff else 'Salon Stylist' }}
+                        </td>
+                        <td>
+                            {% if inv.payment_method %}
+                                {% if inv.payment_method.name == 'CASH' %}
+                                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-money-bill-wave"></i> Tiền mặt</span>
+                                {% elif inv.payment_method.name == 'BANK_TRANSFER' %}
+                                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-qrcode"></i> Chuyển khoản</span>
+                                {% elif inv.payment_method.name == 'CARD' %}
+                                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-credit-card"></i> Quẹt thẻ</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted font-italic">Chưa thanh toán</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong class="text-dark-price" style="color: #C62828;">{{ "{:,.0f}".format(inv.total_amount) }} <small>đ</small></strong>
+                        </td>
+                        <td>
+                            {% if inv.status.name == 'PAID' %}
+                                <span class="status-badge status-completed"><i class="fa-solid fa-circle-check"></i> Đã thanh toán</span>
+                            {% elif inv.status.name == 'DRAFT' %}
+                                <span class="status-badge status-pending"><i class="fa-solid fa-clock"></i> Chờ Lễ tân xác nhận</span>
+                            {% elif inv.status.name == 'CANCELLED' %}
+                                <span class="status-badge status-cancelled"><i class="fa-solid fa-ban"></i> Đã hủy</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{{ url_for('get_invoice_detail_route', invoice_id=inv.id) }}" class="btn-action-edit" style="text-decoration: none;">
+                                <i class="fa-regular fa-file-lines"></i> Xem biên nhận
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <!-- Trạng thái không có hóa đơn -->
+        <div class="empty-history-box py-5">
+            <i class="fa-solid fa-receipt empty-icon"></i>
+            <h3>Không tìm thấy hóa đơn nào</h3>
+            <p class="text-muted">Thử điều chỉnh lại bộ lọc hoặc đặt lịch trải nghiệm dịch vụ mới tại Minimalist Muse.</p>
+            <a href="/booking" class="btn-luxury mt-3"> Đặt lịch trải nghiệm ngay</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 3. THANH PHÂN TRANG -->
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination-wrap mt-4">
+        <a href="{{ url_for('my_invoices_view', page=page-1, status=selected_status, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page <= 1 else '' }}">
+            <i class="fa-solid fa-chevron-left"></i> Trước
+        </a>
+        <div class="page-numbers">
+            {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('my_invoices_view', page=p, status=selected_status, date=selected_date) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+                    {{ p }}
+                </a>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('my_invoices_view', page=page+1, status=selected_status, date=selected_date) }}"
+           class="page-btn {{ 'disabled' if page >= total_pages else '' }}">
+            Sau <i class="fa-solid fa-chevron-right"></i>
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
