@@ -1,14 +1,16 @@
 import hashlib
 import re
 from datetime import datetime, timedelta, time
-
 from sqlalchemy.exc import IntegrityError
-
 from app.models import User, UserRole, Service, Product, Appointment, AppointmentStatus, InvoiceDetail, InvoiceItemType, \
     Invoice, PaymentMethod, ProductUnit, ServiceProduct, InvoiceStatus, PromotionType, Promotion
 from app import db, app
 from app.exceptions import ValidationError, DuplicateError, NotFoundError
 
+
+
+
+#=========================Nghiệp vụ 1: Xác thực & Phân quyền==========================
 
 def get_user_by_id(user_id):
     return User.query.get(user_id)
@@ -56,8 +58,6 @@ def validate_user_input(full_name, username, password, phone, email, is_update=F
 
         _validate_password_strength(password)
 
-
-#=========================Nghiệp vụ 1: Xác thực & Phân quyền==========================
 
 def add_user(full_name, username, password, phone, email, role=UserRole.CUSTOMER, avatar=None):
     """Đăng ký tài khoản (Khách hàng) hoặc tạo nhân viên (Admin)"""
@@ -202,36 +202,7 @@ def delete_user_soft(user_id):
     return u
 
 
-def load_services(kw=None, page=1, page_size=None):
-    """Lấy danh sách dịch vụ Salon hiển thị ở trang chủ (có tìm kiếm & phân trang)"""
-    query = Service.query.filter(Service.active.__eq__(True))
-
-    # Kiểm tra kw khác None và không rỗng
-    if kw and kw.strip():
-        query = query.filter(Service.service_name.contains(kw.strip()))
-
-    # Lấy page_size từ config nếu không truyền vào (mặc định là 4)
-    if page_size is None:
-        page_size = app.config.get('PAGE_SIZE', 4)
-
-    if page:
-        start = (page - 1) * page_size
-        query = query.offset(start).limit(page_size)
-
-    return query.all()
-
-
-def count_services(kw=None):
-    """Đếm tổng số lượng dịch vụ active để tính số trang (Phân trang)"""
-    query = Service.query.filter(Service.active.__eq__(True))
-    if kw:
-        query = query.filter(Service.service_name.contains(kw.strip()))
-    return query.count()
-
-
-# =========================================================================
-# Nghiệp vụ 2: Quản lý Dịch vụ (Service)
-# =========================================================================
+# ==========================Nghiệp vụ 2: Quản lý Dịch vụ (Service)==========================
 
 def get_service_by_id(service_id):
     return Service.query.get(service_id)
@@ -271,6 +242,33 @@ def validate_service_input(name, price, duration, is_update=False, service_id=No
 
     if query.first():
         raise DuplicateError(f"Dịch vụ '{name}' đã tồn tại trong hệ thống!")
+
+
+def load_services(kw=None, page=1, page_size=None):
+    """Lấy danh sách dịch vụ Salon hiển thị ở trang chủ (có tìm kiếm & phân trang)"""
+    query = Service.query.filter(Service.active.__eq__(True))
+
+    # Kiểm tra kw khác None và không rỗng
+    if kw and kw.strip():
+        query = query.filter(Service.service_name.contains(kw.strip()))
+
+    # Lấy page_size từ config nếu không truyền vào (mặc định là 4)
+    if page_size is None:
+        page_size = app.config.get('PAGE_SIZE', 4)
+
+    if page:
+        start = (page - 1) * page_size
+        query = query.offset(start).limit(page_size)
+
+    return query.all()
+
+
+def count_services(kw=None):
+    """Đếm tổng số lượng dịch vụ active để tính số trang (Phân trang)"""
+    query = Service.query.filter(Service.active.__eq__(True))
+    if kw:
+        query = query.filter(Service.service_name.contains(kw.strip()))
+    return query.count()
 
 
 def get_services_paged(page=1, page_size=10):
@@ -344,6 +342,7 @@ def update_service(service_id, name=None, price=None, duration=None, description
     db.session.commit()
     return s
 
+
 def delete_service(service_id):
     """Xóa mềm (Soft Delete) dịch vụ"""
     s = get_service_by_id(service_id)
@@ -355,9 +354,7 @@ def delete_service(service_id):
     return True
 
 
-# =========================================================================
-# Nghiệp vụ 3: Quản lý Sản phẩm (Product)
-# =========================================================================
+# ==========================Nghiệp vụ 3: Quản lý Sản phẩm (Product)==========================
 
 def get_product_by_id(product_id):
     return Product.query.get(product_id)
@@ -477,10 +474,7 @@ def check_low_stock_products():
     ).all()
 
 
-# =========================================================================
-# Nghiệp vụ 3b: Nhập / Xuất kho
-# =========================================================================
-
+#Nhập / Xuất kho
 def _validate_stock_quantity(quantity):
     """Hàm bổ trợ: số lượng nhập/xuất phải là số nguyên dương"""
     try:
@@ -532,9 +526,7 @@ def export_stock(product_id, quantity):
         raise Exception("Lỗi hệ thống: Không thể xuất kho!")
 
 
-# =========================================================================
-# Nghiệp vụ 4: Quản lý Lịch hẹn (Appointment)
-# =========================================================================
+# ==========================Nghiệp vụ 4: Quản lý Lịch hẹn (Appointment)==========================
 
 def get_appointment_by_id(appointment_id):
     """Lấy 1 lịch hẹn theo id — dùng ở route layer để check quyền sở hữu
@@ -837,6 +829,7 @@ def create_appointment(customer_id, service_id, staff_id=None, date_str=None, ti
 
     return appointment
 
+
 def cancel_appointment(appointment_id):
     """Hủy lịch hẹn"""
     appt = Appointment.query.get(appointment_id)
@@ -964,81 +957,9 @@ def update_appointment(appointment_id, service_id=None, staff_id=None, date_str=
     return appt
 
 
-# =========================================================================
-# Nghiệp vụ 5b: Admin sửa/hủy hóa đơn NHÁP bị lập sai
-# =========================================================================
+# ==========================Nghiệp vụ 5: Quản lý Hóa đơn & Thanh toán (Invoice)==========================
 
-def cancel_invoice_draft(invoice_id):
-    """Admin hủy 1 hóa đơn đang ở trạng thái NHÁP do nhân viên lập nhầm.
-    Chỉ áp dụng cho DRAFT — hóa đơn đã PAID tuyệt đối không được hủy/xóa
-    (đúng ràng buộc: giao dịch đã hoàn tất không được xóa/sửa).
-    Gỡ appointment_id để giải phóng lịch hẹn, cho phép lập lại hóa đơn đúng."""
-    invoice = Invoice.query.get(invoice_id)
-    if not invoice or not invoice.active:
-        raise NotFoundError("Hóa đơn không tồn tại!")
-
-    if invoice.status != InvoiceStatus.DRAFT:
-        raise ValidationError("Chỉ được hủy hóa đơn ở trạng thái nháp! Hóa đơn đã hoàn tất không thể hủy.")
-
-    invoice.status = InvoiceStatus.CANCELLED
-    invoice.active = False
-    invoice.appointment_id = None  # giải phóng lịch hẹn để nhân viên lập lại hóa đơn khác
-
-    try:
-        db.session.commit()
-        return invoice
-    except IntegrityError:
-        db.session.rollback()
-        raise Exception("Lỗi hệ thống: Không thể hủy hóa đơn!")
-
-
-def update_invoice_draft(invoice_id, details_data):
-    """Admin sửa lại danh sách dịch vụ/sản phẩm của 1 hóa đơn NHÁP bị lập sai
-    (thay vì bắt nhân viên hủy rồi tạo lại từ đầu, mất luôn liên kết appointment_id).
-    Xóa toàn bộ InvoiceDetail cũ, validate và tạo lại từ details_data mới,
-    tính lại total_amount. Chỉ áp dụng cho DRAFT."""
-    invoice = Invoice.query.get(invoice_id)
-    if not invoice or not invoice.active:
-        raise NotFoundError("Hóa đơn không tồn tại!")
-
-    if invoice.status != InvoiceStatus.DRAFT:
-        raise ValidationError("Chỉ được sửa hóa đơn ở trạng thái nháp! Hóa đơn đã hoàn tất không thể sửa.")
-
-    try:
-        service_ids_in_invoice = {
-            line.get('item_id') or line.get('service_id')
-            for line in details_data if line.get('item_type') == 'SERVICE'
-        }
-        validated_items, gross_total = _validate_and_prepare_invoice_items(details_data, service_ids_in_invoice)
-
-        # Xóa chi tiết cũ, thay bằng chi tiết mới
-        for old_detail in list(invoice.details):
-            db.session.delete(old_detail)
-
-        new_details = [
-            InvoiceDetail(
-                item_type=item["item_type"], quantity=item["quantity"],
-                unit_price=item["unit_price"], subtotal=item["subtotal"],
-                service_id=item["entity"].id if item["item_type"] == InvoiceItemType.SERVICE else None,
-                product_id=item["entity"].id if item["item_type"] == InvoiceItemType.PRODUCT_USED else None,
-                invoice_id=invoice.id
-            ) for item in validated_items
-        ]
-        db.session.add_all(new_details)
-
-        invoice.total_amount = gross_total
-        db.session.commit()
-        return invoice
-
-    except Exception as ex:
-        db.session.rollback()
-        raise ex
-
-
-# =========================================================================
-# HELPER VALIDATORS CHO HÓA ĐƠN
-# =========================================================================
-
+#HELPER VALIDATORS CHO HÓA ĐƠN
 def _validate_invoice_participants(customer_id, staff_id):
     """Validate khách hàng và nhân viên"""
     customer = User.query.filter_by(id=customer_id, role=UserRole.CUSTOMER, active=True).first()
@@ -1048,24 +969,6 @@ def _validate_invoice_participants(customer_id, staff_id):
     if not staff:
         raise NotFoundError("Nhân viên không tồn tại hoặc không hợp lệ!")
     return customer, staff
-
-
-# def _validate_discount_and_payment(discount_percent, payment_method):
-#     """Validate phần trăm giảm giá và phương thức thanh toán"""
-#     try:
-#         discount_percent = float(discount_percent)
-#         if not (0 <= discount_percent <= 100):
-#             raise ValidationError("Khuyến mãi/giảm giá phải nằm trong khoảng từ 0% đến 100%!")
-#     except (ValueError, TypeError):
-#         raise ValidationError("Phần trăm giảm giá không hợp lệ!")
-#
-#     if isinstance(payment_method, str):
-#         try:
-#             payment_method = PaymentMethod[payment_method.upper()]
-#         except KeyError:
-#             raise ValidationError("Phương thức thanh toán không hợp lệ! (Chấp nhận: CASH, BANK_TRANSFER, CARD)")
-#
-#     return discount_percent, payment_method
 
 
 def _validate_invoice_appointment(appointment_id, staff_id):
@@ -1151,6 +1054,46 @@ def _validate_and_prepare_invoice_items(details_data, service_ids_in_invoice):
     return validated_items, gross_total
 
 
+def get_invoice_by_id(invoice_id):
+    """Lấy chi tiết 1 hóa đơn kèm danh sách items"""
+    return Invoice.query.get(invoice_id)
+
+
+def get_invoices(staff_id=None, status=None, customer_id=None, from_date=None, to_date=None, page=1, page_size=None):
+    """
+    Lấy danh sách hóa đơn có bộ lọc & phân trang từ Database
+    """
+    query = Invoice.query.filter(Invoice.active.__eq__(True))
+
+    if staff_id:
+        query = query.filter(Invoice.staff_id == staff_id)
+    if status:
+        try:
+            status_enum = InvoiceStatus[status.upper()] if isinstance(status, str) else status
+            query = query.filter(Invoice.status == status_enum)
+        except KeyError:
+            pass
+    if customer_id:
+        query = query.filter(Invoice.customer_id == customer_id)
+    if from_date:
+        query = query.filter(Invoice.invoice_date >= from_date)
+    if to_date:
+        query = query.filter(Invoice.invoice_date <= to_date)
+
+    query = query.order_by(Invoice.invoice_date.desc())
+
+    # Đếm tổng số bản ghi khớp bộ lọc
+    total_items = query.count()
+
+    if page:
+        page_size = page_size or app.config.get('PAGE_SIZE', 10)
+        start = (page - 1) * page_size
+        query = query.offset(start).limit(page_size)
+
+    invoices = query.all()
+    return invoices, total_items
+
+
 def create_invoice(customer_id, staff_id, details_data, appointment_id=None):
     """Nhân viên tạo hóa đơn NHÁP (DRAFT). KHÔNG trừ kho, KHÔNG nhận payment_method -
     2 việc đó chỉ xảy ra khi Lễ tân xác nhận qua confirm_invoice_payment()."""
@@ -1182,9 +1125,8 @@ def create_invoice(customer_id, staff_id, details_data, appointment_id=None):
 
         db.session.add(invoice)
 
-        # =========================================================================
+
         # BỔ SUNG MỚI: TỰ ĐỘNG CHUYỂN TRẠNG THÁI LỊCH HẸN SANG COMPLETED (HOÀN THÀNH)
-        # =========================================================================
         if appointment:
             appointment.status = AppointmentStatus.COMPLETED
             db.session.add(appointment)
@@ -1193,7 +1135,6 @@ def create_invoice(customer_id, staff_id, details_data, appointment_id=None):
             if appt:
                 appt.status = AppointmentStatus.COMPLETED
                 db.session.add(appt)
-        # =========================================================================
 
         db.session.commit()
         return invoice
@@ -1205,7 +1146,6 @@ def create_invoice(customer_id, staff_id, details_data, appointment_id=None):
     except Exception as ex:
         db.session.rollback()
         raise ex
-
 
 
 def confirm_invoice_payment(invoice_id, receptionist_id, payment_method, promotion_id=None):
@@ -1271,53 +1211,75 @@ def confirm_invoice_payment(invoice_id, receptionist_id, payment_method, promoti
         raise ex
 
 
-# =========================================================================
-# Nghiệp vụ 5: Quản lý Hóa đơn & Thanh toán (Invoice) - BỔ SUNG
-# =========================================================================
+#Admin sửa/hủy hóa đơn NHÁP bị lập sai
+def cancel_invoice_draft(invoice_id):
+    """Admin hủy 1 hóa đơn đang ở trạng thái NHÁP do nhân viên lập nhầm.
+    Chỉ áp dụng cho DRAFT — hóa đơn đã PAID tuyệt đối không được hủy/xóa
+    (đúng ràng buộc: giao dịch đã hoàn tất không được xóa/sửa).
+    Gỡ appointment_id để giải phóng lịch hẹn, cho phép lập lại hóa đơn đúng."""
+    invoice = Invoice.query.get(invoice_id)
+    if not invoice or not invoice.active:
+        raise NotFoundError("Hóa đơn không tồn tại!")
 
-def get_invoice_by_id(invoice_id):
-    """Lấy chi tiết 1 hóa đơn kèm danh sách items"""
-    return Invoice.query.get(invoice_id)
+    if invoice.status != InvoiceStatus.DRAFT:
+        raise ValidationError("Chỉ được hủy hóa đơn ở trạng thái nháp! Hóa đơn đã hoàn tất không thể hủy.")
 
+    invoice.status = InvoiceStatus.CANCELLED
+    invoice.active = False
+    invoice.appointment_id = None  # giải phóng lịch hẹn để nhân viên lập lại hóa đơn khác
 
-def get_invoices(staff_id=None, status=None, customer_id=None, from_date=None, to_date=None, page=1, page_size=None):
-    """
-    Lấy danh sách hóa đơn có bộ lọc & phân trang từ Database
-    """
-    query = Invoice.query.filter(Invoice.active.__eq__(True))
-
-    if staff_id:
-        query = query.filter(Invoice.staff_id == staff_id)
-    if status:
-        try:
-            status_enum = InvoiceStatus[status.upper()] if isinstance(status, str) else status
-            query = query.filter(Invoice.status == status_enum)
-        except KeyError:
-            pass
-    if customer_id:
-        query = query.filter(Invoice.customer_id == customer_id)
-    if from_date:
-        query = query.filter(Invoice.invoice_date >= from_date)
-    if to_date:
-        query = query.filter(Invoice.invoice_date <= to_date)
-
-    query = query.order_by(Invoice.invoice_date.desc())
-
-    # Đếm tổng số bản ghi khớp bộ lọc
-    total_items = query.count()
-
-    if page:
-        page_size = page_size or app.config.get('PAGE_SIZE', 10)
-        start = (page - 1) * page_size
-        query = query.offset(start).limit(page_size)
-
-    invoices = query.all()
-    return invoices, total_items
+    try:
+        db.session.commit()
+        return invoice
+    except IntegrityError:
+        db.session.rollback()
+        raise Exception("Lỗi hệ thống: Không thể hủy hóa đơn!")
 
 
-# =========================================================================
-# HELPER FUNCTIONS CHO BÁO CÁO (Internal Helpers)
-# =========================================================================
+def update_invoice_draft(invoice_id, details_data):
+    """Admin sửa lại danh sách dịch vụ/sản phẩm của 1 hóa đơn NHÁP bị lập sai
+    (thay vì bắt nhân viên hủy rồi tạo lại từ đầu, mất luôn liên kết appointment_id).
+    Xóa toàn bộ InvoiceDetail cũ, validate và tạo lại từ details_data mới,
+    tính lại total_amount. Chỉ áp dụng cho DRAFT."""
+    invoice = Invoice.query.get(invoice_id)
+    if not invoice or not invoice.active:
+        raise NotFoundError("Hóa đơn không tồn tại!")
+
+    if invoice.status != InvoiceStatus.DRAFT:
+        raise ValidationError("Chỉ được sửa hóa đơn ở trạng thái nháp! Hóa đơn đã hoàn tất không thể sửa.")
+
+    try:
+        service_ids_in_invoice = {
+            line.get('item_id') or line.get('service_id')
+            for line in details_data if line.get('item_type') == 'SERVICE'
+        }
+        validated_items, gross_total = _validate_and_prepare_invoice_items(details_data, service_ids_in_invoice)
+
+        # Xóa chi tiết cũ, thay bằng chi tiết mới
+        for old_detail in list(invoice.details):
+            db.session.delete(old_detail)
+
+        new_details = [
+            InvoiceDetail(
+                item_type=item["item_type"], quantity=item["quantity"],
+                unit_price=item["unit_price"], subtotal=item["subtotal"],
+                service_id=item["entity"].id if item["item_type"] == InvoiceItemType.SERVICE else None,
+                product_id=item["entity"].id if item["item_type"] == InvoiceItemType.PRODUCT_USED else None,
+                invoice_id=invoice.id
+            ) for item in validated_items
+        ]
+        db.session.add_all(new_details)
+
+        invoice.total_amount = gross_total
+        db.session.commit()
+        return invoice
+
+    except Exception as ex:
+        db.session.rollback()
+        raise ex
+
+
+# ==========================HELPER FUNCTIONS CHO BÁO CÁO (Internal Helpers)==========================
 
 def _get_period_key(invoice_date, period_type):
     """
@@ -1349,9 +1311,7 @@ def _parse_date_bound(date_str, is_end_of_day=False):
         raise ValidationError("Định dạng ngày không hợp lệ! Vui lòng dùng YYYY-MM-DD.")
 
 
-# =========================================================================
-# HÀM CHÍNH: BÁO CÁO DOANH THU
-# =========================================================================
+# ==========================BÁO CÁO DOANH THU==========================
 
 def get_revenue_report(period_type='day', from_date_str=None, to_date_str=None):
     """
@@ -1390,9 +1350,7 @@ def get_revenue_report(period_type='day', from_date_str=None, to_date_str=None):
     return sorted(groups.values(), key=lambda x: x["period"], reverse=True)
 
 
-# =========================================================================
-# Nghiệp vụ 6: Định mức Sản phẩm theo Dịch vụ (ServiceProduct)
-# =========================================================================
+# ==========================Nghiệp vụ 6: Định mức Sản phẩm theo Dịch vụ (ServiceProduct)==========================
 
 def get_service_products(service_id):
     """Lấy danh sách sản phẩm khả dụng kèm định mức gợi ý cho 1 dịch vụ.
@@ -1481,9 +1439,7 @@ def delete_service_product(sp_id):
         raise Exception("Lỗi hệ thống: Không thể xóa định mức sản phẩm!")
 
 
-# =========================================================================
-# Nghiệp vụ 7: Quản lý Khuyến mãi (Promotion)
-# =========================================================================
+# ==========================Nghiệp vụ 7: Quản lý Khuyến mãi (Promotion)==========================
 
 def get_promotion_by_id(promo_id):
     return Promotion.query.get(promo_id)
