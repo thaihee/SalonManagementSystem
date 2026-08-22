@@ -1,39 +1,237 @@
-name: Run Tests
+name: E2E Automation Tests
+
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+
+
 jobs:
-  test:
+  e2e-tests:
+    name: Playwright E2E Tests
     runs-on: ubuntu-latest
+
+    # =====================================================
+    # MYSQL DATABASE CHỈ DÙNG TRONG GITHUB ACTIONS
+    # =====================================================
     services:
       mysql:
         image: mysql:8.0
+
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: salondb
+
         ports:
           - 3306:3306
+
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
+
+
+    # =====================================================
+    # ENVIRONMENT
+    # =====================================================
+    env:
+      PYTHONPATH: .
+      BASE_URL: http://127.0.0.1:5000
+
+
     steps:
-      - name: Checkout code
+
+      # ===================================================
+      # 1. CHECKOUT SOURCE CODE
+      # ===================================================
+      - name: Checkout source code
         uses: actions/checkout@v5
 
-      - name: Set up Python
+
+      # ===================================================
+      # 2. SETUP PYTHON
+      # ===================================================
+      - name: Set up Python 3.11
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
 
-      - name: Install Playwright browsers
-        run: playwright install --with-deps chromium
+      # ===================================================
+      # 3. INSTALL PYTHON DEPENDENCIES
+      # ===================================================
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run tests
-        run: PYTHONPATH=. pytest
+
+      # ===================================================
+      # 4. INSTALL PLAYWRIGHT + CHROMIUM
+      # ===================================================
+      - name: Install Playwright Chromium
+        run: |
+          playwright install --with-deps chromium
+
+
+      # ===================================================
+      # 5. WAIT FOR MYSQL
+      # ===================================================
+      - name: Wait for MySQL
+        run: |
+          echo "Waiting for MySQL..."
+
+          for i in {1..30}; do
+
+            if mysqladmin ping \
+              -h 127.0.0.1 \
+              -P 3306 \
+              -uroot \
+              -proot \
+              --silent; then
+
+              echo "MySQL is ready!"
+              exit 0
+
+            fi
+
+            echo "Waiting for MySQL... ($i/30)"
+            sleep 2
+
+          done
+
+          echo "MySQL failed to start!"
+          exit 1
+
+
+      # ===================================================
+      # 6. CREATE TABLES + SEED TEST DATABASE
+      # ===================================================
+      - name: Initialize and seed database
+        run: |
+          echo "Initializing test database..."
+
+          python -m app.models
+
+          echo "Database initialized successfully!"
+
+
+      # ===================================================
+      # 7. START FLASK APPLICATION
+      # ===================================================
+      - name: Start Flask server
+        run: |
+          echo "Starting Flask server..."
+
+          nohup python index.py > flask.log 2>&1 &
+
+          echo $! > flask.pid
+
+          echo "Flask process started."
+
+
+      # ===================================================
+      # 8. WAIT UNTIL FLASK IS READY
+      # ===================================================
+      - name: Wait for Flask server
+        run: |
+          echo "Waiting for Flask server..."
+
+          for i in {1..30}; do
+
+            if curl -f http://127.0.0.1:5000/login; then
+
+              echo ""
+              echo "Flask server is ready!"
+              exit 0
+
+            fi
+
+            echo "Waiting for Flask... ($i/30)"
+            sleep 2
+
+          done
+
+          echo ""
+          echo "Flask failed to start!"
+
+          echo "========================================"
+          echo "FLASK LOG"
+          echo "========================================"
+
+          cat flask.log || true
+
+          echo "========================================"
+
+          exit 1
+
+
+      # ===================================================
+      # 9. RUN PLAYWRIGHT E2E TESTS
+      # ===================================================
+      - name: Run Playwright E2E tests
+        run: |
+          echo "Running E2E test suite..."
+
+          pytest test/e2e
+
+
+      # ===================================================
+      # 10. SHOW FLASK LOG IF SOMETHING FAILED
+      # ===================================================
+      - name: Show Flask log on failure
+        if: failure()
+
+        run: |
+          echo "========================================"
+          echo "FLASK LOG"
+          echo "========================================"
+
+          cat flask.log || true
+
+          echo "========================================"
+
+
+      # ===================================================
+      # 11. UPLOAD PYTEST HTML REPORT
+      #
+      # always() = vẫn upload kể cả test FAIL
+      # ===================================================
+      - name: Upload E2E HTML report
+        if: always()
+
+        uses: actions/upload-artifact@v4
+
+        with:
+          name: e2e-html-report
+
+          path: |
+            reports/
+
+          if-no-files-found: warn
+
+          retention-days: 14
+
+
+      # ===================================================
+      # 12. UPLOAD PLAYWRIGHT ARTIFACTS
+      # ===================================================
+      - name: Upload Playwright artifacts
+        if: always()
+
+        uses: actions/upload-artifact@v4
+
+        with:
+          name: playwright-artifacts
+
+          path: |
+            test-results/
+
+          if-no-files-found: ignore
+
+          retention-days: 14
