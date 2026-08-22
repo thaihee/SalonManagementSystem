@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 import pytest
 from flask_login import login_user
 from app.models import User
@@ -37,25 +39,97 @@ class TestAuthCSRFProtection:
 # =========================================================================
 class TestStateChangingRoutesCSRFProtection:
 
-    def test_create_appointment_with_valid_csrf_header_success(self, app_csrf_enabled, client_csrf_enabled, customer_user, sample_service, valid_csrf_token):
-        """Gửi API JSON kèm Header X-CSRFToken chuẩn -> Tạo lịch hẹn thành công (201)"""
-        # Đăng nhập bằng POST /login thực tế để Flask-Login tự ghi Cookie Session
-        client_csrf_enabled.post('/login', data={
-            'username': customer_user.username,
-            'password': customer_user.raw_password,
-            'csrf_token': valid_csrf_token
-        })
+    def test_create_appointment_with_valid_csrf_header_success(
+            self,
+            app_csrf_enabled,
+            client_csrf_enabled,
+            customer_user,
+            sample_service,
+            staff_user,
+            valid_csrf_token
+    ):
+        """
+        Gửi API JSON kèm Header X-CSRFToken chuẩn
+        -> request vượt qua CSRF
+        -> tạo lịch hẹn thành công.
+        """
+
+        # ==========================================
+        # 1. Login thật
+        # ==========================================
+
+        login_response = client_csrf_enabled.post(
+            '/login',
+            data={
+                'username': customer_user.username,
+                'password': customer_user.raw_password,
+                'csrf_token': valid_csrf_token
+            }
+        )
+
+        assert login_response.status_code == 302
+
+        # ==========================================
+        # 2. Chọn ngày tương lai
+        # ==========================================
+
+        target_date = (
+                date.today() + timedelta(days=2)
+        ).strftime('%Y-%m-%d')
+
+        # ==========================================
+        # 3. Lấy slot thực sự khả dụng
+        # GET không cần CSRF
+        # ==========================================
+
+        slot_response = client_csrf_enabled.get(
+            '/appointments/available-slots'
+            f'?service_id={sample_service.id}'
+            f'&date={target_date}'
+            f'&staff_id={staff_user.id}'
+        )
+
+        assert slot_response.status_code == 200
+
+        available_slots = (
+            slot_response.json['available_slots']
+        )
+
+        assert available_slots, (
+            "Không có slot khả dụng để test CSRF"
+        )
+
+        selected_time = available_slots[0]
+
+        # ==========================================
+        # 4. POST với CSRF header hợp lệ
+        # ==========================================
 
         response = client_csrf_enabled.post(
             '/appointments',
             json={
                 'service_id': sample_service.id,
-                'date': '2026-08-25',
-                'time': '10:00'
+                'staff_id': staff_user.id,
+                'date': target_date,
+                'time': selected_time
             },
-            headers={'X-CSRFToken': valid_csrf_token}
+            headers={
+                'X-CSRFToken': valid_csrf_token
+            }
         )
-        assert response.status_code in (201, 200)
+
+        print(
+            "\n[CSRF CREATE APPOINTMENT]",
+            response.status_code,
+            response.get_data(as_text=True)
+        )
+
+        # ==========================================
+        # 5. Request phải vượt qua CSRF
+        # và tạo appointment thành công
+        # ==========================================
+
+        assert response.status_code == 201
 
     def test_cancel_appointment_with_valid_csrf_header_success(self, app_csrf_enabled, client_csrf_enabled, customer_user, sample_appointment, valid_csrf_token):
         """Hủy lịch hẹn qua API JSON gửi kèm Header X-CSRFToken chuẩn -> Thành công (200)"""
