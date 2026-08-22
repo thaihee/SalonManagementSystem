@@ -782,20 +782,49 @@ def create_appointment(customer_id, service_id, staff_id=None, date_str=None, ti
         # 6b. BỔ SUNG MỚI: Nếu chọn Ngẫu nhiên (staff_id = None) -> Tự động tìm 1 Stylist đang rảnh ở khung giờ này
         all_staffs = User.query.filter_by(role=UserRole.STAFF, active=True).all()
         new_end = booking_datetime + timedelta(minutes=service.duration_minutes)
+        assigned_staff_id = None
 
         for st in all_staffs:
             # Kiểm tra xem Stylist này có bị bận lịch nào trùng khung giờ không
-            has_conflict = Appointment.query.filter(
+            staff_appointments = Appointment.query.filter(
                 Appointment.staff_id == st.id,
                 Appointment.status != AppointmentStatus.CANCELLED,
-                Appointment.active.__eq__(True),
-                Appointment.appointment_date < new_end,
-                (Appointment.appointment_date + timedelta(minutes=service.duration_minutes)) > booking_datetime
-            ).first()
+                Appointment.active.__eq__(True)
+            ).all()
 
+            has_conflict = False
+
+            for existing in staff_appointments:
+                existing_duration = (
+                    existing.service.duration_minutes
+                    if existing.service else 30
+                )
+
+                existing_start = existing.appointment_date
+                existing_end = existing_start + timedelta(
+                    minutes=existing_duration
+                )
+
+                # Hai khoảng thời gian giao nhau
+                if (
+                        booking_datetime < existing_end
+                        and new_end > existing_start
+                ):
+                    has_conflict = True
+                    break
+
+            # Stylist này rảnh
             if not has_conflict:
                 assigned_staff_id = st.id
-                break # Gán cho Stylist rảnh đầu tiên tìm thấy
+                break
+
+            # Không có stylist nào rảnh
+        if assigned_staff_id is None:
+            raise ValidationError(
+                "Không có stylist nào khả dụng trong khung giờ này!"
+            )
+
+
 
     # 7. RÀO BẢO VỆ: Chặn khách hàng tự đặt trùng khung giờ với chính mình
     new_end = booking_datetime + timedelta(minutes=service.duration_minutes)

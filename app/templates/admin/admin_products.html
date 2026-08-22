@@ -101,7 +101,13 @@
                     {% if products %}
                         {% for p in products %}
                         {% set is_low = p.stock_quantity <= p.min_stock_level %}
-                        <tr style="border-bottom: 1px solid #F5EFE9; vertical-align: middle; {{ 'background: #FFF8F6;' if is_low else '' }}">
+                        <tr
+                            id="row-product-{{ p.id }}"
+                            data-product-id="{{ p.id }}"
+                            style="
+                                border-bottom: 1px solid #F5EFE9;
+                                vertical-align: middle;
+                                {{ 'background: #FFF8F6;' if is_low else '' }}">
                             <td style="padding: 14px 20px; font-weight: 700; color: #8C827A;">#{{ p.id }}</td>
                             <td style="padding: 14px 20px; font-weight: 700; color: #2C2623;">
                                 {{ p.product_name }}

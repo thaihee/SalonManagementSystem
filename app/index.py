@@ -207,6 +207,7 @@ def users_me_update():
 
 # GET /appointments/available-slots?staff_id=1&service_id=2&date=2026-08-16&appointment_id=5
 @app.route('/appointments/available-slots', methods=['GET'])
+@login_required
 def get_available_slots_route():
     service_id = request.args.get('service_id')
     date_str = request.args.get('date')
@@ -376,7 +377,6 @@ def cancel_appointment_route(appointment_id):
 
 # 7.1 POST /invoices - Tạo hóa đơn
 @app.route('/invoices', methods=['POST'])
-@login_required
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def create_invoice_route():
     data = request.get_json(silent=True) or request.form
@@ -472,7 +472,6 @@ def my_invoices_view():
 
 # Giao diện lập hóa đơn nháp (Nhân viên)
 @app.route('/staff/create-invoice', methods=['GET'])
-@login_required
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def create_invoice_view():
     appointment_id = request.args.get('appointment_id', type=int)
@@ -513,7 +512,6 @@ def create_invoice_view():
 
 # Giao diện danh sách hóa đơn do Nhân viên lập
 @app.route('/staff/invoices', methods=['GET'])
-@login_required
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def staff_invoices_view():
     status_str = request.args.get('status', 'ALL')
@@ -567,9 +565,8 @@ def staff_invoices_view():
     ), 200
 
 
-# Lễ tân quản lý toàn bộ danh sách hóa đơn (Xem nháp, Xem đã thanh toán)
+#Lễ tân quản lý toàn bộ danh sách hóa đơn (Xem nháp, Xem đã thanh toán)
 @app.route('/reception/invoices', methods=['GET'])
-@login_required
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def reception_invoices_view():
     date_str = request.args.get('date')
@@ -627,7 +624,6 @@ def reception_invoices_view():
 
 # Lễ tân xem và tra cứu toàn bộ lịch hẹn của Salon (Đã hỗ trợ phân trang)
 @app.route('/reception/appointments', methods=['GET'])
-@login_required
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def reception_appointments_view():
     date_str = request.args.get('date')
@@ -669,7 +665,6 @@ def reception_appointments_view():
 
 # PATCH /invoices/<id>/confirm-payment - Lễ tân xác nhận thanh toán (DRAFT -> PAID)
 @app.route('/invoices/<int:invoice_id>/confirm-payment', methods=['PATCH'])
-@login_required
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def confirm_invoice_payment_route(invoice_id):
     data = request.get_json(silent=True) or request.form
@@ -705,7 +700,6 @@ def confirm_invoice_payment_route(invoice_id):
 
 
 @app.route('/reception/invoice/<int:invoice_id>/checkout', methods=['GET'])
-@login_required
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def invoice_checkout_view(invoice_id):
     invoice = dao.get_invoice_by_id(invoice_id)
@@ -724,9 +718,8 @@ def invoice_checkout_view(invoice_id):
     ), 200
 
 
-# =========================================================================
-# 8. ĐỔI MẬT KHẨU
-# =========================================================================
+# ==========================8. ĐỔI MẬT KHẨU==========================
+
 @app.route('/users/change-password', methods=['POST'])
 @login_required
 def change_password_route():
@@ -755,9 +748,7 @@ def change_password_route():
         return jsonify(success=False, error="Lỗi hệ thống khi đổi mật khẩu!"), 500
 
 
-# =========================================================================
-# 9. LỊCH HẸN CỦA TÔI (KHÁCH HÀNG) / LỊCH HẸN ĐƯỢC GIAO (NHÂN VIÊN)
-# =========================================================================
+# ==========================9. LỊCH HẸN==========================
 
 # Lịch hẹn cá nhân của Khách hàng (Có Lọc & Phân trang)
 @app.route('/appointments/me', methods=['GET'])
@@ -819,7 +810,6 @@ def my_appointments_view():
 
 # Nhân viên xem danh sách lịch hẹn được giao
 @app.route('/staff/appointments', methods=['GET'])
-@login_required
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def staff_appointments_view():
     date_str = request.args.get('date', date.today().strftime('%Y-%m-%d'))
@@ -851,7 +841,6 @@ def staff_appointments_view():
 
 # API trả về danh sách dữ liệu JSON cho JS fetch
 @app.route('/api/staff/appointments', methods=['GET'])
-@login_required
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def staff_appointments_api():
     date_str = request.args.get('date')
@@ -881,11 +870,8 @@ def staff_appointments_api():
         return jsonify({"error": str(ex)}), 400
 
 
-# =========================================================================
-# 10. TRA CỨU KHÁCH HÀNG (NHÂN VIÊN / QUẢN LÝ)
-# =========================================================================
+# ==========================10. TRA CỨU KHÁCH HÀNG (NHÂN VIÊN / QUẢN LÝ)==========================
 @app.route('/customers/search', methods=['GET'])
-@login_required
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def search_customers_route():
     """Nhân viên tra cứu khách hàng theo tên hoặc SĐT khi lập hóa đơn.
@@ -914,10 +900,7 @@ def search_customers_route():
     }), 200
 
 
-
-# =========================================================================
-# XỬ LÝ LỖI TRANG (ERROR HANDLERS)
-# =========================================================================
+# ==========================XỬ LÝ LỖI TRANG (ERROR HANDLERS)==========================
 
 @app.errorhandler(403)
 def forbidden_error(error):
@@ -928,8 +911,6 @@ def not_found_error(error):
     return render_template('error/404.html'), 404
 
 
-# =========================================================================
-# CHẠY ỨNG DỤNG
-# =========================================================================
+# ==========================CHẠY ỨNG DỤNG==========================
 if __name__ == "__main__":
     app.run(debug=True)

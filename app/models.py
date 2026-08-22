@@ -208,7 +208,7 @@ class InvoiceDetail(BaseModel):
 
 if __name__ == '__main__':
     with app.app_context():
-        # db.drop_all()
+        #db.drop_all()
         db.create_all()
 
         password = str(hashlib.md5('123456'.encode('utf-8')).hexdigest())
@@ -319,7 +319,7 @@ if __name__ == '__main__':
         # ---------- APPOINTMENTS ----------
         now = datetime.now().replace(minute=0, second=0, microsecond=0)
         appointments_data = [
-            Appointment(appointment_date=now.replace(hour=14), status=AppointmentStatus.CONFIRMED,
+            Appointment(appointment_date=now.replace(hour=14), status=AppointmentStatus.COMPLETED,
                         customer_id=cus1.id, staff_id=staff1.id, service_id=svc['Cắt tóc nam'].id),
             Appointment(appointment_date=now.replace(hour=16), status=AppointmentStatus.CONFIRMED,
                         customer_id=cus2.id, staff_id=staff2.id, service_id=svc['Uốn tóc'].id),

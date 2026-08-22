@@ -362,7 +362,10 @@ function loadDraftDetails(invoiceId) {
 
 // LƯU THAY ĐỔI HÓA ĐƠN NHÁP
 function saveDraftInvoice(invoiceId) {
-    const inputs = document.querySelectorAll(`.draft-qty-input-${invoiceId}`);
+    const inputs = document.querySelectorAll(
+        `.draft-qty-input-${invoiceId}`
+    );
+
     const details = [];
 
     inputs.forEach(input => {
@@ -373,46 +376,80 @@ function saveDraftInvoice(invoiceId) {
         });
     });
 
-    fetch(`/admin/invoices/${invoiceId}`, {
+    csrfFetch(`/admin/invoices/${invoiceId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ details: details })
+        body: JSON.stringify({
+            details: details
+        })
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            showToast('Cập nhật hóa đơn nháp thành công!', 'success');
-            setTimeout(() => window.location.reload(), 600);
+            showToast(
+                'Cập nhật hóa đơn nháp thành công!',
+                'success'
+            );
+
+            setTimeout(
+                () => window.location.reload(),
+                600
+            );
         } else {
-            showToast(data.error || 'Không thể cập nhật!', 'error');
+            showToast(
+                data.error || 'Không thể cập nhật!',
+                'error'
+            );
         }
     })
     .catch(err => {
         console.error(err);
-        showToast('Lỗi hệ thống khi cập nhật!', 'error');
+
+        showToast(
+            'Lỗi hệ thống khi cập nhật!',
+            'error'
+        );
     });
 }
 
 // HỦY HÓA ĐƠN NHÁP
 function cancelDraftInvoice(invoiceId) {
-    if (!confirm(`Bạn có chắc chắn muốn HỦY Hóa đơn nháp #${invoiceId}? Lịch hẹn liên quan sẽ được giải phóng.`)) return;
+    if (!confirm(
+        `Bạn có chắc chắn muốn HỦY Hóa đơn nháp #${invoiceId}? ` +
+        `Lịch hẹn liên quan sẽ được giải phóng.`
+    )) return;
 
-    fetch(`/admin/invoices/${invoiceId}/cancel`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' }
-    })
+    csrfFetch(
+        `/admin/invoices/${invoiceId}/cancel`,
+        {
+            method: 'PATCH'
+        }
+    )
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            showToast('Đã hủy hóa đơn nháp thành công!', 'success');
-            setTimeout(() => window.location.reload(), 600);
+            showToast(
+                'Đã hủy hóa đơn nháp thành công!',
+                'success'
+            );
+
+            setTimeout(
+                () => window.location.reload(),
+                600
+            );
         } else {
-            showToast(data.error || 'Không thể hủy hóa đơn!', 'error');
+            showToast(
+                data.error || 'Không thể hủy hóa đơn!',
+                'error'
+            );
         }
     })
     .catch(err => {
         console.error(err);
-        showToast('Lỗi kết nối máy chủ!', 'error');
+
+        showToast(
+            'Lỗi kết nối máy chủ!',
+            'error'
+        );
     });
 }
 </script>

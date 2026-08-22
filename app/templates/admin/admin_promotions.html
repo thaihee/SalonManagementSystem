@@ -53,7 +53,10 @@
                 <tbody id="promoTableBody" style="font-size: 13px; color: #2C2623;">
                     {% if promotions %}
                         {% for p in promotions %}
-                        <tr style="border-bottom: 1px solid #F5EFE9; vertical-align: middle;">
+                        <tr
+                            id="row-promotion-{{ p.id }}"
+                            data-promotion-id="{{ p.id }}"
+                            style="border-bottom: 1px solid #F5EFE9; vertical-align: middle;">
                             <td style="padding: 14px 20px; font-weight: 700; color: #8C827A;">#{{ p.id }}</td>
                             <td style="padding: 14px 20px;">
                                 <span style="background: #FAF7F2; border: 1px solid #D8C8B8; color: #2C2623; font-weight: 700; padding: 4px 12px; border-radius: 6px; font-size: 12px; letter-spacing: 0.5px;">

@@ -120,7 +120,10 @@
                 <tbody style="font-size: 13px; color: #2C2623;">
                     {% if users %}
                         {% for u in users %}
-                        <tr style="border-bottom: 1px solid #F5EFE9; vertical-align: middle; {{ 'opacity: 0.6; background: #FAF7F2;' if not u.active else '' }}">
+                        <tr
+                            id="row-user-{{ u.id }}"
+                            data-user-id="{{ u.id }}"
+                            style="border-bottom: 1px solid #F5EFE9; vertical-align: middle; {{ 'opacity: 0.6; background: #FAF7F2;' if not u.active else '' }}">
                             <td style="padding: 14px 20px; font-weight: 700; color: #8C827A;">#{{ u.id }}</td>
                             <td style="padding: 14px 20px; font-weight: 700; color: #2C2623;">
                                 {{ u.full_name }}

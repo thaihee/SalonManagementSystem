@@ -45,8 +45,8 @@ def app_csrf_enabled():
     with flask_app.app_context():
         db.create_all()
         yield flask_app
-        db.session.remove()
-        db.drop_all()
+        # db.session.remove()
+        # db.drop_all()
 
 
 @pytest.fixture

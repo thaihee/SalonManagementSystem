@@ -72,6 +72,8 @@
                     {% if appointments %}
                         {% for appt in appointments %}
                         <tr class="appt-row"
+                            id="row-appt-{{ appt.id }}"
+                            data-appointment-id="{{ appt.id }}"
                             data-status="{{ appt.status.name }}"
                             data-customer-name="{{ appt.customer.full_name.lower() if appt.customer else '' }}"
                             data-customer-phone="{{ appt.customer.phone if appt.customer else '' }}">

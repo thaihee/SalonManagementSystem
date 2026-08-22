@@ -1,0 +1,377 @@
+/* =========================================
+   MINIMALIST MUSE - E2E TEST REPORT
+   ========================================= */
+
+:root {
+    --bg: #f6f4f1;
+    --surface: #ffffff;
+    --text: #2c2623;
+    --muted: #807873;
+    --border: #e7e2dd;
+
+    --success: #267a4b;
+    --success-bg: #edf7f1;
+
+    --danger: #b94242;
+    --danger-bg: #fbeeee;
+
+    --warning: #a57522;
+}
+
+
+/* =========================================
+   GLOBAL
+   ========================================= */
+
+body {
+    margin: 0;
+    padding: 40px;
+
+    background: var(--bg);
+    color: var(--text);
+
+    font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 14px;
+}
+
+body > * {
+    max-width: 1500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/* =========================================
+   MAIN TITLE
+   ========================================= */
+
+h1 {
+    margin: 0 0 8px;
+
+    font-size: 32px;
+    font-weight: 700;
+
+    letter-spacing: -0.8px;
+
+    color: var(--text);
+}
+
+h1::before {
+    content: "MINIMALIST MUSE";
+    display: block;
+
+    margin-bottom: 8px;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    letter-spacing: 3px;
+
+    color: var(--muted);
+}
+
+h1::after {
+    content: "Salon Management System · Playwright + Pytest";
+    display: block;
+
+    margin-top: 8px;
+
+    font-size: 14px;
+    font-weight: 400;
+
+    letter-spacing: 0;
+
+    color: var(--muted);
+}
+
+
+/* =========================================
+   GENERATED INFO
+   ========================================= */
+
+h1 + p {
+    margin-top: 18px;
+    margin-bottom: 30px;
+
+    color: var(--muted);
+    font-size: 13px;
+}
+
+
+/* =========================================
+   SECTION HEADINGS
+   ========================================= */
+
+h2 {
+    margin-top: 30px;
+    margin-bottom: 14px;
+
+    font-size: 16px;
+    font-weight: 700;
+
+    letter-spacing: 0.3px;
+}
+
+
+/* =========================================
+   ENVIRONMENT
+   ========================================= */
+
+#environment {
+    padding: 22px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    box-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+#environment table {
+    width: auto;
+
+    border-collapse: collapse;
+}
+
+#environment td {
+    padding: 8px 14px;
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+#environment td:first-child {
+    font-weight: 600;
+    color: var(--muted);
+}
+
+
+/* =========================================
+   SUMMARY
+   ========================================= */
+
+#summary {
+    margin-top: 20px;
+
+    padding: 22px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    box-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+
+/* =========================================
+   FILTERS
+   ========================================= */
+
+#results-table-filter {
+    margin: 16px 0;
+
+    padding: 12px 14px;
+
+    background: #faf9f7;
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+
+/* =========================================
+   RESULTS TABLE
+   ========================================= */
+
+#results-table {
+    width: 100%;
+
+    margin-top: 18px;
+
+    border-collapse: separate;
+    border-spacing: 0;
+
+    overflow: hidden;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+#results-table th {
+    padding: 13px 16px;
+
+    background: #2c2623;
+    color: #ffffff;
+
+    text-align: left;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+#results-table td {
+    padding: 12px 16px;
+
+    border-bottom:
+        1px solid var(--border);
+
+    vertical-align: middle;
+}
+
+#results-table tbody tr {
+    transition:
+        background 0.15s ease;
+}
+
+#results-table tbody tr:hover {
+    background: #faf9f7;
+}
+
+
+/* =========================================
+   RESULT STATUS
+   ========================================= */
+
+.passed {
+    color: var(--success) !important;
+    font-weight: 700;
+}
+
+.failed {
+    color: var(--danger) !important;
+    font-weight: 700;
+}
+
+.skipped {
+    color: var(--warning) !important;
+    font-weight: 700;
+}
+
+
+/* =========================================
+   TEST NAME
+   ========================================= */
+
+.col-name {
+    font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-weight: 500;
+
+    color: #504946;
+}
+
+
+/* =========================================
+   DURATION
+   ========================================= */
+
+.col-duration {
+    white-space: nowrap;
+
+    font-variant-numeric:
+        tabular-nums;
+
+    color: var(--muted);
+}
+
+
+/* =========================================
+   EXPANDED ERROR / LOG
+   ========================================= */
+
+.log {
+    margin: 12px;
+
+    padding: 16px;
+
+    background: #252321;
+    color: #f1efed;
+
+    border-radius: 10px;
+
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+
+    font-size: 12px;
+    line-height: 1.6;
+
+    overflow-x: auto;
+}
+
+
+/* =========================================
+   LINKS
+   ========================================= */
+
+a {
+    color: #75655c;
+
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================
+   SCREENSHOT
+   ========================================= */
+
+img {
+    display: block;
+
+    max-width: 1000px;
+    width: 100%;
+
+    margin-top: 14px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    box-shadow:
+        0 5px 18px rgba(0, 0, 0, 0.08);
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 900px) {
+
+    body {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 25px;
+    }
+
+    #results-table {
+        font-size: 12px;
+    }
+
+    #results-table td,
+    #results-table th {
+        padding: 10px;
+    }
+}

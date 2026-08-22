@@ -104,7 +104,10 @@
                     {% if services %}
                         {% for s in services %}
                         <!-- HÀNG HIỂN THỊ THÔNG TIN -->
-                        <tr style="border-bottom: 1px solid #F5EFE9; vertical-align: middle;">
+                        <tr
+                            id="row-service-{{ s.id }}"
+                            data-service-id="{{ s.id }}"
+                            style="border-bottom: 1px solid #F5EFE9; vertical-align: middle;">
                             <td style="padding: 14px 20px; font-weight: 700; color: #8C827A;">#{{ s.id }}</td>
 
                             <td style="padding: 14px 20px;">

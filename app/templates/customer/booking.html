@@ -41,7 +41,7 @@
             <div class="form-group-luxury">
                 <label for="staff_id"><i class="fa-solid fa-user-tie"></i> Chọn Kỹ Thuật Viên / Stylist (Tùy chọn)</label>
                 <select id="staff_id" name="staff_id" class="form-control-luxury">
-                    <option value="">-- Ngẫu nhiên / Salon tự xếp --</option>
+                    <option value="">-- Salon tự động sắp xếp Stylist ----</option>
                     {% for st in staff %}
                         <option value="{{ st.id }}">{{ st.full_name }}</option>
                     {% endfor %}

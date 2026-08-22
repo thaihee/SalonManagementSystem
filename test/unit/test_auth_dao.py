@@ -3,7 +3,6 @@ import pytest
 from app import dao
 from app.models import UserRole
 from app.exceptions import ValidationError, DuplicateError, NotFoundError
-from app.test.unit import conftest
 
 
 # =========================================================================

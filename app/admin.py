@@ -3,7 +3,6 @@ import math
 from io import StringIO, BytesIO
 
 from flask import request, jsonify, render_template, Response, send_file
-from flask_login import login_required
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 
@@ -17,7 +16,6 @@ from app.exceptions import ValidationError, DuplicateError, NotFoundError
 # 0. TRANG QUẢN TRỊ ADMIN (DASHBOARD TỔNG QUAN)
 # =========================================================================
 @app.route('/admin', methods=['GET'])
-@login_required
 @role_required(UserRole.ADMIN)
 def admin_dashboard_view():
     kw = request.args.get('kw', '').strip()
@@ -95,7 +93,6 @@ def admin_dashboard_view():
 # =========================Nghiệp vụ 2: CRUD Dịch vụ (Quản lý)==========================
 
 @app.route('/admin/services', methods=['GET'])
-@login_required
 @role_required(UserRole.ADMIN)
 def list_services():
     page = request.args.get('page', 1, type=int)
@@ -139,7 +136,6 @@ def create_service():
 
 
 @app.route('/admin/services/<int:service_id>', methods=['PUT'])
-@login_required
 @role_required(UserRole.ADMIN)
 def update_service_route(service_id):
     data = request.get_json(silent=True) or {}
@@ -247,7 +243,6 @@ def _serialize_user(u):
     }
 
 @app.route('/admin/users', methods=['GET'])
-@login_required
 @role_required(UserRole.ADMIN)
 def list_users_route():
     role_filter = request.args.get('role')
@@ -351,7 +346,6 @@ def deactivate_user_route(user_id):
 # =========================Nghiệp vụ 4: Báo cáo Doanh thu (Quản lý)==========================
 
 @app.route('/admin/reports/revenue', methods=['GET'])
-@login_required
 @role_required(UserRole.ADMIN)
 def revenue_report_route():
     period_type = request.args.get('period_type', 'day').lower()
@@ -543,7 +537,6 @@ def export_revenue_report_route():
 # =========================Nghiệp vụ 3: CRUD Sản phẩm (Quản lý)==========================
 
 @app.route('/admin/products', methods=['GET'])
-@login_required
 @role_required(UserRole.ADMIN)
 def list_products():
     page = request.args.get('page', 1, type=int)
@@ -840,7 +833,6 @@ def cancel_invoice_draft_route(invoice_id):
 
 # API trả về danh sách chi tiết của Hóa đơn nháp để Admin sửa tại chỗ (Inline Edit)
 @app.route('/admin/invoices/<int:invoice_id>/draft-detail', methods=['GET'])
-@login_required
 @role_required(UserRole.ADMIN)
 def get_invoice_draft_detail_route(invoice_id):
     invoice = dao.get_invoice_by_id(invoice_id)
