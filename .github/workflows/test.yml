@@ -128,7 +128,7 @@ jobs:
         run: |
           echo "Starting Flask server..."
 
-          nohup python index.py > flask.log 2>&1 &
+          nohup python -m app.index > flask.log 2>&1 &
 
           echo $! > flask.pid
 
