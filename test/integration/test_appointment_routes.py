@@ -20,34 +20,96 @@ class TestBookingViewAndSlotsDetailed:
         response = customer_client.get(f'/booking?service_id={sample_service.id}')
         assert response.status_code == 200
 
-    def test_get_available_slots_missing_params_raises_400(self, client):
-        """Gọi API tra cứu slot thiếu date hoặc service_id -> 400 Bad Request"""
-        response = client.get('/appointments/available-slots?service_id=1')
-        assert response.status_code == 400
-        assert response.json['error'] == "Thiếu service_id hoặc date!"
+    def test_get_available_slots_missing_params_raises_400(
+            self,
+            customer_client
+    ):
+        """
+        Gọi API tra cứu slot thiếu date hoặc service_id
+        -> 400 Bad Request
+        """
+        response = customer_client.get(
+            '/appointments/available-slots?service_id=1'
+        )
 
-    def test_get_available_slots_non_existent_service_raises_404(self, client):
-        """Tra cứu slot cho Dịch vụ không tồn tại -> 404 Not Found"""
-        target_date = (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
-        response = client.get(f'/appointments/available-slots?service_id=99999&date={target_date}')
+        assert response.status_code == 400
+        assert (
+                response.json['error']
+                == "Thiếu service_id hoặc date!"
+        )
+
+    def test_get_available_slots_non_existent_service_raises_404(
+            self,
+            customer_client
+    ):
+        """
+        Tra cứu slot cho Dịch vụ không tồn tại
+        -> 404 Not Found
+        """
+        target_date = (
+                date.today() + timedelta(days=2)
+        ).strftime('%Y-%m-%d')
+
+        response = customer_client.get(
+            '/appointments/available-slots'
+            f'?service_id=99999'
+            f'&date={target_date}'
+        )
+
         assert response.status_code == 404
 
-    def test_get_available_slots_success(self, client, sample_service, staff_user):
-        """Tra cứu khung giờ trống hợp lệ -> 200 OK kèm danh sách slots"""
-        target_date = (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
-        response = client.get(
-            f'/appointments/available-slots?service_id={sample_service.id}&date={target_date}&staff_id={staff_user.id}'
+    def test_get_available_slots_success(
+            self,
+            customer_client,
+            sample_service,
+            staff_user
+    ):
+        """
+        Tra cứu khung giờ trống hợp lệ
+        -> 200 OK kèm danh sách slots
+        """
+        target_date = (
+                date.today() + timedelta(days=2)
+        ).strftime('%Y-%m-%d')
+
+        response = customer_client.get(
+            '/appointments/available-slots'
+            f'?service_id={sample_service.id}'
+            f'&date={target_date}'
+            f'&staff_id={staff_user.id}'
         )
+
         assert response.status_code == 200
         assert response.json['date'] == target_date
-        assert isinstance(response.json['available_slots'], list)
-
-    def test_get_available_slots_exclude_appointment_id(self, client, sample_appointment):
-        """Tra cứu slot khi đang chỉnh sửa lịch hẹn gốc (exclude_appointment_id) -> 200 OK"""
-        target_date = sample_appointment.appointment_date.strftime('%Y-%m-%d')
-        response = client.get(
-            f'/appointments/available-slots?service_id={sample_appointment.service_id}&date={target_date}&staff_id={sample_appointment.staff_id}&appointment_id={sample_appointment.id}'
+        assert isinstance(
+            response.json['available_slots'],
+            list
         )
+
+    def test_get_available_slots_exclude_appointment_id(
+            self,
+            customer_client,
+            sample_appointment
+    ):
+        """
+        Tra cứu slot khi đang chỉnh sửa lịch hẹn gốc
+        (exclude appointment hiện tại)
+        -> 200 OK
+        """
+        target_date = (
+            sample_appointment
+            .appointment_date
+            .strftime('%Y-%m-%d')
+        )
+
+        response = customer_client.get(
+            '/appointments/available-slots'
+            f'?service_id={sample_appointment.service_id}'
+            f'&date={target_date}'
+            f'&staff_id={sample_appointment.staff_id}'
+            f'&appointment_id={sample_appointment.id}'
+        )
+
         assert response.status_code == 200
 
 
@@ -80,17 +142,85 @@ class TestCreateAppointmentRouteDetailed:
         assert response.json['message'] == "Đặt lịch hẹn thành công!"
         assert response.json['appointment']['status'] == "CONFIRMED"
 
-    def test_create_appointment_without_staff_success(self, customer_client, sample_service):
-        """Tạo lịch hẹn không chỉ định staff (staff_id=None) -> Lịch hẹn được tạo thành công với staff_id = None"""
-        target_date = (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
-        response = customer_client.post('/appointments', json={
-            'service_id': sample_service.id,
-            'date': target_date,
-            'time': '11:00'
-        })
+    def test_create_appointment_without_staff_success(
+            self,
+            customer_client,
+            sample_service,
+            staff_user
+    ):
+        """
+        Customer không chỉ định Stylist
+        -> hệ thống tự động gán 1 Stylist khả dụng.
+        """
+
+        target_date = (
+                date.today() + timedelta(days=2)
+        ).strftime('%Y-%m-%d')
+
+        # ==========================================
+        # 1. Lấy slot hợp lệ
+        # ==========================================
+
+        slot_response = customer_client.get(
+            '/appointments/available-slots'
+            f'?service_id={sample_service.id}'
+            f'&date={target_date}'
+        )
+
+        assert slot_response.status_code == 200
+
+        available_slots = (
+            slot_response.json['available_slots']
+        )
+
+        assert available_slots
+
+        selected_time = available_slots[0]
+
+        # ==========================================
+        # 2. POST nhưng KHÔNG gửi staff_id
+        # ==========================================
+
+        response = customer_client.post(
+            '/appointments',
+            json={
+                'service_id': sample_service.id,
+                'date': target_date,
+                'time': selected_time
+            }
+        )
+
+        print(
+            "\n[WITHOUT STAFF]",
+            response.status_code,
+            response.get_data(as_text=True)
+        )
+
+        # ==========================================
+        # 3. Phải tạo thành công
+        # ==========================================
+
         assert response.status_code == 201
-        # Thực tế hệ thống cho phép staff_id = None (Lễ tân sẽ xếp người sau)
-        assert response.json['appointment']['staff_id'] is None
+
+        # ==========================================
+        # 4. Hệ thống phải tự gán Stylist
+        # ==========================================
+
+        assert (
+                response.json[
+                    'appointment'
+                ]['staff_id']
+                is not None
+        )
+
+        # Vì test DB hiện chỉ tạo staff_user này,
+        # có thể kiểm tra chính xác luôn
+        assert (
+                response.json[
+                    'appointment'
+                ]['staff_id']
+                == staff_user.id
+        )
 
     def test_create_appointment_missing_required_fields_raises_400(self, customer_client):
         """Tạo lịch hẹn thiếu thông tin (thiếu giờ/ngày/dịch vụ) -> 400 Bad Request"""
@@ -123,17 +253,100 @@ class TestCreateAppointmentRouteDetailed:
         })
         assert response.status_code == 400
 
-    def test_create_appointment_idor_protection(self, customer_client, customer_user, sample_service):
-        """Customer truyền customer_id của người khác -> Hệ thống tự ép về ID chính họ (Chống IDOR)"""
-        target_date = (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
-        response = customer_client.post('/appointments', json={
-            'customer_id': 99999,  # Cố tình giả mạo ID
-            'service_id': sample_service.id,
-            'date': target_date,
-            'time': '16:00'
-        })
+    def test_create_appointment_idor_protection(
+            self,
+            customer_client,
+            customer_user,
+            sample_service,
+            staff_user
+    ):
+        """
+        Customer truyền customer_id giả
+        -> backend phải bỏ ID giả,
+           dùng ID user đang đăng nhập.
+        """
+
+        target_date = (
+                date.today() + timedelta(days=3)
+        ).strftime('%Y-%m-%d')
+
+        # ==========================================
+        # 1. Lấy slot khả dụng
+        # ==========================================
+
+        slot_response = customer_client.get(
+            '/appointments/available-slots'
+            f'?service_id={sample_service.id}'
+            f'&date={target_date}'
+        )
+
+        assert slot_response.status_code == 200
+
+        available_slots = (
+            slot_response.json['available_slots']
+        )
+
+        assert available_slots
+
+        selected_time = available_slots[0]
+
+        # ==========================================
+        # 2. Cố tình gửi customer_id giả
+        # ==========================================
+
+        response = customer_client.post(
+            '/appointments',
+            json={
+                'customer_id': 99999,
+                'service_id': sample_service.id,
+                'date': target_date,
+                'time': selected_time
+            }
+        )
+
+        print(
+            "\n[IDOR CREATE]",
+            response.status_code,
+            response.get_data(as_text=True)
+        )
+
+        # ==========================================
+        # 3. Appointment vẫn được tạo
+        # ==========================================
+
         assert response.status_code == 201
-        assert response.json['appointment']['customer_id'] == customer_user.id
+
+        # ==========================================
+        # 4. customer_id giả phải bị bỏ qua
+        # ==========================================
+
+        assert (
+                response.json[
+                    'appointment'
+                ]['customer_id']
+                == customer_user.id
+        )
+
+        # Auto assign phải hoạt động
+        assert (
+                response.json[
+                    'appointment'
+                ]['staff_id']
+                == staff_user.id
+        )
+
+        # ==========================================
+        # 3. Appointment vẫn phải được tạo
+        # ==========================================
+        assert response.status_code == 201
+
+        # ==========================================
+        # 4. Backend phải bỏ customer_id giả
+        # ==========================================
+        assert (
+                response.json['appointment']['customer_id']
+                == customer_user.id
+        )
 
 
 # =========================================================================
