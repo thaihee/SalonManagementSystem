@@ -144,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAvailableSlots();
     }
 
+    let slotsRequestController = null;
     // 5. Hàm Fetch danh sách khung giờ trống (8:00 - 20:00)
     async function fetchAvailableSlots() {
         const serviceId = serviceInput.value;
@@ -154,49 +155,123 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = true;
 
         if (!serviceId || !dateStr) {
-            slotsContainer.innerHTML = '<p class="slot-placeholder">Vui lòng chọn Dịch vụ và Ngày để xem lịch trống.</p>';
+            slotsContainer.innerHTML =
+                '<p class="slot-placeholder">' +
+                'Vui lòng chọn Dịch vụ và Ngày để xem lịch trống.' +
+                '</p>';
             return;
         }
 
-        slotsContainer.innerHTML = '<p class="slot-placeholder"><i class="fa-solid fa-spinner fa-spin"></i> Đang kiểm tra lịch trống (8:00 - 20:00)...</p>';
+        // Hủy request cũ nếu người dùng vừa đổi
+        // service / staff / date liên tục.
+        if (slotsRequestController) {
+            slotsRequestController.abort();
+        }
+
+        slotsRequestController = new AbortController();
+
+        const controller = slotsRequestController;
+
+        slotsContainer.innerHTML =
+            '<p class="slot-placeholder">' +
+            '<i class="fa-solid fa-spinner fa-spin"></i> ' +
+            'Đang kiểm tra lịch trống (8:00 - 20:00)...' +
+            '</p>';
 
         try {
-            let url = `/appointments/available-slots?service_id=${serviceId}&date=${dateStr}`;
-            if (staffId) url += `&staff_id=${staffId}`;
+            let url =
+                `/appointments/available-slots` +
+                `?service_id=${serviceId}` +
+                `&date=${dateStr}`;
 
-            const res = await fetch(url);
+            if (staffId) {
+                url += `&staff_id=${staffId}`;
+            }
+
+            const res = await fetch(
+                url,
+                {
+                    signal: controller.signal
+                }
+            );
+
             const data = await res.json();
 
+            // Nếu từ lúc request bắt đầu đã có request mới,
+            // không cho request cũ cập nhật UI.
+            if (controller !== slotsRequestController) {
+                return;
+            }
+
             if (!res.ok) {
-                slotsContainer.innerHTML = `<p class="slot-error">${data.error || 'Không thể lấy khung giờ trống'}</p>`;
+                slotsContainer.innerHTML =
+                    `<p class="slot-error">` +
+                    `${data.error || 'Không thể lấy khung giờ trống'}` +
+                    `</p>`;
                 return;
             }
 
-            if (!data.available_slots || data.available_slots.length === 0) {
-                slotsContainer.innerHTML = '<p class="slot-empty">Khung giờ trong ngày này đã kín hoặc đã qua giờ làm việc (8:00-20:00). Vui lòng chọn ngày khác!</p>';
+            if (
+                !data.available_slots ||
+                data.available_slots.length === 0
+            ) {
+                slotsContainer.innerHTML =
+                    '<p class="slot-empty">' +
+                    'Khung giờ trong ngày này đã kín hoặc ' +
+                    'đã qua giờ làm việc (8:00-20:00). ' +
+                    'Vui lòng chọn ngày khác!' +
+                    '</p>';
                 return;
             }
 
-            // Render danh sách nút chọn giờ
-            slotsContainer.innerHTML = data.available_slots.map(slot => `
-                <button type="button" class="slot-btn" data-time="${slot}">
-                    ${slot}
-                </button>
-            `).join('');
+            slotsContainer.innerHTML =
+                data.available_slots
+                    .map(slot => `
+                        <button
+                            type="button"
+                            class="slot-btn"
+                            data-time="${slot}"
+                        >
+                            ${slot}
+                        </button>
+                    `)
+                    .join('');
 
-            // Sự kiện click chọn từng ô giờ
-            document.querySelectorAll('.slot-btn').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    selectedTimeInput.value = this.dataset.time;
-                    submitBtn.disabled = false;
+            document
+                .querySelectorAll('.slot-btn')
+                .forEach(btn => {
+                    btn.addEventListener(
+                        'click',
+                        function () {
+                            document
+                                .querySelectorAll('.slot-btn')
+                                .forEach(b =>
+                                    b.classList.remove('active')
+                                );
+
+                            this.classList.add('active');
+
+                            selectedTimeInput.value =
+                                this.dataset.time;
+
+                            submitBtn.disabled = false;
+                        }
+                    );
                 });
-            });
 
         } catch (err) {
+            // Abort là bình thường:
+            // request cũ bị thay bằng request mới.
+            if (err.name === 'AbortError') {
+                return;
+            }
+
             console.error(err);
-            slotsContainer.innerHTML = '<p class="slot-error">Lỗi kết nối khi tải khung giờ!</p>';
+
+            slotsContainer.innerHTML =
+                '<p class="slot-error">' +
+                'Lỗi kết nối khi tải khung giờ!' +
+                '</p>';
         }
     }
 

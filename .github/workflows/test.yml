@@ -1,4 +1,4 @@
-name: E2E Automation Tests
+name: Salon Management Test Suite
 
 on:
   push:
@@ -11,13 +11,10 @@ on:
 
 
 jobs:
-  e2e-tests:
-    name: Playwright E2E Tests
+  test:
+    name: Unit + Integration + E2E Tests
     runs-on: ubuntu-latest
 
-    # =====================================================
-    # MYSQL DATABASE CHỈ DÙNG TRONG GITHUB ACTIONS
-    # =====================================================
     services:
       mysql:
         image: mysql:8.0
@@ -30,15 +27,12 @@ jobs:
           - 3306:3306
 
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
 
 
-    # =====================================================
-    # ENVIRONMENT
-    # =====================================================
     env:
       PYTHONPATH: .
       BASE_URL: http://127.0.0.1:5000
@@ -46,181 +40,158 @@ jobs:
 
     steps:
 
-      # ===================================================
-      # 1. CHECKOUT SOURCE CODE
-      # ===================================================
+      # ==========================================
+      # 1. CHECKOUT
+      # ==========================================
       - name: Checkout source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
 
-      # ===================================================
-      # 2. SETUP PYTHON
-      # ===================================================
+      # ==========================================
+      # 2. PYTHON
+      # ==========================================
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
+
         with:
           python-version: "3.11"
 
 
-      # ===================================================
-      # 3. INSTALL PYTHON DEPENDENCIES
-      # ===================================================
+      # ==========================================
+      # 3. DEPENDENCIES
+      # ==========================================
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
 
-      # ===================================================
-      # 4. INSTALL PLAYWRIGHT + CHROMIUM
-      # ===================================================
+      # ==========================================
+      # 4. PLAYWRIGHT
+      # ==========================================
       - name: Install Playwright Chromium
         run: |
           playwright install --with-deps chromium
 
 
-      # ===================================================
-      # 5. WAIT FOR MYSQL
-      # ===================================================
-      - name: Wait for MySQL
+      # ==========================================
+      # 5. DATABASE
+      # ==========================================
+      - name: Initialize and seed test database
         run: |
-          echo "Waiting for MySQL..."
-
-          for i in {1..30}; do
-
-            if mysqladmin ping \
-              -h 127.0.0.1 \
-              -P 3306 \
-              -uroot \
-              -proot \
-              --silent; then
-
-              echo "MySQL is ready!"
-              exit 0
-
-            fi
-
-            echo "Waiting for MySQL... ($i/30)"
-            sleep 2
-
-          done
-
-          echo "MySQL failed to start!"
-          exit 1
-
-
-      # ===================================================
-      # 6. CREATE TABLES + SEED TEST DATABASE
-      # ===================================================
-      - name: Initialize and seed database
-        run: |
-          echo "Initializing test database..."
+          echo "Initializing database..."
 
           python -m app.models
 
-          echo "Database initialized successfully!"
+          echo "Database ready!"
 
 
-      # ===================================================
-      # 7. START FLASK APPLICATION
-      # ===================================================
+      # ==========================================
+      # 6. START FLASK
+      # ==========================================
       - name: Start Flask server
         run: |
-          echo "Starting Flask server..."
+          echo "Starting Flask..."
 
           nohup python -m app.index > flask.log 2>&1 &
 
           echo $! > flask.pid
 
-          echo "Flask process started."
+          sleep 2
+
+          echo "Flask process:"
+          cat flask.pid
 
 
-      # ===================================================
-      # 8. WAIT UNTIL FLASK IS READY
-      # ===================================================
+      # ==========================================
+      # 7. HEALTH CHECK
+      # ==========================================
       - name: Wait for Flask server
         run: |
-          echo "Waiting for Flask server..."
+          echo "Waiting for Flask..."
 
           for i in {1..30}; do
 
-            if curl -f http://127.0.0.1:5000/login; then
+            if curl -sSf \
+              http://127.0.0.1:5000/login \
+              > /dev/null; then
 
-              echo ""
               echo "Flask server is ready!"
               exit 0
 
             fi
 
             echo "Waiting for Flask... ($i/30)"
-            sleep 2
 
+            # Nếu process Flask chết thì không cần
+            # chờ hết 30 lần
+            if ! kill -0 $(cat flask.pid) 2>/dev/null; then
+
+              echo ""
+              echo "Flask process stopped unexpectedly."
+
+              echo "========== FLASK LOG =========="
+              cat flask.log || true
+              echo "==============================="
+
+              exit 1
+            fi
+
+            sleep 2
           done
 
           echo ""
-          echo "Flask failed to start!"
+          echo "Flask did not become ready."
 
-          echo "========================================"
-          echo "FLASK LOG"
-          echo "========================================"
-
+          echo "========== FLASK LOG =========="
           cat flask.log || true
-
-          echo "========================================"
+          echo "==============================="
 
           exit 1
 
 
-      # ===================================================
-      # 9. RUN PLAYWRIGHT E2E TESTS
-      # ===================================================
-      - name: Run Playwright E2E tests
+      # ==========================================
+      # 8. ALL TESTS
+      # Unit + Integration + E2E
+      # ==========================================
+      - name: Run complete test suite
         run: |
-          echo "Running E2E test suite..."
-
-          pytest test/e2e
+          pytest test
 
 
-      # ===================================================
-      # 10. SHOW FLASK LOG IF SOMETHING FAILED
-      # ===================================================
+      # ==========================================
+      # 9. DEBUG LOG
+      # ==========================================
       - name: Show Flask log on failure
         if: failure()
 
         run: |
-          echo "========================================"
-          echo "FLASK LOG"
-          echo "========================================"
-
+          echo "========== FLASK LOG =========="
           cat flask.log || true
+          echo "==============================="
 
-          echo "========================================"
 
-
-      # ===================================================
-      # 11. UPLOAD PYTEST HTML REPORT
-      #
-      # always() = vẫn upload kể cả test FAIL
-      # ===================================================
-      - name: Upload E2E HTML report
+      # ==========================================
+      # 10. HTML REPORT
+      # ==========================================
+      - name: Upload HTML test report
         if: always()
 
         uses: actions/upload-artifact@v4
 
         with:
-          name: e2e-html-report
+          name: salon-test-report
 
-          path: |
-            reports/
+          path: reports/
 
           if-no-files-found: warn
 
           retention-days: 14
 
 
-      # ===================================================
-      # 12. UPLOAD PLAYWRIGHT ARTIFACTS
-      # ===================================================
+      # ==========================================
+      # 11. PLAYWRIGHT ARTIFACTS
+      # ==========================================
       - name: Upload Playwright artifacts
         if: always()
 
@@ -229,8 +200,7 @@ jobs:
         with:
           name: playwright-artifacts
 
-          path: |
-            test-results/
+          path: test-results/
 
           if-no-files-found: ignore
 

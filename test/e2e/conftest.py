@@ -541,11 +541,40 @@ def staff1_booking_with_products(customer_page, base_url):
     )
 
     # Chọn ngày
-    customer_page.locator("#date").fill(booking_date)
+    with customer_page.expect_response(
+            lambda response:
+            "/appointments/available-slots"
+            in response.url
+            and f"date={booking_date}"
+            in response.url
+            and response.request.method == "GET"
+    ) as slots_response_info:
 
-    # Chờ slot
-    first_slot = customer_page.locator(".slot-btn").first
-    expect(first_slot).to_be_visible(timeout=10000)
+        customer_page.locator(
+            "#date"
+        ).fill(
+            booking_date
+        )
+
+    slots_response = slots_response_info.value
+
+    assert slots_response.status == 200
+
+    slots_body = slots_response.json()
+
+    assert len(
+        slots_body["available_slots"]
+    ) > 0, (
+        f"Không có slot cho ngày {booking_date}"
+    )
+
+    first_slot = customer_page.locator(
+        ".slot-btn"
+    ).first
+
+    expect(first_slot).to_be_visible(
+        timeout=10000
+    )
 
     booking_time = first_slot.get_attribute("data-time")
 
