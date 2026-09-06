@@ -1,193 +1,235 @@
+import uuid
 from datetime import datetime, timedelta
+
 import pytest
+
 from app import dao
-from app.models import UserRole, User, Service, Product
+from app.models import UserRole
+
+
+# =========================================================================
+# HELPER
+# =========================================================================
+
+def unique_suffix():
+    return uuid.uuid4().hex[:8]
+
+
+def unique_phone():
+    return f"09{uuid.uuid4().int % 100000000:08d}"
 
 
 # =========================================================================
 # HELPER: Đăng nhập giả lập qua session
 # =========================================================================
+
 @pytest.fixture
 def login_as(client):
-  def _login_as(user):
-    with client.session_transaction() as sess:
-      sess['user_id'] = str(user.id)
-      sess['_user_id'] = str(user.id)
-      sess['_fresh'] = True
-    return client
+    def _login_as(user):
+        with client.session_transaction() as sess:
+            sess["user_id"] = str(user.id)
+            sess["_user_id"] = str(user.id)
+            sess["_fresh"] = True
 
-  return _login_as
+        return client
+
+    return _login_as
 
 
 # =========================================================================
-# USERS FIXTURES
+# USER FIXTURES
 # =========================================================================
+
 @pytest.fixture
 def admin_user(app):
-    user = User.query.filter_by(username='admintest').first()
-    if not user:
-        user = dao.add_user(
-            'Admin Test',
-            'admintest',
-            'Admin123',
-            '0900000001',
-            'admin@test.com',
-            role=UserRole.ADMIN,
-        )
+    suffix = unique_suffix()
 
+    user = dao.add_user(
+        full_name="Admin Test",
+        username=f"admintest{suffix}",
+        password="Admin123",
+        phone=unique_phone(),
+        email=f"admin_{suffix}@test.com",
+        role=UserRole.ADMIN,
+    )
+
+    user.raw_password = "Admin123"
     return user
 
 
 @pytest.fixture
 def staff_user(app):
-    user = User.query.filter_by(username='stafftest').first()
-    if not user:
-        user = dao.add_user(
-            'Staff Test',
-            'stafftest',
-            'Staff123',
-            '0900000002',
-            'staff@test.com',
-            role=UserRole.STAFF,
-        )
+    suffix = unique_suffix()
 
-    user.raw_password = 'Staff123'
+    user = dao.add_user(
+        full_name="Staff Test",
+        username=f"stafftest{suffix}",
+        password="Staff123",
+        phone=unique_phone(),
+        email=f"staff_{suffix}@test.com",
+        role=UserRole.STAFF,
+    )
+
+    user.raw_password = "Staff123"
     return user
 
 
 @pytest.fixture
 def receptionist_user(app):
-    user = User.query.filter_by(username='receptiontest').first()
-    if not user:
-        user = dao.add_user(
-            'Reception Test',
-            'receptiontest',
-            'Recep123',
-            '0900000003',
-            'reception@test.com',
-            role=UserRole.RECEPTIONIST,
-        )
+    suffix = unique_suffix()
 
-    user.raw_password = 'Recep123'
+    user = dao.add_user(
+        full_name="Reception Test",
+        username=f"recep{suffix}",
+        password="Recep123",
+        phone=unique_phone(),
+        email=f"reception_{suffix}@test.com",
+        role=UserRole.RECEPTIONIST,
+    )
+
+    user.raw_password = "Recep123"
     return user
+
 
 @pytest.fixture
 def customer_user(app):
-    user = User.query.filter_by(username='customertest').first()
-    if not user:
-        user = dao.add_user(
-            'Customer Test',
-            'customertest',
-            'Customer123',
-            '0900000004',
-            'customer@test.com',
-            role=UserRole.CUSTOMER,
-        )
+    suffix = unique_suffix()
 
-    user.raw_password = 'Customer123'
+    user = dao.add_user(
+        full_name="Customer Test",
+        username=f"customertest{suffix}",
+        password="Customer123",
+        phone=unique_phone(),
+        email=f"customer_{suffix}@test.com",
+        role=UserRole.CUSTOMER,
+    )
+
+    user.raw_password = "Customer123"
     return user
 
+# =========================================================================
+# CLIENT FIXTURES
+# =========================================================================
 
-# =========================================================================
-# CLIENTS FIXTURES
-# =========================================================================
 @pytest.fixture
 def admin_client(client, login_as, admin_user):
-  return login_as(admin_user)
+    return login_as(admin_user)
 
 
 @pytest.fixture
 def staff_client(client, login_as, staff_user):
-  return login_as(staff_user)
+    return login_as(staff_user)
 
 
 @pytest.fixture
 def receptionist_client(client, login_as, receptionist_user):
-  return login_as(receptionist_user)
+    return login_as(receptionist_user)
 
 
 @pytest.fixture
 def customer_client(client, login_as, customer_user):
-  return login_as(customer_user)
+    return login_as(customer_user)
 
 
 # =========================================================================
-# SAMPLE DATA FIXTURES DÙNG CHO INTEGRATION TESTS
+# SAMPLE DATA FIXTURES
 # =========================================================================
+
 @pytest.fixture
 def sample_service(app):
-    service = Service.query.filter_by(
-        service_name='Cắt tóc nam'
-    ).first()
+    suffix = unique_suffix()
 
-    if not service:
-        service = dao.add_service(
-            name='Cắt tóc nam',
-            price=100000,
-            duration=30,
-            description='Cắt tóc nam'
-        )
+    return dao.add_service(
+        name=f"Service Test {suffix}",
+        price=100000,
+        duration=30,
+        description="Dịch vụ dùng cho integration test",
+    )
 
-    return service
 
 @pytest.fixture
 def sample_product(app):
-    product = Product.query.filter_by(
-        product_name='Dầu gội'
-    ).first()
+    suffix = unique_suffix()
 
-    if not product:
-        product = dao.add_product(
-            name='Dầu gội',
-            unit='CHAI',
-            stock_quantity=50,
-            min_stock_level=10
-        )
-
-    return product
+    return dao.add_product(
+        name=f"Product Test {suffix}",
+        unit="CHAI",
+        stock_quantity=50,
+        min_stock_level=10,
+    )
 
 
 @pytest.fixture
-def sample_service_product(app, sample_service, sample_product):
-  return dao.add_service_product(
-      service_id=sample_service.id,
-      product_id=sample_product.id,
-      default_quantity=1,
-  )
+def sample_service_product(
+    app,
+    sample_service,
+    sample_product,
+):
+    return dao.add_service_product(
+        service_id=sample_service.id,
+        product_id=sample_product.id,
+        default_quantity=1,
+    )
 
 
 @pytest.fixture
-def sample_appointment(app, customer_user, staff_user, sample_service):
-  """Tạo sẵn 1 lịch hẹn mẫu trong tương lai cho các test case update/cancel/view"""
-  target_date = (datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d')
-  return dao.create_appointment(
-      customer_id=customer_user.id,
-      service_id=sample_service.id,
-      staff_id=staff_user.id,
-      date_str=target_date,
-      time_str='09:00',
-  )
+def sample_appointment(
+    app,
+    customer_user,
+    staff_user,
+    sample_service,
+):
+    """
+    Tạo 1 lịch hẹn riêng cho từng test.
+    Không dùng lại appointment của test trước.
+    """
+
+    target_date = (
+        datetime.now() + timedelta(days=2)
+    ).strftime("%Y-%m-%d")
+
+    return dao.create_appointment(
+        customer_id=customer_user.id,
+        service_id=sample_service.id,
+        staff_id=staff_user.id,
+        date_str=target_date,
+        time_str="09:00",
+    )
 
 
 @pytest.fixture
 def sample_promotion(app):
-  today = datetime.now().date()
-  return dao.add_promotion(
-      promo_code='SALE10',
-      promo_type='PERCENT',
-      value=10,
-      start_date=today.strftime('%Y-%m-%d'),
-      end_date=(today + timedelta(days=30)).strftime('%Y-%m-%d'),
-  )
+    suffix = unique_suffix()
+    today = datetime.now().date()
+
+    return dao.add_promotion(
+        promo_code=f"SALE_{suffix}",
+        promo_type="PERCENT",
+        value=10,
+        start_date=today.strftime("%Y-%m-%d"),
+        end_date=(
+            today + timedelta(days=30)
+        ).strftime("%Y-%m-%d"),
+    )
 
 
 @pytest.fixture
-def sample_invoice(app, customer_user, staff_user, sample_service):
-  details_data = [
-      {'item_type': 'SERVICE', 'item_id': sample_service.id, 'quantity': 1}
-  ]
-  return dao.create_invoice(
-      customer_id=customer_user.id,
-      staff_id=staff_user.id,
-      details_data=details_data,
-  )
+def sample_invoice(
+    app,
+    customer_user,
+    staff_user,
+    sample_service,
+):
+    details_data = [
+        {
+            "item_type": "SERVICE",
+            "item_id": sample_service.id,
+            "quantity": 1,
+        }
+    ]
+
+    return dao.create_invoice(
+        customer_id=customer_user.id,
+        staff_id=staff_user.id,
+        details_data=details_data,
+    )

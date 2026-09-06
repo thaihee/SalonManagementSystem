@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from datetime import datetime, date, timedelta
 from app import dao
@@ -54,23 +56,37 @@ class TestAdminUserManagementRoutes:
 
     def test_create_staff_success(self, admin_client):
         """Admin tạo nhân viên STAFF thành công -> 201 Created"""
+        suffix = uuid.uuid4().hex[:8]
+
         response = admin_client.post('/users', data={
-            'full_name': 'Nhân Viên Mới', 'username': 'newstaff123',
-            'password': 'Password123', 'phone': '0912345678',
-            'email': 'newstaff@gmail.com', 'role': 'STAFF'
+            'full_name': 'Nhân Viên Mới',
+            'username': f'newstaff{suffix}',
+            'password': 'Password123',
+            'phone': f"09{uuid.uuid4().int % 100000000:08d}",
+            'email': f'newstaff{suffix}@gmail.com',
+            'role': 'STAFF'
         })
+
         assert response.status_code == 201
         assert response.json['success'] is True
 
     def test_create_staff_invalid_role_raises_400(self, admin_client):
-        """Tạo user với Role khác STAFF/RECEPTIONIST -> 400 Bad Request"""
+        suffix = uuid.uuid4().hex[:8]
+
         response = admin_client.post('/users', data={
-            'full_name': 'Admin Mới', 'username': 'newadmin123',
-            'password': 'Password123', 'phone': '0912345678',
-            'email': 'newadmin@gmail.com', 'role': 'ADMIN'
+            'full_name': 'Admin Mới',
+            'username': f'newadmin{suffix}',
+            'password': 'Password123',
+            'phone': f"09{uuid.uuid4().int % 100000000:08d}",
+            'email': f'newadmin{suffix}@gmail.com',
+            'role': 'ADMIN'
         })
+
         assert response.status_code == 400
-        assert "Chỉ được tạo tài khoản với role STAFF hoặc RECEPTIONIST" in response.json['error']
+        assert (
+                "Chỉ được tạo tài khoản với role STAFF hoặc RECEPTIONIST"
+                in response.json['error']
+        )
 
     def test_toggle_user_active_success(self, admin_client, staff_user):
         """Khóa / Mở khóa tài khoản người dùng -> 200 OK"""
@@ -91,19 +107,32 @@ class TestAdminServicesRoutes:
 
     def test_create_service_success(self, admin_client):
         """Tạo dịch vụ mới -> 201 Created"""
+        suffix = uuid.uuid4().hex[:8]
+
         response = admin_client.post('/admin/services', data={
-            'service_name': 'Uốn Tóc Hàn Quốc', 'price': 300000,
-            'duration_minutes': 60, 'description': 'Uốn mi cao cấp'
+            'service_name': f'Uốn Tóc Test {suffix}',
+            'price': 300000,
+            'duration_minutes': 60,
+            'description': 'Dịch vụ dùng cho integration test'
         })
+
         assert response.status_code == 201
         assert response.json['success'] is True
 
     def test_update_service_success(self, admin_client, sample_service):
         """Cập nhật dịch vụ -> 200 OK"""
-        response = admin_client.put(f'/admin/services/{sample_service.id}', json={
-            'service_name': 'Cắt Tóc Nam Đẹp', 'price': 120000,
-            'duration_minutes': 35, 'description': 'Mô tả cập nhật'
-        })
+        suffix = uuid.uuid4().hex[:8]
+
+        response = admin_client.put(
+            f'/admin/services/{sample_service.id}',
+            json={
+                'service_name': f'Service Updated {suffix}',
+                'price': 120000,
+                'duration_minutes': 35,
+                'description': 'Mô tả cập nhật'
+            }
+        )
+
         assert response.status_code == 200
         assert response.json['success'] is True
 
@@ -164,11 +193,18 @@ class TestAdminPromotionRoutes:
     def test_create_promotion_success(self, admin_client):
         """Tạo khuyến mãi mới -> 201 Created"""
         today = date.today()
+        suffix = uuid.uuid4().hex[:8].upper()
+
         response = admin_client.post('/admin/promotions', json={
-            'promo_code': 'SUMMER2026', 'promo_type': 'PERCENT', 'value': 15,
+            'promo_code': f'SALE{suffix}',
+            'promo_type': 'PERCENT',
+            'value': 15,
             'start_date': today.strftime('%Y-%m-%d'),
-            'end_date': (today + timedelta(days=10)).strftime('%Y-%m-%d')
+            'end_date': (
+                    today + timedelta(days=10)
+            ).strftime('%Y-%m-%d')
         })
+
         assert response.status_code == 201
         assert response.json['success'] is True
 

@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from datetime import datetime, date, timedelta
 from app import dao
@@ -145,8 +147,7 @@ class TestCreateAppointmentRouteDetailed:
     def test_create_appointment_without_staff_success(
             self,
             customer_client,
-            sample_service,
-            staff_user
+            sample_service
     ):
         """
         Customer không chỉ định Stylist
@@ -156,10 +157,6 @@ class TestCreateAppointmentRouteDetailed:
         target_date = (
                 date.today() + timedelta(days=2)
         ).strftime('%Y-%m-%d')
-
-        # ==========================================
-        # 1. Lấy slot hợp lệ
-        # ==========================================
 
         slot_response = customer_client.get(
             '/appointments/available-slots'
@@ -177,10 +174,6 @@ class TestCreateAppointmentRouteDetailed:
 
         selected_time = available_slots[0]
 
-        # ==========================================
-        # 2. POST nhưng KHÔNG gửi staff_id
-        # ==========================================
-
         response = customer_client.post(
             '/appointments',
             json={
@@ -190,36 +183,11 @@ class TestCreateAppointmentRouteDetailed:
             }
         )
 
-        print(
-            "\n[WITHOUT STAFF]",
-            response.status_code,
-            response.get_data(as_text=True)
-        )
-
-        # ==========================================
-        # 3. Phải tạo thành công
-        # ==========================================
-
         assert response.status_code == 201
 
-        # ==========================================
-        # 4. Hệ thống phải tự gán Stylist
-        # ==========================================
-
         assert (
-                response.json[
-                    'appointment'
-                ]['staff_id']
+                response.json['appointment']['staff_id']
                 is not None
-        )
-
-        # Vì test DB hiện chỉ tạo staff_user này,
-        # có thể kiểm tra chính xác luôn
-        assert (
-                response.json[
-                    'appointment'
-                ]['staff_id']
-                == staff_user.id
         )
 
     def test_create_appointment_missing_required_fields_raises_400(self, customer_client):
@@ -257,8 +225,7 @@ class TestCreateAppointmentRouteDetailed:
             self,
             customer_client,
             customer_user,
-            sample_service,
-            staff_user
+            sample_service
     ):
         """
         Customer truyền customer_id giả
@@ -269,10 +236,6 @@ class TestCreateAppointmentRouteDetailed:
         target_date = (
                 date.today() + timedelta(days=3)
         ).strftime('%Y-%m-%d')
-
-        # ==========================================
-        # 1. Lấy slot khả dụng
-        # ==========================================
 
         slot_response = customer_client.get(
             '/appointments/available-slots'
@@ -290,10 +253,6 @@ class TestCreateAppointmentRouteDetailed:
 
         selected_time = available_slots[0]
 
-        # ==========================================
-        # 2. Cố tình gửi customer_id giả
-        # ==========================================
-
         response = customer_client.post(
             '/appointments',
             json={
@@ -304,48 +263,18 @@ class TestCreateAppointmentRouteDetailed:
             }
         )
 
-        print(
-            "\n[IDOR CREATE]",
-            response.status_code,
-            response.get_data(as_text=True)
-        )
-
-        # ==========================================
-        # 3. Appointment vẫn được tạo
-        # ==========================================
-
         assert response.status_code == 201
 
-        # ==========================================
-        # 4. customer_id giả phải bị bỏ qua
-        # ==========================================
-
-        assert (
-                response.json[
-                    'appointment'
-                ]['customer_id']
-                == customer_user.id
-        )
-
-        # Auto assign phải hoạt động
-        assert (
-                response.json[
-                    'appointment'
-                ]['staff_id']
-                == staff_user.id
-        )
-
-        # ==========================================
-        # 3. Appointment vẫn phải được tạo
-        # ==========================================
-        assert response.status_code == 201
-
-        # ==========================================
-        # 4. Backend phải bỏ customer_id giả
-        # ==========================================
+        # customer_id giả phải bị bỏ qua
         assert (
                 response.json['appointment']['customer_id']
                 == customer_user.id
+        )
+
+        # Hệ thống phải tự gán một stylist khả dụng
+        assert (
+                response.json['appointment']['staff_id']
+                is not None
         )
 
 
@@ -383,7 +312,16 @@ class TestUpdateAndCancelAppointmentRoutesDetailed:
 
     def test_update_appointment_other_customer_idor_blocked(self, client, app, sample_appointment):
         """Customer A sửa lịch hẹn của Customer B -> 403 Forbidden"""
-        other_cust = dao.add_user("Cust B", "custb12345", "Password123", "0988888888", "b@test.com", role=UserRole.CUSTOMER)
+        suffix = uuid.uuid4().hex[:8]
+
+        other_cust = dao.add_user(
+            "Cust B",
+            f"custb{suffix}",
+            "Password123",
+            f"09{uuid.uuid4().int % 100000000:08d}",
+            f"custb{suffix}@test.com",
+            role=UserRole.CUSTOMER
+        )
         with client.session_transaction() as sess:
             sess["user_id"] = str(other_cust.id)
             sess["_user_id"] = str(other_cust.id)
@@ -401,7 +339,16 @@ class TestUpdateAndCancelAppointmentRoutesDetailed:
 
     def test_cancel_appointment_other_customer_idor_blocked(self, client, sample_appointment):
         """Customer A hủy lịch hẹn của Customer B -> 403 Forbidden"""
-        other_cust = dao.add_user("Cust C", "custc12345", "Password123", "0977777777", "c@test.com", role=UserRole.CUSTOMER)
+        suffix = uuid.uuid4().hex[:8]
+
+        other_cust = dao.add_user(
+            "Cust C",
+            f"custc{suffix}",
+            "Password123",
+            f"09{uuid.uuid4().int % 100000000:08d}",
+            f"custc{suffix}@test.com",
+            role=UserRole.CUSTOMER
+        )
         with client.session_transaction() as sess:
             sess["user_id"] = str(other_cust.id)
             sess["_user_id"] = str(other_cust.id)

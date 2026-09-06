@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8"/>
-    <title id="head-title">Minimalist Muse — E2E Automation Test Report</title>
+    <title id="head-title">report.html</title>
       <style type="text/css">body {
   font-family: Helvetica, Arial, sans-serif;
   font-size: 12px;
@@ -328,10 +328,6 @@ div.media {
  * reports\assets\report.css
  ******************************/
 
-/* =========================================
-   MINIMALIST MUSE - E2E TEST REPORT
-   ========================================= */
-
 :root {
     --bg: #f6f4f1;
     --surface: #ffffff;
@@ -347,11 +343,6 @@ div.media {
 
     --warning: #a57522;
 }
-
-
-/* =========================================
-   GLOBAL
-   ========================================= */
 
 body {
     margin: 0;
@@ -373,11 +364,6 @@ body > * {
     margin-left: auto;
     margin-right: auto;
 }
-
-
-/* =========================================
-   MAIN TITLE
-   ========================================= */
 
 h1 {
     margin: 0 0 8px;
@@ -418,11 +404,6 @@ h1::after {
     color: var(--muted);
 }
 
-
-/* =========================================
-   GENERATED INFO
-   ========================================= */
-
 h1 + p {
     margin-top: 18px;
     margin-bottom: 30px;
@@ -430,11 +411,6 @@ h1 + p {
     color: var(--muted);
     font-size: 13px;
 }
-
-
-/* =========================================
-   SECTION HEADINGS
-   ========================================= */
 
 h2 {
     margin-top: 30px;
@@ -445,11 +421,6 @@ h2 {
 
     letter-spacing: 0.3px;
 }
-
-
-/* =========================================
-   ENVIRONMENT
-   ========================================= */
 
 #environment {
     padding: 22px;
@@ -481,11 +452,6 @@ h2 {
     color: var(--muted);
 }
 
-
-/* =========================================
-   SUMMARY
-   ========================================= */
-
 #summary {
     margin-top: 20px;
 
@@ -500,11 +466,6 @@ h2 {
         0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
-
-/* =========================================
-   FILTERS
-   ========================================= */
-
 #results-table-filter {
     margin: 16px 0;
 
@@ -515,11 +476,6 @@ h2 {
     border: 1px solid var(--border);
     border-radius: 9px;
 }
-
-
-/* =========================================
-   RESULTS TABLE
-   ========================================= */
 
 #results-table {
     width: 100%;
@@ -570,11 +526,6 @@ h2 {
     background: #faf9f7;
 }
 
-
-/* =========================================
-   RESULT STATUS
-   ========================================= */
-
 .passed {
     color: var(--success) !important;
     font-weight: 700;
@@ -590,11 +541,6 @@ h2 {
     font-weight: 700;
 }
 
-
-/* =========================================
-   TEST NAME
-   ========================================= */
-
 .col-name {
     font-family:
         "Segoe UI",
@@ -606,11 +552,6 @@ h2 {
     color: #504946;
 }
 
-
-/* =========================================
-   DURATION
-   ========================================= */
-
 .col-duration {
     white-space: nowrap;
 
@@ -619,11 +560,6 @@ h2 {
 
     color: var(--muted);
 }
-
-
-/* =========================================
-   EXPANDED ERROR / LOG
-   ========================================= */
 
 .log {
     margin: 12px;
@@ -646,11 +582,6 @@ h2 {
     overflow-x: auto;
 }
 
-
-/* =========================================
-   LINKS
-   ========================================= */
-
 a {
     color: #75655c;
 
@@ -660,11 +591,6 @@ a {
 a:hover {
     text-decoration: underline;
 }
-
-
-/* =========================================
-   SCREENSHOT
-   ========================================= */
 
 img {
     display: block;
@@ -680,11 +606,6 @@ img {
     box-shadow:
         0 5px 18px rgba(0, 0, 0, 0.08);
 }
-
-
-/* =========================================
-   RESPONSIVE
-   ========================================= */
 
 @media (max-width: 900px) {
 
@@ -709,8 +630,8 @@ img {
     
   </head>
   <body>
-    <h1 id="title">Minimalist Muse — E2E Automation Test Report</h1>
-    <p>Report generated on 06-Sep-2026 at 17:10:07 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a>
+    <h1 id="title">report.html</h1>
+    <p>Report generated on 06-Sep-2026 at 23:56:04 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a>
         v4.2.0</p>
     <div id="environment-header">
       <h2>Environment</h2>
@@ -765,7 +686,7 @@ img {
         <h2>Summary</h2>
         <div class="additional-summary prefix">
         </div>
-        <p class="run-count">1 test took 00:00:11.</p>
+        <p class="run-count">33 tests took 00:00:02.</p>
         <p class="filter">(Un)check the boxes to filter the results.</p>
         <div class="summary__reload">
           <div class="summary__reload__button hidden" onclick="location.reload()">
@@ -778,7 +699,7 @@ img {
             <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="failed" disabled>
             <span class="failed">0 Failed,</span>
             <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="passed" >
-            <span class="passed">1 Passed,</span>
+            <span class="passed">33 Passed,</span>
             <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="skipped" disabled>
             <span class="skipped">0 Skipped,</span>
             <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xfailed" disabled>
@@ -813,7 +734,7 @@ img {
       </thead>
     </table>
   <footer>
-    <div id="data-container" data-jsonblob="{&#34;environment&#34;: {&#34;Python&#34;: &#34;3.11.9&#34;, &#34;Platform&#34;: &#34;Windows-10-10.0.26200-SP0&#34;, &#34;Packages&#34;: {&#34;pytest&#34;: &#34;9.1.1&#34;, &#34;pluggy&#34;: &#34;1.6.0&#34;}, &#34;Plugins&#34;: {&#34;base-url&#34;: &#34;2.1.0&#34;, &#34;html&#34;: &#34;4.2.0&#34;, &#34;metadata&#34;: &#34;3.1.1&#34;, &#34;playwright&#34;: &#34;0.8.0&#34;, &#34;timeout&#34;: &#34;2.4.0&#34;}, &#34;Base URL&#34;: &#34;http://127.0.0.1:5000&#34;}, &#34;tests&#34;: {&#34;test/e2e/customer/test_booking.py::test_customer_can_create_booking[chromium]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/e2e/customer/test_booking.py::test_customer_can_create_booking[chromium]&#34;, &#34;duration&#34;: &#34;00:00:11&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/e2e/customer/test_booking.py::test_customer_can_create_booking[chromium]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:11&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}]}, &#34;renderCollapsed&#34;: [&#34;passed&#34;], &#34;initialSort&#34;: &#34;result&#34;, &#34;title&#34;: &#34;Minimalist Muse \u2014 E2E Automation Test Report&#34;}"></div>
+    <div id="data-container" data-jsonblob="{&#34;environment&#34;: {&#34;Python&#34;: &#34;3.11.9&#34;, &#34;Platform&#34;: &#34;Windows-10-10.0.26200-SP0&#34;, &#34;Packages&#34;: {&#34;pytest&#34;: &#34;9.1.1&#34;, &#34;pluggy&#34;: &#34;1.6.0&#34;}, &#34;Plugins&#34;: {&#34;base-url&#34;: &#34;2.1.0&#34;, &#34;html&#34;: &#34;4.2.0&#34;, &#34;metadata&#34;: &#34;3.1.1&#34;, &#34;playwright&#34;: &#34;0.8.0&#34;, &#34;timeout&#34;: &#34;2.4.0&#34;}, &#34;Base URL&#34;: &#34;http://127.0.0.1:5000&#34;}, &#34;tests&#34;: {&#34;test/unit/test_service_dao.py::TestAddService::test_add_service_success&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_add_service_success&#34;, &#34;duration&#34;: &#34;180 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_add_service_success&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;180 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_empty_name_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_empty_name_raises&#34;, &#34;duration&#34;: &#34;30 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_empty_name_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;30 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_avatar_too_long_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_avatar_too_long_raises&#34;, &#34;duration&#34;: &#34;32 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_avatar_too_long_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;32 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_price_raises[-10000]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_price_raises[-10000]&#34;, &#34;duration&#34;: &#34;25 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_invalid_price_raises[-10000]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;25 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_price_raises[abc]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_price_raises[abc]&#34;, &#34;duration&#34;: &#34;18 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_invalid_price_raises[abc]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;18 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_price_raises[None]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_price_raises[None]&#34;, &#34;duration&#34;: &#34;24 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_invalid_price_raises[None]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;24 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[0]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[0]&#34;, &#34;duration&#34;: &#34;25 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[0]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;25 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[-15]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[-15]&#34;, &#34;duration&#34;: &#34;15 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[-15]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;15 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[xyz]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[xyz]&#34;, &#34;duration&#34;: &#34;18 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[xyz]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;18 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[12.5]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[12.5]&#34;, &#34;duration&#34;: &#34;19 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[12.5]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;19 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[None]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[None]&#34;, &#34;duration&#34;: &#34;14 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_invalid_duration_raises[None]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;14 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestAddService::test_duplicate_name_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestAddService::test_duplicate_name_raises&#34;, &#34;duration&#34;: &#34;39 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestAddService::test_duplicate_name_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;39 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_success&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_success&#34;, &#34;duration&#34;: &#34;42 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestUpdateService::test_update_success&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;42 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_keep_own_name_ok&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_keep_own_name_ok&#34;, &#34;duration&#34;: &#34;48 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestUpdateService::test_update_keep_own_name_ok&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;48 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_duplicate_name_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_duplicate_name_raises&#34;, &#34;duration&#34;: &#34;33 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestUpdateService::test_update_duplicate_name_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;33 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_invalid_price_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_invalid_price_raises&#34;, &#34;duration&#34;: &#34;43 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestUpdateService::test_update_invalid_price_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;43 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_invalid_duration_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_invalid_duration_raises&#34;, &#34;duration&#34;: &#34;32 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestUpdateService::test_update_invalid_duration_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;32 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_not_found_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestUpdateService::test_update_not_found_raises&#34;, &#34;duration&#34;: &#34;25 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestUpdateService::test_update_not_found_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;25 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_delete_service_soft&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_delete_service_soft&#34;, &#34;duration&#34;: &#34;72 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_delete_service_soft&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;72 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_delete_not_found_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_delete_not_found_raises&#34;, &#34;duration&#34;: &#34;12 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_delete_not_found_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;12 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_load_and_count_services&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_load_and_count_services&#34;, &#34;duration&#34;: &#34;29 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_load_and_count_services&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;29 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_get_services_paged&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_get_services_paged&#34;, &#34;duration&#34;: &#34;20 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestDeleteAndQueryService::test_get_services_paged&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;20 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_service_product_success&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_service_product_success&#34;, &#34;duration&#34;: &#34;72 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_add_service_product_success&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;72 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_duplicate_pair_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_duplicate_pair_raises&#34;, &#34;duration&#34;: &#34;74 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_add_duplicate_pair_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;74 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_invalid_quantity_raises[0]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_invalid_quantity_raises[0]&#34;, &#34;duration&#34;: &#34;91 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_add_invalid_quantity_raises[0]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;91 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_invalid_quantity_raises[-1]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_invalid_quantity_raises[-1]&#34;, &#34;duration&#34;: &#34;46 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_add_invalid_quantity_raises[-1]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;46 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_invalid_quantity_raises[abc]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_invalid_quantity_raises[abc]&#34;, &#34;duration&#34;: &#34;58 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_add_invalid_quantity_raises[abc]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;58 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_non_existent_service_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_non_existent_service_raises&#34;, &#34;duration&#34;: &#34;40 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_add_non_existent_service_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;40 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_non_existent_product_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_add_non_existent_product_raises&#34;, &#34;duration&#34;: &#34;61 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_add_non_existent_product_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;61 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_update_service_product_success&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_update_service_product_success&#34;, &#34;duration&#34;: &#34;76 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_update_service_product_success&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;76 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_update_not_found_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_update_not_found_raises&#34;, &#34;duration&#34;: &#34;12 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_update_not_found_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;12 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_delete_service_product_success&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_delete_service_product_success&#34;, &#34;duration&#34;: &#34;136 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_delete_service_product_success&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;136 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;test/unit/test_service_dao.py::TestServiceProduct::test_delete_not_found_raises&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test/unit/test_service_dao.py::TestServiceProduct::test_delete_not_found_raises&#34;, &#34;duration&#34;: &#34;16 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test/unit/test_service_dao.py::TestServiceProduct::test_delete_not_found_raises&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;16 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}]}, &#34;renderCollapsed&#34;: [&#34;passed&#34;], &#34;initialSort&#34;: &#34;result&#34;, &#34;title&#34;: &#34;report.html&#34;}"></div>
     <script>
       (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 const { getCollapsedCategory, setCollapsedIds } = require('./storage.js')

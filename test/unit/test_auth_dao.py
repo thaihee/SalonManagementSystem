@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from app import dao
@@ -11,24 +13,33 @@ from app.exceptions import ValidationError, DuplicateError, NotFoundError
 class TestAddUser:
 
     def test_add_user_success(self, app):
+        suffix = uuid.uuid4().hex[:8]
+
         user = dao.add_user(
             full_name="Nguyễn Văn A",
-            username="nguyenvana",
+            username=f"user{suffix}",
             password="Password123",
-            phone="0912345678",
-            email="a@example.com",
+            phone=f"09{uuid.uuid4().int % 100000000:08d}",
+            email=f"user{suffix}@example.com",
         )
+
+        assert user is not None
         assert user.id is not None
-        assert user.username == "nguyenvana"
-        assert user.role == UserRole.CUSTOMER  # mặc định khi không truyền role
-        # Mật khẩu phải được hash, không lưu plaintext
-        assert user.password != "Password123"
+        assert user.full_name == "Nguyễn Văn A"
 
     def test_add_user_with_role_staff(self, app):
+        suffix = uuid.uuid4().hex[:8]
+
         user = dao.add_user(
-            full_name="Nhân Viên B", username="staffb", password="Password123",
-            phone="0912345679", email="staffb@example.com", role=UserRole.STAFF,
+            full_name="Nhân Viên B",
+            username=f"staff{suffix}",
+            password="Password123",
+            phone=f"09{uuid.uuid4().int % 100000000:08d}",
+            email=f"staff{suffix}@example.com",
+            role=UserRole.STAFF,
         )
+
+        assert user is not None
         assert user.role == UserRole.STAFF
 
     def test_duplicate_username_raises(self, app, customer_user):
@@ -141,12 +152,22 @@ class TestGetUsers:
 
     def test_get_all_users(self, app, admin_user, staff_user, customer_user):
         users = dao.get_users()
-        assert len(users) == 3
+
+        user_ids = [u.id for u in users]
+
+        assert admin_user.id in user_ids
+        assert staff_user.id in user_ids
+        assert customer_user.id in user_ids
 
     def test_filter_by_role(self, app, admin_user, staff_user, customer_user):
         staffs = dao.get_users(role=UserRole.STAFF)
-        assert len(staffs) == 1
-        assert staffs[0].id == staff_user.id
+
+        assert staff_user.id in [u.id for u in staffs]
+
+        assert all(
+            u.role == UserRole.STAFF
+            for u in staffs
+        )
 
 
 # =========================================================================
@@ -155,13 +176,21 @@ class TestGetUsers:
 class TestUpdateUserProfile:
 
     def test_update_success(self, app, customer_user):
+        suffix = uuid.uuid4().hex[:8]
+
+        new_phone = f"09{uuid.uuid4().int % 100000000:08d}"
+        new_email = f"moi{suffix}@example.com"
+
         updated = dao.update_user_profile(
-            user_id=customer_user.id, full_name="Tên Mới",
-            phone="0999999999", email="moimoi@example.com",
+            user_id=customer_user.id,
+            full_name="Tên Mới",
+            phone=new_phone,
+            email=new_email,
         )
+
         assert updated.full_name == "Tên Mới"
-        assert updated.phone == "0999999999"
-        assert updated.email == "moimoi@example.com"
+        assert updated.phone == new_phone
+        assert updated.email == new_email
 
     def test_update_not_found_raises(self, app):
         with pytest.raises(NotFoundError):

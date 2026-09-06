@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from datetime import datetime, timedelta
 from app import dao
@@ -112,8 +114,16 @@ class TestGetInvoiceDetailRouteDetailed:
 
     def test_get_invoice_detail_idor_protection(self, client, app, sample_invoice):
         """Khách hàng A cố tình xem hóa đơn của Khách hàng B -> 403 Forbidden"""
-        other_cust = dao.add_user("Other Cust", "othercust12", "Password123", "0977777777", "other@test.com",
-                                  role=UserRole.CUSTOMER)
+        suffix = uuid.uuid4().hex[:8]
+
+        other_cust = dao.add_user(
+            "Other Cust",
+            f"other{suffix}",
+            "Password123",
+            f"09{uuid.uuid4().int % 100000000:08d}",
+            f"other{suffix}@test.com",
+            role=UserRole.CUSTOMER
+        )
         with client.session_transaction() as sess:
             sess["user_id"] = str(other_cust.id)
             sess["_user_id"] = str(other_cust.id)
@@ -221,15 +231,25 @@ class TestConfirmInvoicePaymentRouteDetailed:
 
     def test_confirm_payment_expired_promotion_raises_400(self, receptionist_client, sample_invoice):
         """Áp dụng khuyến mãi đã hết hạn -> 400 Bad Request"""
-        yesterday = datetime.now().date() - timedelta(days=2)
-        expired_promo = dao.add_promotion("EXPIRED", "PERCENT", 20,
-                                          (yesterday - timedelta(days=5)).strftime("%Y-%m-%d"),
-                                          yesterday.strftime("%Y-%m-%d"))
+        suffix = uuid.uuid4().hex[:8].upper()
 
-        response = receptionist_client.patch(f'/invoices/{sample_invoice.id}/confirm-payment', json={
-            'payment_method': 'BANK_TRANSFER',
-            'promotion_id': expired_promo.id
-        })
+        yesterday = datetime.now().date() - timedelta(days=2)
+
+        expired_promo = dao.add_promotion(
+            f"EXP{suffix}",
+            "PERCENT",
+            20,
+            (yesterday - timedelta(days=5)).strftime("%Y-%m-%d"),
+            yesterday.strftime("%Y-%m-%d")
+        )
+
+        response = receptionist_client.patch(
+            f'/invoices/{sample_invoice.id}/confirm-payment',
+            json={
+                'payment_method': 'CASH',
+                'promotion_id': expired_promo.id
+            }
+        )
         assert response.status_code == 400
 
     def test_confirm_payment_already_paid_raises_400(self, receptionist_client, sample_invoice):

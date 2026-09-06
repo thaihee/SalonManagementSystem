@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from datetime import datetime, timedelta, date
 from app import dao
@@ -53,7 +55,14 @@ class TestCreateInvoice:
 
     def test_create_invoice_product_not_in_service_product_config_raises(self, app, customer_user, staff_user, sample_service):
         # Sản phẩm chưa được cấu hình ServiceProduct cho dịch vụ này
-        unlinked_prod = dao.add_product("Sáp tạo kiểu", "GOI", stock_quantity=10, min_stock_level=2)
+        suffix = uuid.uuid4().hex[:8]
+
+        unlinked_prod = dao.add_product(
+            f"Sáp tạo kiểu {suffix}",
+            "GOI",
+            stock_quantity=10,
+            min_stock_level=2
+        )
         details = [
             {"item_type": "SERVICE", "item_id": sample_service.id, "quantity": 1},
             {"item_type": "PRODUCT_USED", "item_id": unlinked_prod.id, "quantity": 1}
@@ -110,7 +119,15 @@ class TestConfirmInvoicePayment:
     def test_confirm_payment_with_percent_promotion(self, app, sample_invoice, receptionist_user):
         # Mã giảm giá 10%
         today = datetime.now().date()
-        promo = dao.add_promotion("SALE10", "PERCENT", 10, today.strftime("%Y-%m-%d"), (today + timedelta(days=5)).strftime("%Y-%m-%d"))
+        suffix = uuid.uuid4().hex[:8].upper()
+
+        promo = dao.add_promotion(
+            f"SALE{suffix}",
+            "PERCENT",
+            10,
+            today.strftime("%Y-%m-%d"),
+            (today + timedelta(days=5)).strftime("%Y-%m-%d")
+        )
 
         paid_inv = dao.confirm_invoice_payment(
             invoice_id=sample_invoice.id,
@@ -125,7 +142,15 @@ class TestConfirmInvoicePayment:
     def test_confirm_payment_with_fixed_promotion(self, app, sample_invoice, receptionist_user):
         # Mã giảm 30k
         today = datetime.now().date()
-        promo = dao.add_promotion("FIX30K", "FIXED", 30000, today.strftime("%Y-%m-%d"), (today + timedelta(days=5)).strftime("%Y-%m-%d"))
+        suffix = uuid.uuid4().hex[:8].upper()
+
+        promo = dao.add_promotion(
+            f"FIX{suffix}",
+            "FIXED",
+            30000,
+            today.strftime("%Y-%m-%d"),
+            (today + timedelta(days=5)).strftime("%Y-%m-%d")
+        )
 
         paid_inv = dao.confirm_invoice_payment(
             invoice_id=sample_invoice.id,
@@ -138,11 +163,25 @@ class TestConfirmInvoicePayment:
 
     def test_confirm_payment_expired_promotion_raises(self, app, sample_invoice, receptionist_user):
         # Mã hết hạn
+        suffix = uuid.uuid4().hex[:8].upper()
+
         yesterday = datetime.now().date() - timedelta(days=2)
-        promo = dao.add_promotion("EXPIRED", "PERCENT", 20, (yesterday - timedelta(days=5)).strftime("%Y-%m-%d"), yesterday.strftime("%Y-%m-%d"))
+
+        expired_promo = dao.add_promotion(
+            promo_code=f"EXP{suffix}",
+            promo_type="PERCENT",
+            value=20,
+            start_date=(yesterday - timedelta(days=5)).strftime("%Y-%m-%d"),
+            end_date=yesterday.strftime("%Y-%m-%d"),
+        )
 
         with pytest.raises(ValidationError):
-            dao.confirm_invoice_payment(sample_invoice.id, receptionist_user.id, "CASH", promotion_id=promo.id)
+            dao.confirm_invoice_payment(
+                invoice_id=sample_invoice.id,
+                receptionist_id=receptionist_user.id,
+                payment_method="CASH",
+                promotion_id=expired_promo.id,
+            )
 
     def test_confirm_payment_already_paid_raises(self, app, sample_invoice, receptionist_user):
         dao.confirm_invoice_payment(sample_invoice.id, receptionist_user.id, "CASH")
@@ -174,7 +213,13 @@ class TestAdminDraftInvoiceOperations:
             dao.cancel_invoice_draft(sample_invoice.id)
 
     def test_update_invoice_draft_success(self, app, sample_invoice, sample_service):
-        new_svc = dao.add_service("Nhuộm Tóc", 300000, 60)
+        suffix = uuid.uuid4().hex[:8]
+
+        new_svc = dao.add_service(
+            f"Nhuộm Tóc {suffix}",
+            300000,
+            60
+        )
         new_details = [
             {"item_type": "SERVICE", "item_id": sample_service.id, "quantity": 1},
             {"item_type": "SERVICE", "item_id": new_svc.id, "quantity": 1}
@@ -201,26 +246,56 @@ class TestInvoicesQueryAndReports:
 
         # Filter theo status=PAID
         invoices_paid, total = dao.get_invoices(status="PAID")
-        assert total == 1
+        assert sample_invoice.id in [inv.id for inv in invoices_paid]
+        assert all(inv.status.name == "PAID" for inv in invoices_paid)
 
         # Filter theo customer_id
         invoices_cust, _ = dao.get_invoices(customer_id=customer_user.id)
-        assert len(invoices_cust) == 1
+        assert all(
+            inv.customer_id == customer_user.id
+            for inv in invoices_cust
+        )
 
         # Filter theo staff_id
         invoices_staff, _ = dao.get_invoices(staff_id=staff_user.id)
-        assert len(invoices_staff) == 1
+        assert sample_invoice.id in [inv.id for inv in invoices_staff]
+        assert all(
+            inv.staff_id == staff_user.id
+            for inv in invoices_staff
+        )
 
-    def test_get_revenue_report_grouping(self, app, sample_invoice, receptionist_user):
-        dao.confirm_invoice_payment(sample_invoice.id, receptionist_user.id, "CASH")
+    def test_get_revenue_report_grouping(
+            self, app, sample_invoice, receptionist_user
+    ):
+        dao.confirm_invoice_payment(
+            sample_invoice.id,
+            receptionist_user.id,
+            "CASH"
+        )
 
+        # Theo ngày
         report_day = dao.get_revenue_report(period_type="day")
-        assert len(report_day) == 1
-        assert report_day[0]["total_invoices"] == 1
-        assert report_day[0]["total_revenue"] == 100000.0
 
+        target_day = sample_invoice.invoice_date.strftime("%Y-%m-%d")
+        day_row = next(
+            row for row in report_day
+            if row["period"] == target_day
+        )
+
+        assert day_row["total_invoices"] >= 1
+        assert day_row["total_revenue"] >= 100000.0
+
+        # Theo tháng
         report_month = dao.get_revenue_report(period_type="month")
-        assert len(report_month) == 1
+
+        target_month = sample_invoice.invoice_date.strftime("%Y-%m")
+        month_row = next(
+            row for row in report_month
+            if row["period"] == target_month
+        )
+
+        assert month_row["total_invoices"] >= 1
+        assert month_row["total_revenue"] >= 100000.0
 
     def test_get_revenue_report_invalid_period_raises(self, app):
         with pytest.raises(ValidationError):
@@ -234,16 +309,20 @@ class TestPromotionOperations:
 
     def test_add_promotion_success(self, app):
         today = datetime.now().date()
+        suffix = uuid.uuid4().hex[:8].upper()
+        promo_code = f"PROMO{suffix}"
+
         promo = dao.add_promotion(
-            promo_code="PROMO2026",
+            promo_code=promo_code,
             promo_type="PERCENT",
             value=15,
             start_date=today.strftime("%Y-%m-%d"),
             end_date=(today + timedelta(days=10)).strftime("%Y-%m-%d")
         )
-        assert promo.id is not None
-        assert promo.promo_code == "PROMO2026"
-        assert promo.value == 15.0
+
+        assert promo is not None
+        assert promo.promo_code == promo_code
+        assert promo.value == 15
 
     def test_add_promotion_duplicate_code_raises(self, app, sample_promotion):
         today = datetime.now().date()
@@ -262,16 +341,20 @@ class TestPromotionOperations:
 
     def test_update_promotion_success(self, app, sample_promotion):
         today = datetime.now().date().strftime("%Y-%m-%d")
+        suffix = uuid.uuid4().hex[:8].upper()
+        new_code = f"SALE{suffix}"
+
         updated = dao.update_promotion(
             promo_id=sample_promotion.id,
-            promo_code="SALE20",
+            promo_code=new_code,
             promo_type="PERCENT",
             value=20,
             start_date=today,
             end_date=sample_promotion.end_date.strftime("%Y-%m-%d")
         )
-        assert updated.promo_code == "SALE20"
-        assert updated.value == 20.0
+
+        assert updated.promo_code == new_code
+        assert updated.value == 20
 
     def test_delete_unused_promotion_hard_delete(self, app, sample_promotion):
         assert dao.delete_promotion(sample_promotion.id) is True

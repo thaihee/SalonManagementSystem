@@ -1,8 +1,17 @@
 import pytest
+import uuid
 from datetime import datetime, timedelta
 
 from app import dao
 from app.models import UserRole
+
+
+def unique_suffix():
+    return uuid.uuid4().hex[:8]
+
+
+def unique_phone():
+    return f"09{uuid.uuid4().int % 100000000:08d}"
 
 
 # =========================================================================
@@ -11,48 +20,56 @@ from app.models import UserRole
 # =========================================================================
 @pytest.fixture
 def admin_user(app):
+    suffix = unique_suffix()
+
     return dao.add_user(
         full_name="Admin Test",
-        username="admintest",
+        username=f"admin{suffix}",
         password="Admin123",
-        phone="0900000001",
-        email="admin@test.com",
+        phone=unique_phone(),
+        email=f"admin{suffix}@test.com",
         role=UserRole.ADMIN,
     )
 
 
 @pytest.fixture
 def staff_user(app):
+    suffix = unique_suffix()
+
     return dao.add_user(
         full_name="Staff Test",
-        username="stafftest",
+        username=f"staff{suffix}",
         password="Staff123",
-        phone="0900000002",
-        email="staff@test.com",
+        phone=unique_phone(),
+        email=f"staff{suffix}@test.com",
         role=UserRole.STAFF,
     )
 
 
 @pytest.fixture
 def receptionist_user(app):
+    suffix = unique_suffix()
+
     return dao.add_user(
         full_name="Reception Test",
-        username="receptiontest",
+        username=f"recep{suffix}",
         password="Recep123",
-        phone="0900000003",
-        email="reception@test.com",
+        phone=unique_phone(),
+        email=f"recep{suffix}@test.com",
         role=UserRole.RECEPTIONIST,
     )
 
 
 @pytest.fixture
 def customer_user(app):
+    suffix = unique_suffix()
+
     return dao.add_user(
         full_name="Customer Test",
-        username="customertest",
+        username=f"cust{suffix}",
         password="Customer123",
-        phone="0900000004",
-        email="customer@test.com",
+        phone=unique_phone(),
+        email=f"cust{suffix}@test.com",
         role=UserRole.CUSTOMER,
     )
 
@@ -62,25 +79,31 @@ def customer_user(app):
 # =========================================================================
 @pytest.fixture
 def sample_service(app):
+    suffix = unique_suffix()
+
     return dao.add_service(
-        name="Cắt tóc nam",
+        name=f"Service Test {suffix}",
         price=100000,
         duration=30,
-        description="Dịch vụ cắt tóc nam cơ bản",
+        description="Dịch vụ test",
+    )
+
+
+@pytest.fixture
+def sample_product(app):
+    suffix = unique_suffix()
+
+    return dao.add_product(
+        name=f"Product Test {suffix}",
+        unit="CHAI",
+        stock_quantity=50,
+        min_stock_level=10,
     )
 
 
 # =========================================================================
 # NGHIỆP VỤ 3: Product & Nhập/Xuất kho
 # =========================================================================
-@pytest.fixture
-def sample_product(app):
-    return dao.add_product(
-        name="Dầu gội",
-        unit="CHAI",
-        stock_quantity=50,
-        min_stock_level=10,
-    )
 
 
 @pytest.fixture
@@ -115,9 +138,11 @@ def sample_appointment(app, customer_user, staff_user, sample_service):
 # =========================================================================
 @pytest.fixture
 def sample_promotion(app):
+    suffix = unique_suffix().upper()
     today = datetime.now().date()
+
     return dao.add_promotion(
-        promo_code="SALE10",
+        promo_code=f"SALE{suffix}",
         promo_type="PERCENT",
         value=10,
         start_date=today.strftime("%Y-%m-%d"),

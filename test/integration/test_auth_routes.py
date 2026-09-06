@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from app import dao
 from app.models import UserRole
@@ -35,10 +37,16 @@ class TestLoginRoutes:
     ])
     def test_login_process_redirect_by_role(self, client, app, role, expected_redirect):
         """Đăng nhập Admin/Receptionist/Staff -> Redirect về đúng URL quản trị theo Role"""
-        clean_username = f"user{role.name.lower()}"
+        # clean_username = f"user{role.name.lower()}"
+        suffix = uuid.uuid4().hex[:8]
+
         user = dao.add_user(
-            full_name=f"User {role.name}", username=clean_username,
-            password="Password123", phone="0911223344", email=f"{role.name.lower()}@test.com", role=role
+            f"User {role.name}",
+            f"usr{suffix}",
+            "Password123",
+            f"09{uuid.uuid4().int % 100000000:08d}",
+            f"{role.name.lower()}{suffix}@test.com",
+            role=role
         )
         response = client.post('/login', data={'username': user.username, 'password': "Password123"})
         assert response.status_code == 302
@@ -70,10 +78,15 @@ class TestRegisterRoutes:
 
     def test_register_process_success(self, client):
         """Đăng ký thành công -> Redirect về /login (302)"""
+        suffix = uuid.uuid4().hex[:8]
+
         response = client.post('/register', data={
-            'full_name': 'Khách Hàng Mới', 'username': 'newcustomer',
-            'password': 'Password123', 'confirm': 'Password123',
-            'phone': '0988776655', 'email': 'newcust@gmail.com'
+            'full_name': 'Khách Hàng Mới',
+            'username': f'cust{suffix}',
+            'password': 'Password123',
+            'confirm': 'Password123',
+            'phone': f"09{uuid.uuid4().int % 100000000:08d}",
+            'email': f'cust{suffix}@gmail.com'
         })
         assert response.status_code == 302
         assert response.location.endswith('/login')
@@ -117,9 +130,11 @@ class TestUserProfileAndLogoutRoutes:
 
     def test_profile_update_json_success(self, customer_client, customer_user):
         """Cập nhật thông tin qua PUT /users/me JSON -> 200 OK"""
+        new_phone = f"09{uuid.uuid4().int % 100000000:08d}"
+
         response = customer_client.put('/users/me', json={
             'full_name': 'Tên Mới Cập Nhật',
-            'phone': '0912345678',
+            'phone': new_phone,
             'email': customer_user.email
         })
         assert response.status_code == 200
