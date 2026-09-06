@@ -21,4 +21,4 @@ api_key='466151686122924',
 api_secret='dH86bZJEC8Z800SNhRZVQEw648k')
 
 csrf = CSRFProtect(app)
-app.config['WTF_CSRF_ENABLED'] = True   # TODO: bật lại khi làm frontend, gắn {{ csrf_token() }} vào form
+app.config['WTF_CSRF_ENABLED'] = True

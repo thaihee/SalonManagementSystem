@@ -10,7 +10,7 @@ from app.exceptions import ValidationError, DuplicateError, NotFoundError
 
 
 
-#=========================Nghiệp vụ 1: Xác thực & Phân quyền==========================
+# Nghiệp vụ 1: Xác thực & Phân quyền
 
 def get_user_by_id(user_id):
     return User.query.get(user_id)
@@ -202,7 +202,7 @@ def delete_user_soft(user_id):
     return u
 
 
-# ==========================Nghiệp vụ 2: Quản lý Dịch vụ (Service)==========================
+# Nghiệp vụ 2: Quản lý Dịch vụ
 
 def get_service_by_id(service_id):
     return Service.query.get(service_id)
@@ -354,7 +354,7 @@ def delete_service(service_id):
     return True
 
 
-# ==========================Nghiệp vụ 3: Quản lý Sản phẩm (Product)==========================
+# Nghiệp vụ 3: Quản lý Sản phẩm
 
 def get_product_by_id(product_id):
     return Product.query.get(product_id)
@@ -474,7 +474,7 @@ def check_low_stock_products():
     ).all()
 
 
-#Nhập / Xuất kho
+# Nhập / Xuất kho
 def _validate_stock_quantity(quantity):
     """Hàm bổ trợ: số lượng nhập/xuất phải là số nguyên dương"""
     try:
@@ -526,7 +526,7 @@ def export_stock(product_id, quantity):
         raise Exception("Lỗi hệ thống: Không thể xuất kho!")
 
 
-# ==========================Nghiệp vụ 4: Quản lý Lịch hẹn (Appointment)==========================
+# Nghiệp vụ 4: Quản lý Lịch hẹn
 
 def get_appointment_by_id(appointment_id):
     """Lấy 1 lịch hẹn theo id — dùng ở route layer để check quyền sở hữu
@@ -986,7 +986,7 @@ def update_appointment(appointment_id, service_id=None, staff_id=None, date_str=
     return appt
 
 
-# ==========================Nghiệp vụ 5: Quản lý Hóa đơn & Thanh toán (Invoice)==========================
+# Nghiệp vụ 5: Quản lý Hóa đơn & Thanh toán
 
 #HELPER VALIDATORS CHO HÓA ĐƠN
 def _validate_invoice_participants(customer_id, staff_id):
@@ -1240,7 +1240,7 @@ def confirm_invoice_payment(invoice_id, receptionist_id, payment_method, promoti
         raise ex
 
 
-#Admin sửa/hủy hóa đơn NHÁP bị lập sai
+# Admin sửa/hủy hóa đơn NHÁP bị lập sai
 def cancel_invoice_draft(invoice_id):
     """Admin hủy 1 hóa đơn đang ở trạng thái NHÁP do nhân viên lập nhầm.
     Chỉ áp dụng cho DRAFT — hóa đơn đã PAID tuyệt đối không được hủy/xóa
@@ -1308,7 +1308,7 @@ def update_invoice_draft(invoice_id, details_data):
         raise ex
 
 
-# ==========================HELPER FUNCTIONS CHO BÁO CÁO (Internal Helpers)==========================
+# HELPER FUNCTIONS CHO BÁO CÁO
 
 def _get_period_key(invoice_date, period_type):
     """
@@ -1340,7 +1340,7 @@ def _parse_date_bound(date_str, is_end_of_day=False):
         raise ValidationError("Định dạng ngày không hợp lệ! Vui lòng dùng YYYY-MM-DD.")
 
 
-# ==========================BÁO CÁO DOANH THU==========================
+# BÁO CÁO DOANH THU
 
 def get_revenue_report(period_type='day', from_date_str=None, to_date_str=None):
     """
@@ -1379,7 +1379,7 @@ def get_revenue_report(period_type='day', from_date_str=None, to_date_str=None):
     return sorted(groups.values(), key=lambda x: x["period"], reverse=True)
 
 
-# ==========================Nghiệp vụ 6: Định mức Sản phẩm theo Dịch vụ (ServiceProduct)==========================
+# Nghiệp vụ 6: Định mức Sản phẩm theo Dịch vụ
 
 def get_service_products(service_id):
     """Lấy danh sách sản phẩm khả dụng kèm định mức gợi ý cho 1 dịch vụ.
@@ -1468,7 +1468,7 @@ def delete_service_product(sp_id):
         raise Exception("Lỗi hệ thống: Không thể xóa định mức sản phẩm!")
 
 
-# ==========================Nghiệp vụ 7: Quản lý Khuyến mãi (Promotion)==========================
+# Nghiệp vụ 7: Quản lý Khuyến mãi
 
 def get_promotion_by_id(promo_id):
     return Promotion.query.get(promo_id)

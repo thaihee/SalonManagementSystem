@@ -12,14 +12,12 @@ from app.models import UserRole, InvoiceStatus
 from app.exceptions import ValidationError, DuplicateError, NotFoundError
 
 
-# =========================================================================
-# 0. TRANG QUẢN TRỊ ADMIN (DASHBOARD TỔNG QUAN)
-# =========================================================================
+# Trang quản trị
 @app.route('/admin', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def admin_dashboard_view():
     kw = request.args.get('kw', '').strip()
-    date_str = request.args.get('date', None)  # Đọc tham số ngày
+    date_str = request.args.get('date', None)
     status_str = request.args.get('status', 'ALL')
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 10)
@@ -90,7 +88,7 @@ def admin_dashboard_view():
     ), 200
 
 
-# =========================Nghiệp vụ 2: CRUD Dịch vụ (Quản lý)==========================
+# CRUD Dịch vụ
 
 @app.route('/admin/services', methods=['GET'])
 @role_required(UserRole.ADMIN)
@@ -181,7 +179,7 @@ def delete_service_route(service_id):
         return jsonify(success=False, error="Lỗi hệ thống khi xóa dịch vụ!"), 500
 
 
-# =========================Nghiệp vụ 3b: Nhập / Xuất kho (Quản lý)==========================
+# Nhập / Xuất kho
 
 @app.route('/admin/products/<int:product_id>/import', methods=['POST'])
 @role_required(UserRole.ADMIN)
@@ -215,8 +213,7 @@ def export_stock_route(product_id):
         return jsonify(success=False, error="Lỗi hệ thống khi xuất kho!"), 500
 
 
-# =========================Nghiệp vụ 3c: Cảnh báo tồn kho thấp==========================
-
+# Cảnh báo tồn kho thấp
 @app.route('/admin/products/low-stock', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def low_stock_products_route():
@@ -229,8 +226,7 @@ def low_stock_products_route():
     } for p in products]), 200
 
 
-# =========================Nghiệp vụ 1b: Admin quản lý User/Nhân viên==========================
-
+# Admin quản lý User/Nhân viên
 def _serialize_user(u):
     return {
         "id": u.id,
@@ -343,7 +339,7 @@ def deactivate_user_route(user_id):
         return jsonify(success=False, error="Lỗi hệ thống khi vô hiệu hóa tài khoản!"), 500
 
 
-# =========================Nghiệp vụ 4: Báo cáo Doanh thu (Quản lý)==========================
+# Báo cáo Doanh thu
 
 @app.route('/admin/reports/revenue', methods=['GET'])
 @role_required(UserRole.ADMIN)
@@ -534,7 +530,7 @@ def export_revenue_report_route():
     )
 
 
-# =========================Nghiệp vụ 3: CRUD Sản phẩm (Quản lý)==========================
+# CRUD Sản phẩm
 
 @app.route('/admin/products', methods=['GET'])
 @role_required(UserRole.ADMIN)
@@ -620,7 +616,7 @@ def delete_product_route(product_id):
         return jsonify(success=False, error="Lỗi hệ thống khi xóa sản phẩm!"), 500
 
 
-# =========================Nghiệp vụ: Định mức Sản phẩm theo Dịch vụ (Quản lý)==========================
+# Định mức Sản phẩm theo Dịch vụ
 
 @app.route('/admin/services/<int:service_id>/products', methods=['GET'])
 @role_required(UserRole.ADMIN)
@@ -685,7 +681,7 @@ def delete_service_product_route(sp_id):
         return jsonify(success=False, error="Lỗi hệ thống khi xóa định mức!"), 500
 
 
-# =========================Nghiệp vụ: Khuyến mãi (Quản lý)==========================
+# Khuyến mãi
 
 @app.route('/admin/promotions', methods=['GET'])
 @role_required(UserRole.ADMIN)
@@ -788,7 +784,7 @@ def toggle_user_active_route(user_id):
         return jsonify(success=False, error="Lỗi hệ thống khi thay đổi trạng thái tài khoản!"), 500
 
 
-# =========================Nghiệp vụ: Xóa /Sửa đơn nháp (Quản lý)==========================
+# Xóa /Sửa đơn nháp
 
 @app.route('/admin/invoices/<int:invoice_id>', methods=['PUT'])
 @role_required(UserRole.ADMIN)
@@ -830,8 +826,7 @@ def cancel_invoice_draft_route(invoice_id):
         return jsonify(success=False, error="Lỗi hệ thống khi hủy hóa đơn!"), 500
 
 
-
-# API trả về danh sách chi tiết của Hóa đơn nháp để Admin sửa tại chỗ (Inline Edit)
+# Trả về danh sách chi tiết của Hóa đơn nháp để Admin sửa tại chỗ
 @app.route('/admin/invoices/<int:invoice_id>/draft-detail', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def get_invoice_draft_detail_route(invoice_id):

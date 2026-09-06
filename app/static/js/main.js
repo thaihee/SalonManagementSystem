@@ -1,7 +1,3 @@
-/* ========================================================
-   UTILITIES JS - DÙNG CHUNG CHO TOÀN BỘ WEBSITE
-   ======================================================== */
-
 // 1. Lấy CSRF Token
 function getCsrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');

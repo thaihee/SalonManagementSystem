@@ -1,0 +1,3759 @@
+{
+  "info": {
+    "_postman_id": "b3ab8770-2db6-48e2-a742-6a141a1635c3",
+    "name": "Salon Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54771328",
+    "_collection_link": "https://go.postman.co/collection/54771328-b3ab8770-2db6-48e2-a742-6a141a1635c3?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Đăng nhập",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Load nội dung HTML trả về từ server\r",
+                  "const $ = cheerio.load(pm.response.text());\r",
+                  "\r",
+                  "// Tìm thẻ meta và lấy token\r",
+                  "const csrfToken = $('meta[name=\"csrf-token\"]').attr('content');\r",
+                  "\r",
+                  "if (csrfToken) {\r",
+                  "    // SỬA Ở ĐÂY: Dùng collectionVariables thay vì environment\r",
+                  "    pm.collectionVariables.set(\"csrf_token\", csrfToken);\r",
+                  "    console.log(\"Đã lấy được CSRF Token: \", csrfToken);\r",
+                  "} else {\r",
+                  "    console.log(\"Lỗi: Không tìm thấy thẻ meta csrf-token trong HTML\");\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng nhập KH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "// Kịch bản 1: Đăng nhập thành công (Kỳ vọng 302 và có Cookie session)\r",
+                  "if (status === 302) {\r",
+                  "    pm.test(\"Đăng nhập thành công\", function () {\r",
+                  "        pm.response.to.have.status(302);\r",
+                  "        \r",
+                  "        // Kiểm tra xem server có cấp phát session cookie không (quan trọng nhất của Login)\r",
+                  "        pm.expect(pm.cookies.has('session')).to.be.true;\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 2: Sai tài khoản / mật khẩu (Kỳ vọng 401)\r",
+                  "else if (status === 401) {\r",
+                  "    pm.test(\"Sai tài khoản hoặc mật khẩu\", function () {\r",
+                  "        pm.response.to.have.status(401);\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 3: Lỗi hệ thống server (Kỳ vọng 500)\r",
+                  "else if (status === 500) {\r",
+                  "    pm.test(\"Lỗi hệ thống server\", function () {\r",
+                  "        pm.response.to.have.status(500);\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 4: Bắt các trạng thái rác khác\r",
+                  "else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([302, 401, 500]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// Luôn check xem đã truyền CSRF chưa\r",
+                  "pm.test(\"X-CSRFToken header is present in Request\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "username",
+                  "value": "customer1",
+                  "type": "text",
+                  "uuid": "3fea6e71-ff10-408f-ba59-daacd6fcd303"
+                },
+                {
+                  "key": "password",
+                  "value": "Abc@1234",
+                  "type": "text",
+                  "uuid": "fc724dcf-ce51-40fc-b1a5-dde0d76d08e6"
+                },
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text",
+                  "uuid": "50234d1a-7c03-440c-802e-bbaaec592f0e"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng nhập NV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "// Kịch bản 1: Đăng nhập thành công (Kỳ vọng 302 và có Cookie session)\r",
+                  "if (status === 302) {\r",
+                  "    pm.test(\"Đăng nhập thành công\", function () {\r",
+                  "        pm.response.to.have.status(302);\r",
+                  "        \r",
+                  "        // Kiểm tra xem server có cấp phát session cookie không (quan trọng nhất của Login)\r",
+                  "        pm.expect(pm.cookies.has('session')).to.be.true;\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 2: Sai tài khoản / mật khẩu (Kỳ vọng 401)\r",
+                  "else if (status === 401) {\r",
+                  "    pm.test(\"Sai tài khoản hoặc mật khẩu\", function () {\r",
+                  "        pm.response.to.have.status(401);\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 3: Lỗi hệ thống server (Kỳ vọng 500)\r",
+                  "else if (status === 500) {\r",
+                  "    pm.test(\"Lỗi hệ thống server\", function () {\r",
+                  "        pm.response.to.have.status(500);\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 4: Bắt các trạng thái rác khác\r",
+                  "else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([302, 401, 500]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// Luôn check xem đã truyền CSRF chưa\r",
+                  "pm.test(\"X-CSRFToken header is present in Request\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "username",
+                  "value": "staff1",
+                  "type": "text",
+                  "uuid": "3fea6e71-ff10-408f-ba59-daacd6fcd303"
+                },
+                {
+                  "key": "password",
+                  "value": "123456",
+                  "type": "text",
+                  "uuid": "fc724dcf-ce51-40fc-b1a5-dde0d76d08e6"
+                },
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text",
+                  "uuid": "50234d1a-7c03-440c-802e-bbaaec592f0e"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng nhập LT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "// Kịch bản 1: Đăng nhập thành công (Kỳ vọng 302 và có Cookie session)\r",
+                  "if (status === 302) {\r",
+                  "    pm.test(\"Đăng nhập thành công\", function () {\r",
+                  "        pm.response.to.have.status(302);\r",
+                  "        \r",
+                  "        // Kiểm tra xem server có cấp phát session cookie không (quan trọng nhất của Login)\r",
+                  "        pm.expect(pm.cookies.has('session')).to.be.true;\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 2: Sai tài khoản / mật khẩu (Kỳ vọng 401)\r",
+                  "else if (status === 401) {\r",
+                  "    pm.test(\"Sai tài khoản hoặc mật khẩu\", function () {\r",
+                  "        pm.response.to.have.status(401);\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 3: Lỗi hệ thống server (Kỳ vọng 500)\r",
+                  "else if (status === 500) {\r",
+                  "    pm.test(\"Lỗi hệ thống server\", function () {\r",
+                  "        pm.response.to.have.status(500);\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 4: Bắt các trạng thái rác khác\r",
+                  "else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([302, 401, 500]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// Luôn check xem đã truyền CSRF chưa\r",
+                  "pm.test(\"X-CSRFToken header is present in Request\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "username",
+                  "value": "letan1",
+                  "type": "text",
+                  "uuid": "3fea6e71-ff10-408f-ba59-daacd6fcd303"
+                },
+                {
+                  "key": "password",
+                  "value": "123456",
+                  "type": "text",
+                  "uuid": "fc724dcf-ce51-40fc-b1a5-dde0d76d08e6"
+                },
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text",
+                  "uuid": "50234d1a-7c03-440c-802e-bbaaec592f0e"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng nhập Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "text",
+                  "uuid": "86699073-a5d1-4995-ba40-f467b3ba5690"
+                },
+                {
+                  "key": "password",
+                  "value": "123456",
+                  "type": "text",
+                  "uuid": "c52c3470-005d-48a3-bd21-d19a105eb514"
+                },
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text",
+                  "uuid": "7709e038-c142-4bfe-afbe-244255b8d57e"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Trang cá nhân",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "if (status === 200) {\r",
+                  "    pm.test(\"Truy cập hồ sơ thành công (200 OK)\", function () {\r",
+                  "        pm.response.to.have.status(200);\r",
+                  "    });\r",
+                  "} else if (status === 302) {\r",
+                  "    pm.test(\"Chưa đăng nhập bị đá văng\", function () {\r",
+                  "        pm.response.to.have.status(302);\r",
+                  "    });\r",
+                  "} else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([200, 302]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// const $ = cheerio.load(pm.response.text());\r",
+                  "// const csrfToken = $('meta[name=\"csrf-token\"]').attr('content');\r",
+                  "// if (csrfToken) {\r",
+                  "//     pm.collectionVariables.set(\"csrf_token\", csrfToken);\r",
+                  "//     console.log(\"Đã cập nhật Token mới sau khi đăng nhập:\", csrfToken);\r",
+                  "// }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Chỉnh sửa thông tin cá nhân",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "// Kịch bản 1: Thành công\r",
+                  "if (status === 200) {\r",
+                  "    pm.test(\"Cập nhật thành công\", function () {\r",
+                  "        pm.response.to.have.status(200);\r",
+                  "        \r",
+                  "        // Vì API trả về JSON nên ta check luôn nội dung message\r",
+                  "        const jsonData = pm.response.json();\r",
+                  "        pm.expect(jsonData.message).to.eql(\"Cập nhật thông tin cá nhân thành công!\");\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 2: Lỗi Validation\r",
+                  "else if (status === 400) {\r",
+                  "    pm.test(\"Dữ liệu sai định dạng/trống\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "        pm.expect(pm.response.json()).to.have.property(\"error\");\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 3: Lỗi Trùng Email/SĐT\r",
+                  "else if (status === 409) {\r",
+                  "    pm.test(\"Trùng thông tin của người khác\", function () {\r",
+                  "        pm.response.to.have.status(409);\r",
+                  "        pm.expect(pm.response.json()).to.have.property(\"error\");\r",
+                  "    });\r",
+                  "}\r",
+                  "// Các kịch bản khác\r",
+                  "else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([200, 400, 409, 404, 500]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// Luôn check xem có gửi CSRF Token lên không\r",
+                  "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"full_name\": \"Nguyễn Văn Test\",\r\n    \"phone\": \"0999888777\",\r\n    \"email\": \"testupdate@gmail.com\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đổi mật khẩu",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "if (status === 200) {\r",
+                  "    pm.test(\"Đổi mật khẩu thành công\", function () {\r",
+                  "        pm.response.to.have.status(200);\r",
+                  "\r",
+                  "        const jsonData = pm.response.json();\r",
+                  "        pm.expect(jsonData.message).to.eql(\"Đổi mật khẩu thành công!\");\r",
+                  "    });\r",
+                  "}\r",
+                  "else if (status === 400) {\r",
+                  "    pm.test(\"Mật khẩu sai/trống\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "        pm.expect(pm.response.json()).to.have.property(\"error\");\r",
+                  "    });\r",
+                  "} \r",
+                  "else if (status === 404) {\r",
+                  "    pm.test(\"Người dùng không tồn tại\", function () {\r",
+                  "        pm.response.to.have.status(404);\r",
+                  "        pm.expect(pm.response.json()).to.have.property(\"error\");\r",
+                  "    });\r",
+                  "}\r",
+                  "// Các kịch bản khác\r",
+                  "else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([200, 400, 404,500]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// Luôn check xem có gửi CSRF Token lên không\r",
+                  "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"old_password\": \"123456\",\r\n    \"new_password\": \"Abc@1234\",\r\n    \"confirm_password\": \"Abc@1234\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/change-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng xuất",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Đăng xuất thành công\", function() {\r",
+                  "    pm.response.to.have.status(302);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng kí",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const $ = cheerio.load(pm.response.text());\r",
+                  "const csrfToken = $('meta[name=\"csrf-token\"]').attr('content');\r",
+                  "if (csrfToken) pm.collectionVariables.set(\"csrf_token\", csrfToken);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "register"
+              ],
+              "query": [
+                {
+                  "key": "",
+                  "value": null,
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng kí",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Lấy mã HTTP và nội dung HTML trả về\r",
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "// Kịch bản 1: Đăng ký thành công (Kỳ vọng 302 Redirect)\r",
+                  "if (status === 302) {\r",
+                  "    pm.test(\"Đăng ký thành công\", function () {\r",
+                  "        pm.response.to.have.status(302);\r",
+                  "        // Kiểm tra xem server có điều hướng về đúng trang login không\r",
+                  "        pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/login\");\r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 2: Lỗi Mật khẩu hoặc Dữ liệu sai định dạng (Kỳ vọng 400)\r",
+                  "else if (status === 400) {\r",
+                  "    pm.test(\"Lỗi dữ liệu / Sai mật khẩu xác nhận\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "        // Kiểm tra xem thông báo lỗi có xuất hiện trên giao diện HTML không\r",
+                  "        // Chữ này phải khớp với biến err_msg trong index.py\r",
+                  "        // pm.expect(htmlBody).to.include(\"Mật khẩu xác nhận không khớp\"); \r",
+                  "    });\r",
+                  "} \r",
+                  "// Kịch bản 3: Lỗi Trùng lặp thông tin (Kỳ vọng 409)\r",
+                  "else if (status === 409) {\r",
+                  "    pm.test(\"Trùng Username hoặc Email\", function () {\r",
+                  "        pm.response.to.have.status(409);\r",
+                  "    });\r",
+                  "} \r",
+                  "else if (status === 500) {\r",
+                  "    pm.test(\"Lỗi hệ thống server (500 Internal Server Error)\", function () {\r",
+                  "        pm.response.to.have.status(500);\r",
+                  "    });\r",
+                  "}\r",
+                  "// Kịch bản 4: Các lỗi ngoại lệ khác (ví dụ 500 Server Error)\r",
+                  "else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        // Test này sẽ báo FAILED nếu server văng ra lỗi 500\r",
+                  "        pm.expect(status).to.be.oneOf([302, 400, 409]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// Giữ lại test check Header của bạn (luôn chạy bất kể case nào)\r",
+                  "pm.test(\"X-CSRFToken header is present in Request\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "full_name",
+                  "value": "Nguyễn Thị Lan",
+                  "type": "text",
+                  "uuid": "311232b3-3441-4029-8d44-83589e625071"
+                },
+                {
+                  "key": "username",
+                  "value": "customer4",
+                  "type": "text",
+                  "uuid": "752eda59-0736-42fd-8eb6-2944966a8fc7"
+                },
+                {
+                  "key": "password",
+                  "value": "Abc@1234",
+                  "type": "text",
+                  "uuid": "23aa0f45-6387-4d88-b221-8976d6bfd39f"
+                },
+                {
+                  "key": "confirm",
+                  "value": "Abc@1235",
+                  "type": "text",
+                  "uuid": "f774961f-8f16-403b-9ec0-9dfb553adead"
+                },
+                {
+                  "key": "phone",
+                  "value": "0123456788",
+                  "type": "text",
+                  "uuid": "97c446c0-d38d-4233-a916-2ea0cfa27d66"
+                },
+                {
+                  "key": "email",
+                  "value": "lan1@gmail.com",
+                  "type": "text",
+                  "uuid": "1aab5c3c-500c-4cd1-94a4-5c76c9290bd5"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "register"
+              ],
+              "query": [
+                {
+                  "key": "",
+                  "value": null,
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "item": [
+        {
+          "name": "Trang chủ",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "username",
+                  "value": "customer1",
+                  "type": "text",
+                  "uuid": "3fea6e71-ff10-408f-ba59-daacd6fcd303"
+                },
+                {
+                  "key": "password",
+                  "value": "123456",
+                  "type": "text",
+                  "uuid": "fc724dcf-ce51-40fc-b1a5-dde0d76d08e6"
+                },
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text",
+                  "uuid": "50234d1a-7c03-440c-802e-bbaaec592f0e"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đặt lịch",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "username",
+                  "value": "customer1",
+                  "type": "text",
+                  "uuid": "3fea6e71-ff10-408f-ba59-daacd6fcd303"
+                },
+                {
+                  "key": "password",
+                  "value": "123456",
+                  "type": "text",
+                  "uuid": "fc724dcf-ce51-40fc-b1a5-dde0d76d08e6"
+                },
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text",
+                  "uuid": "50234d1a-7c03-440c-802e-bbaaec592f0e"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/booking",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Giờ hẹn còn trống",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "if (status === 200) {\r",
+                  "    pm.test(\"Lấy danh sách giờ trống thành công\", function () {\r",
+                  "        pm.response.to.have.status(200);\r",
+                  "        pm.expect(pm.response.json()).to.have.property(\"available_slots\");\r",
+                  "    });\r",
+                  "} else if (status === 302) {\r",
+                  "    pm.test(\"Chưa đăng nhập bị đá văng\", function () {\r",
+                  "        pm.response.to.have.status(302);\r",
+                  "    });\r",
+                  "} else if (status === 400) {\r",
+                  "    pm.test(\"Thiếu param service_id hoặc date\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "        pm.expect(pm.response.json()).to.have.property(\"error\");\r",
+                  "    });\r",
+                  "} else if (status === 404) {\r",
+                  "    pm.test(\"Không tồn tại\", function () {\r",
+                  "        pm.response.to.have.status(404);\r",
+                  "        pm.expect(pm.response.json()).to.have.property(\"error\");\r",
+                  "    });\r",
+                  "} else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([200, 302, 400]);\r",
+                  "    });\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/appointments/available-slots?service_id=1&date=2026-08-21",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments",
+                "available-slots"
+              ],
+              "query": [
+                {
+                  "key": "service_id",
+                  "value": "1"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-08-21"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Tạo lịch hẹn",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "if (status === 201) {\r",
+                  "    pm.test(\"Đặt lịch hẹn thành công\", function () {\r",
+                  "        pm.response.to.be.success;\r",
+                  "        // Lưu lại ID lịch hẹn để dành test cho route Sửa/Hủy phía sau\r",
+                  "        const apptId = pm.response.json().appointment.id;\r",
+                  "        pm.collectionVariables.set(\"test_appointment_id\", apptId);\r",
+                  "    });\r",
+                  "} else if (status === 400) {\r",
+                  "    pm.test(\"Lỗi dữ liệu hoặc Trùng giờ\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "    });\r",
+                  "} else if (status === 404) {\r",
+                  "    pm.test(\"Không tìm thấy dữ liệu\", function () {\r",
+                  "        pm.response.to.have.status(404);\r",
+                  "    });\r",
+                  "} else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([201, 200, 400]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "pm.test(\"X-CSRFToken header is present in Request\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"service_id\": 1,\r\n    \"date\": \"2026-08-23\",\r\n    \"time\": \"09:00\",\r\n    \"note\": \"cắt cẩn thận nha\",\r\n    \"staff_id\" : 2\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sửa lịch hẹn",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "if (status === 200) {\r",
+                  "    pm.test(\"Cập nhật lịch hẹn thành công\", function () {\r",
+                  "        pm.response.to.have.status(200);\r",
+                  "    });\r",
+                  "} else if (status === 400) {\r",
+                  "    pm.test(\"Dữ liệu sai định dạng\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "    });\r",
+                  "} else if (status === 403) {\r",
+                  "    pm.test(\"Chặn IDOR - Không có quyền sửa lịch này\", function () {\r",
+                  "        pm.response.to.have.status(403);\r",
+                  "    });\r",
+                  "} else if (status === 404) {\r",
+                  "    pm.test(\"Không tìm thấy lịch hẹn\", function () {\r",
+                  "        pm.response.to.have.status(404);\r",
+                  "    });\r",
+                  "} else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([200, 400, 403, 404]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"note\": \"Mình đổi ý rồi, tới xem cần từ vấn có nên cắt không\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments/{{test_appointment_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments",
+                "{{test_appointment_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Hủy lịch hẹn",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "if (status === 200) {\r",
+                  "    pm.test(\"Hủy lịch hẹn thành công\", function () {\r",
+                  "        pm.response.to.have.status(200);\r",
+                  "    });\r",
+                  "} else if (status === 400) {\r",
+                  "    pm.test(\"Không thể hủy lịch hẹn\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "    });\r",
+                  "} else if (status === 403) {\r",
+                  "    pm.test(\"Chặn IDOR\", function () {\r",
+                  "        pm.response.to.have.status(403);\r",
+                  "    });\r",
+                  "} else if (status === 404) {\r",
+                  "    pm.test(\"Không tìm thấy lịch hẹn\", function () {\r",
+                  "        pm.response.to.have.status(404);\r",
+                  "    });\r",
+                  "} else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([200, 403, 404]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/{{test_appointment_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments",
+                "{{test_appointment_id}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lịch hẹn của tôi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/appointments/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Danh sách hóa đơn",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/invoices/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Chi tiết hóa đơn",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "if (status === 200) {\r",
+                  "    pm.test(\"Truy cập chi tiết hóa đơn thành công (200 OK)\", function () {\r",
+                  "        pm.response.to.have.status(200);\r",
+                  "    });\r",
+                  "} else if (status === 403) {\r",
+                  "    pm.test(\"Bắt IDOR)\", function () {\r",
+                  "        pm.response.to.have.status(403);\r",
+                  "    });\r",
+                  "} else if (status === 404) {\r",
+                  "    pm.test(\"Hóa đơn không tồn tại\", function () {\r",
+                  "        pm.response.to.have.status(404);\r",
+                  "    });\r",
+                  "} else if (status === 302) {\r",
+                  "    pm.test(\"Chưa đăng nhập bị chặn\", function () {\r",
+                  "        pm.response.to.have.status(302);\r",
+                  "    });\r",
+                  "} else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([200, 403, 404, 302]);\r",
+                  "    });\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/invoices/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Tìm kiếm khách hàng-Admin, Staff",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/customers/search",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Staff",
+      "item": [
+        {
+          "name": "Tạo hóa đơn",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "if (status === 201) {\r",
+                  "    pm.test(\"Tạo hóa đơn nháp thành công\", function () {\r",
+                  "        pm.response.to.be.success;\r",
+                  "        \r",
+                  "        // Lưu lại invoice_id để dành cho nhóm Lễ tân (Thanh toán)\r",
+                  "        const jsonData = pm.response.json();\r",
+                  "        if(jsonData.invoice && jsonData.invoice.id) {\r",
+                  "            pm.collectionVariables.set(\"test_invoice_id\", jsonData.invoice.id);\r",
+                  "        }\r",
+                  "    });\r",
+                  "} else if (status === 400) {\r",
+                  "    pm.test(\"Lỗi Validation (Thiếu Dịch vụ, Sai Sản phẩm...)\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "        // Sản phẩm phải có trong danh mục ServiceProduct, Số lượng > 0...\r",
+                  "    });\r",
+                  "} else if (status === 403) {\r",
+                  "    pm.test(\"Chặn IDOR - Lập hóa đơn cho lịch hẹn của nhân viên khác\", function () {\r",
+                  "        pm.response.to.have.status(403);\r",
+                  "    });\r",
+                  "} else if (status === 409) {\r",
+                  "    pm.test(\"Lịch hẹn này đã được lập hóa đơn rồi\", function () {\r",
+                  "        pm.response.to.have.status(409);\r",
+                  "    });\r",
+                  "} else if (status === 404) {\r",
+                  "    pm.test(\"Dữ liệu không tồn tại\", function () {\r",
+                  "        pm.response.to.have.status(404);\r",
+                  "    });\r",
+                  "} else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([200, 201, 400, 403, 404, 409]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"customer_id\": 5,\r\n    \"appointment_id\": {{test_appointment_id}},\r\n    \"details\": [\r\n        {\r\n            \"item_type\": \"SERVICE\",\r\n            \"item_id\": 2,\r\n            \"quantity\": 1\r\n        },\r\n        {\r\n            \"item_type\": \"PRODUCT_USED\",\r\n            \"item_id\": 1,\r\n            \"quantity\": 1\r\n        }\r\n    ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Trang tạo hóa đơn",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/staff/create-invoice",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "staff",
+                "create-invoice"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Danh sách hóa đơn",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/staff/invoices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "staff",
+                "invoices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Trang danh sách lịch hẹn",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/staff/appointments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "staff",
+                "appointments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Danh sách lịch hẹn",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (status === 201) {\r",
+                  "    pm.test(\"Tạo hóa đơn nháp thành công\", function () {\r",
+                  "        pm.response.to.be.success;\r",
+                  "        \r",
+                  "        // Lưu lại invoice_id để dành cho nhóm Lễ tân (Thanh toán)\r",
+                  "        const jsonData = pm.response.json();\r",
+                  "        if(jsonData.invoice && jsonData.invoice.id) {\r",
+                  "            pm.collectionVariables.set(\"test_invoice_id\", jsonData.invoice.id);\r",
+                  "        }\r",
+                  "    });\r",
+                  "} else {\r",
+                  "    pm.test(\"Lỗi Validation)\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "    });\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/staff/appointments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "staff",
+                "appointments"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Receptionist",
+      "item": [
+        {
+          "name": "Danh sách lịch hẹn",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reception/appointments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reception",
+                "appointments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Danh sách hóa đơn",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reception/invoices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reception",
+                "invoices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Trang xử lý thanh toán",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reception/invoice/1/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reception",
+                "invoice",
+                "1",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Xác nhận thanh toán",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;\r",
+                  "\r",
+                  "if (status === 200) {\r",
+                  "    pm.test(\"Xác nhận thanh toán thành công\", function () {\r",
+                  "        pm.response.to.have.status(200);\r",
+                  "        const jsonData = pm.response.json();\r",
+                  "        pm.expect(jsonData.message).to.exist;\r",
+                  "    });\r",
+                  "} else if (status === 400) {\r",
+                  "    pm.test(\"Lỗi Validation (Sai trạng thái, Hết tồn kho, Mã KM hết hạn)\", function () {\r",
+                  "        pm.response.to.have.status(400);\r",
+                  "        // Bắt các lỗi ValidationError trong dao.py như: \r",
+                  "        // \"Hóa đơn không ở trạng thái nháp...\" hoặc \"...không còn đủ tồn kho...\"\r",
+                  "    });\r",
+                  "} else if (status === 403) {\r",
+                  "    pm.test(\"Vượt quyền - Không phải Lễ tân/Admin\", function () {\r",
+                  "        pm.response.to.have.status(403);\r",
+                  "    });\r",
+                  "} else if (status === 404) {\r",
+                  "    pm.test(\"Không tìm thấy Hóa đơn hoặc Mã KM\", function () {\r",
+                  "        pm.response.to.have.status(404);\r",
+                  "    });\r",
+                  "} else {\r",
+                  "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                  "        pm.expect(status).to.be.oneOf([200, 400, 403, 404]);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                  "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"payment_method\": \"CASH\", \r\n    \"promotion_id\": null\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{test_invoice_id}}/confirm-payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invoices",
+                "{{test_invoice_id}}",
+                "confirm-payment"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Dashboard & Reports",
+          "item": [
+            {
+              "name": "Dashboard",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Thành công truy cập\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Báo cáo",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Thành công truy cập\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/reports/revenue",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "reports",
+                    "revenue"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Xuất ra báo cáo Excel",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Xuất báo cáo Excel thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        \r",
+                      "        // Kiểm tra Header Content-Type xem có đúng chuẩn file Excel không\r",
+                      "        pm.test(\"Kiểm tra Header Content-Type là Excel\", function() {\r",
+                      "            pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"spreadsheetml.sheet\");\r",
+                      "        });\r",
+                      "\r",
+                      "        // Kiểm tra Header Content-Disposition xem có ép tải file không\r",
+                      "        pm.test(\"Kiểm tra Header Content-Disposition (Tên file)\", function() {\r",
+                      "            const disposition = pm.response.headers.get(\"Content-Disposition\");\r",
+                      "            pm.expect(disposition).to.include(\"attachment\");\r",
+                      "            pm.expect(disposition).to.include(\"Bao_Cao_Doanh_Thu\");\r",
+                      "        });\r",
+                      "    });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server (Có thể do sai định dạng ngày)\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/reports/revenue/export?form_date=2026-08-21&to_date=2026-08-21",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "reports",
+                    "revenue",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "key": "form_date",
+                      "value": "2026-08-21",
+                      "type": "text"
+                    },
+                    {
+                      "key": "to_date",
+                      "value": "2026-08-21",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Services",
+          "item": [
+            {
+              "name": "Danh sách dịch vụ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Thành công truy cập\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/services",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "services"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Thêm dịch vụ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 201) {\r",
+                      "    pm.test(\"Tạo dịch vụ thành công\", function () {\r",
+                      "        pm.response.to.have.status(201);\r",
+                      "        const jsonData = pm.response.json();\r",
+                      "        pm.expect(jsonData.success).to.be.true;\r",
+                      "        \r",
+                      "        // Tự động lưu ID của dịch vụ vừa tạo để test Sửa/Xóa\r",
+                      "        if (jsonData.id) {\r",
+                      "            pm.collectionVariables.set(\"test_service_id\", jsonData.id);\r",
+                      "        }\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Dữ liệu sai định dạng (âm tiền, thiếu tên...)\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "        pm.expect(pm.response.json()).to.have.property(\"error\");\r",
+                      "    });\r",
+                      "} else if (status === 409) {\r",
+                      "    pm.test(\"Trùng tên dịch vụ\", function () {\r",
+                      "        pm.response.to.have.status(409);\r",
+                      "        pm.expect(pm.response.json()).to.have.property(\"error\");\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Bị chặn do không phải Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([201, 400, 409, 403, 500]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "service_name",
+                      "value": "Cắt tóc Nam VIP",
+                      "type": "text",
+                      "uuid": "e18cd4ab-f6cd-43e4-8c47-7a35750103ec"
+                    },
+                    {
+                      "key": "price",
+                      "value": "150000",
+                      "type": "text",
+                      "uuid": "fdd96239-1e88-4a9e-9b32-f9126c2a80c7"
+                    },
+                    {
+                      "key": "duration_minutes",
+                      "value": "45",
+                      "type": "text",
+                      "uuid": "12b194c4-ad26-42fa-8f01-be5862de2dda"
+                    },
+                    {
+                      "key": "description",
+                      "value": "Gội, massage và cắt tạo kiểu",
+                      "type": "text",
+                      "uuid": "51e7218a-bf12-4109-813c-2eb0bbe9cf16"
+                    },
+                    {
+                      "key": "avatar",
+                      "value": "",
+                      "type": "text",
+                      "uuid": "9635faad-da63-4dd5-a8b0-669b4faa7bf2"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/services",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "services"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Sửa dịch vụ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Cập nhật dịch vụ thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        pm.expect(pm.response.json().success).to.be.true;\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Dữ liệu sai định dạng\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy dịch vụ\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 409) {\r",
+                      "    pm.test(\"Trùng tên dịch vụ với dịch vụ khác\", function () {\r",
+                      "        pm.response.to.have.status(409);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 409, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"service_name\": \"Cắt tóc Nam VIP kèm massage\",\r\n    \"price\": 200000\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/services/{{test_service_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "services",
+                    "{{test_service_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Xóa dịch vụ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Xóa dịch vụ thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        pm.expect(pm.response.json().success).to.be.true;\r",
+                      "\r",
+                      "        // Xóa xong thì dọn luôn cái biến môi trường cho sạch sẽ\r",
+                      "        pm.collectionVariables.unset(\"test_service_id\");\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy dịch vụ để xóa\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 404, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/services/{{test_service_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "services",
+                    "{{test_service_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Danh sách dịch vụ-sản phẩm",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Thành công truy cập\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/services/1/products",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "services",
+                    "1",
+                    "products"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Products",
+          "item": [
+            {
+              "name": "Danh sách sản phẩm",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Thành công truy cập\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/products",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "products"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Thêm sản phẩm",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 201) {\r",
+                      "    pm.test(\"Tạo sản phẩm thành công\", function () {\r",
+                      "        pm.response.to.have.status(201);\r",
+                      "        const jsonData = pm.response.json();\r",
+                      "        pm.expect(jsonData.success).to.be.true;\r",
+                      "        \r",
+                      "        // Lưu ID sản phẩm vào biến môi trường để test Nhập/Xuất kho\r",
+                      "        if (jsonData.id) {\r",
+                      "            pm.collectionVariables.set(\"test_product_id\", jsonData.id);\r",
+                      "        }\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Dữ liệu sai (Sai đơn vị tính, số lượng âm...)\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "        // Bắt lỗi Validation từ DAO (VD: Mức tồn kho không được âm, Đơn vị không hợp lệ...)\r",
+                      "    });\r",
+                      "} else if (status === 409) {\r",
+                      "    pm.test(\"Trùng tên sản phẩm\", function () {\r",
+                      "        pm.response.to.have.status(409);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Bị chặn do không phải Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([201, 400, 409, 403, 500]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "product_name",
+                      "value": "Thuốc nhuộm tóc Loreal",
+                      "type": "text",
+                      "uuid": "a2993100-2d42-4f96-b154-f5e3e6ef2e19"
+                    },
+                    {
+                      "key": "unit",
+                      "value": "CHAI",
+                      "type": "text",
+                      "uuid": "7112552c-97fb-45aa-839d-449643d43656"
+                    },
+                    {
+                      "key": "stock_quantity",
+                      "value": "50",
+                      "type": "text",
+                      "uuid": "5cbcdadf-8bf1-4243-ae88-a914f5284e0f"
+                    },
+                    {
+                      "key": "min_stock_level",
+                      "value": "10",
+                      "type": "text",
+                      "uuid": "94506368-bef7-4428-84a4-7c899f388a5c"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/products",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "products"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Sửa sản phẩm",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Cập nhật sản phẩm thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        pm.expect(pm.response.json().success).to.be.true;\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Dữ liệu sai (Âm tồn kho, sai đơn vị)\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy sản phẩm\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 409) {\r",
+                      "    pm.test(\"Trùng tên với sản phẩm khác\", function () {\r",
+                      "        pm.response.to.have.status(409);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Chặn truy cập - Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 409, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "product_name",
+                      "value": "Thuốc nhuộm tóc Loreal (Bản nâng cấp)",
+                      "type": "text",
+                      "uuid": "2cd695a2-c93c-4588-a352-382fc7171392"
+                    },
+                    {
+                      "key": "unit",
+                      "value": "CHAI",
+                      "type": "text",
+                      "uuid": "40caaaae-2292-43b7-b861-ac337f550e0d"
+                    },
+                    {
+                      "key": "min_stock_level",
+                      "value": "15",
+                      "type": "text",
+                      "uuid": "1e2c315f-b82a-401c-8881-90d7e9a3ac72"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/products/{{test_product_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "products",
+                    "{{test_product_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Xóa sản phẩm",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Xóa (Soft Delete) sản phẩm thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        pm.collectionVariables.unset(\"test_product_id\"); // Dọn dẹp biến\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy sản phẩm để xóa\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Chặn truy cập - Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 404, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/products/{{test_product_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "products",
+                    "{{test_product_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Nhập kho",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Nhập kho thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        const jsonData = pm.response.json();\r",
+                      "        pm.expect(jsonData.stock_quantity).to.exist;\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Số lượng nhập không hợp lệ (<= 0) (400)\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy sản phẩm để nhập kho\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Chặn truy cập - Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "quantity",
+                      "value": "20",
+                      "type": "text",
+                      "uuid": "960aa544-34d3-454b-8255-8817ca0162f0"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/products/{{test_product_id}}/import",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "products",
+                    "{{test_product_id}}",
+                    "import"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Xuất kho",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Xuất kho thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Không đủ tồn kho hoặc số lượng sai\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "        // Lỗi này văng ra khi quantity > p.stock_quantity\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy sản phẩm để xuất kho\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Chặn truy cập - Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "quantity",
+                      "value": "5",
+                      "type": "text",
+                      "uuid": "64c77b26-4073-4bb1-bac1-26a0e8621908"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/products/{{test_product_id}}/export",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "products",
+                    "{{test_product_id}}",
+                    "export"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Báo động tồn kho",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Thành công truy cập\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "GET {{base_url}}/admin/products/low-stock",
+                  "host": [
+                    "GET {{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "products",
+                    "low-stock"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Service Products",
+          "item": [
+            {
+              "name": "Thêm định mức",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 201) {\r",
+                      "    pm.test(\"Tạo định mức thành công\", function () {\r",
+                      "        pm.response.to.have.status(201);\r",
+                      "        const jsonData = pm.response.json();\r",
+                      "\r",
+                      "        // Lưu ID định mức để lát test sửa và xóa\r",
+                      "        if (jsonData.id) {\r",
+                      "            pm.collectionVariables.set(\"test_sp_id\", jsonData.id);\r",
+                      "        }\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Định mức gợi ý sai (<= 0)\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Dịch vụ hoặc Sản phẩm không tồn tại\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 409) {\r",
+                      "    pm.test(\"Trùng lặp: Cặp Dịch vụ - Sản phẩm này đã cấu hình rồi\", function () {\r",
+                      "        pm.response.to.have.status(409);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([201, 400, 404, 409, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "service_id",
+                      "value": "1",
+                      "type": "text",
+                      "uuid": "228e7b16-1593-45d4-b54f-0a6388531a8d"
+                    },
+                    {
+                      "key": "product_id",
+                      "value": "1",
+                      "type": "text",
+                      "uuid": "8e59dc18-d72b-4381-82c1-02e81e232049"
+                    },
+                    {
+                      "key": "default_quantity",
+                      "value": "2.5",
+                      "type": "text",
+                      "uuid": "9857ab95-9dfb-4aec-ba77-5ba0099d40e3"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/service-products",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "service-products"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Sửa định mức",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Cập nhật định mức thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Định mức gợi ý mới không hợp lệ\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy bản ghi định mức (404)\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "default_quantity",
+                      "value": "5",
+                      "type": "text",
+                      "uuid": "99aaaabf-2601-4c4d-99ea-911b6a73a18d"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/service-products/{{test_sp_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "service-products",
+                    "{{test_sp_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Xóa định mức",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Xóa cấu hình định mức thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        pm.collectionVariables.unset(\"test_sp_id\"); // Dọn dẹp biến môi trường\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy bản ghi để xóa\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 404, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/service-products/{{test_sp_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "service-products",
+                    "{{test_sp_id}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Users",
+          "item": [
+            {
+              "name": "Danh sách nhân sự",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Thành công truy cập\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/users",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Thông tin chi tiết nhân sự",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Thành công truy cập\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/users/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Thêm nhân sự",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 201) {\r",
+                      "    pm.test(\"Tạo tài khoản nhân viên thành công\", function () {\r",
+                      "        pm.response.to.have.status(201);\r",
+                      "        const jsonData = pm.response.json();\r",
+                      "\r",
+                      "        // Lưu ID nhân viên để test các route sau\r",
+                      "        if (jsonData.user && jsonData.user.id) {\r",
+                      "            pm.collectionVariables.set(\"test_staff_id\", jsonData.user.id);\r",
+                      "        }\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Lỗi Validation (Sai mật khẩu, phone, email...)\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 409) {\r",
+                      "    pm.test(\"Trùng Username hoặc Email\", function () {\r",
+                      "        pm.response.to.have.status(409);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([201, 400, 409, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "full_name",
+                      "value": "Nhân viên Test",
+                      "type": "text",
+                      "uuid": "77e47e50-91ed-41b1-8c04-2af6864d7ece"
+                    },
+                    {
+                      "key": "username",
+                      "value": "staff_test_123",
+                      "type": "text",
+                      "uuid": "68dd9575-d9d0-4d92-93d5-97c170cea257"
+                    },
+                    {
+                      "key": "password",
+                      "value": "Password123!",
+                      "type": "text",
+                      "uuid": "b7f8ffbd-d5c0-4612-a344-721f5abe1837"
+                    },
+                    {
+                      "key": "phone",
+                      "value": "0912345678",
+                      "type": "text",
+                      "uuid": "d8009c84-2ae1-4cbc-9456-4c3af122697d"
+                    },
+                    {
+                      "key": "email",
+                      "value": "staff_test_123@gmail.com",
+                      "type": "text",
+                      "uuid": "4df002d4-b9e1-4ade-89d5-5e9695bc1967"
+                    },
+                    {
+                      "key": "role",
+                      "value": "STAFF",
+                      "type": "text",
+                      "uuid": "939e6857-ab96-4a58-802c-7ac50c95f30d"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/users",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Chỉnh sửa thông tin nhân sự",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Cập nhật thông tin thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Dữ liệu cập nhật sai định dạng\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy nhân viên\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 409) {\r",
+                      "    pm.test(\"Trùng Email với người khác\", function () {\r",
+                      "        pm.response.to.have.status(409);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 409, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "full_name",
+                      "value": "Nguyễn Thanh Trúc",
+                      "type": "text",
+                      "uuid": "4e557c0a-6020-433e-b459-caa295c5bf87"
+                    },
+                    {
+                      "key": "phone",
+                      "value": "0987654321",
+                      "type": "text",
+                      "uuid": "35d2d69d-fdb8-4af9-a185-6490c14e60d3"
+                    },
+                    {
+                      "key": "email",
+                      "value": "truc@gmail.com",
+                      "type": "text",
+                      "uuid": "dceb689f-f320-4085-867f-a18832ddd9ac"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/users/{{test_staff_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users",
+                    "{{test_staff_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Chuyển đổi trạng thái hoạt động",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Chuyển đổi trạng thái thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        pm.expect(pm.response.json().active).to.be.a('boolean');\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy nhân viên\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 404, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/users/{{test_staff_id}}/toggle-active",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users",
+                    "{{test_staff_id}}",
+                    "toggle-active"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Promotions",
+          "item": [
+            {
+              "name": "Danh sách khuyến mãi",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Thành công truy cập\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        });\r",
+                      "} else if (status === 403 || status === 302) {\r",
+                      "    pm.test(\"Bị chặn do không có quyền ADMIN\", function () {\r",
+                      "        pm.expect(status).to.be.oneOf([403, 302]);\r",
+                      "    });\r",
+                      "} else if (status === 500) {\r",
+                      "    pm.test(\"Lỗi Server\", function () {\r",
+                      "        pm.response.to.have.status(500);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 403, 302, 500]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/promotions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "promotions"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Thêm mã khuyến mãi",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 201) {\r",
+                      "    pm.test(\"Tạo khuyến mãi thành công\", function () {\r",
+                      "        pm.response.to.have.status(201);\r",
+                      "        const jsonData = pm.response.json();\r",
+                      "\r",
+                      "        // Lưu ID khuyến mãi để test sửa và xóa\r",
+                      "        if (jsonData.id) {\r",
+                      "            pm.collectionVariables.set(\"test_promo_id\", jsonData.id);\r",
+                      "        }\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Dữ liệu sai (Sai loại, sai ngày, phần trăm > 100...))\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 409) {\r",
+                      "    pm.test(\"Trùng mã khuyến mãi\", function () {\r",
+                      "        pm.response.to.have.status(409);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([201, 400, 409, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"promo_code\": \"SUMMER2026\",\r\n    \"promo_type\": \"PERCENT\",\r\n    \"value\": 15,\r\n    \"start_date\": \"2026-06-01\",\r\n    \"end_date\": \"2026-08-31\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/promotions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "promotions"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Sửa mã khuyến mãi",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Cập nhật khuyến mãi thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Dữ liệu cập nhật sai định dạng\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy khuyến mãi\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 409) {\r",
+                      "    pm.test(\"Trùng mã khuyến mãi với mã khác\", function () {\r",
+                      "        pm.response.to.have.status(409);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 409, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"promo_code\": \"SUMMER2026_VIP\",\r\n    \"promo_type\": \"FIXED\",\r\n    \"value\": 50000,\r\n    \"start_date\": \"2026-06-01\",\r\n    \"end_date\": \"2026-09-30\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/promotions/{{test_promo_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "promotions",
+                    "{{test_promo_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Xóa mã khuyến mãi",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Xóa khuyến mãi thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        pm.collectionVariables.unset(\"test_promo_id\"); // Dọn dẹp biến\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy khuyến mãi để xóa\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 404, 400, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/promotions/{{test_promo_id}}?X-CSRFToken={{csrf_token}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "promotions",
+                    "{{test_promo_id}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "X-CSRFToken",
+                      "value": "{{csrf_token}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Invoice Drafts",
+          "item": [
+            {
+              "name": "Sửa hóa đơn",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Sửa chi tiết hóa đơn nháp thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Lỗi Validation (Thiếu chi tiết, Hóa đơn không phải DRAFT)\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy hóa đơn\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"details\": [\r\n        {\r\n            \"item_type\": \"SERVICE\",\r\n            \"item_id\": 1,\r\n            \"quantity\": 1\r\n        },\r\n        {\r\n            \"item_type\": \"SERVICE\",\r\n            \"item_id\": 2,\r\n            \"quantity\": 1\r\n        }\r\n    ]\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/invoices/{{test_invoice_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "invoices",
+                    "{{test_invoice_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Hủy hóa đơn",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Hủy hóa đơn nháp thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        pm.collectionVariables.unset(\"test_invoice_id\"); // Dọn dẹp biến môi trường\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Hóa đơn không phải trạng thái Nháp\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\" Không tìm thấy hóa đơn\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 403]);\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "pm.test(\"X-CSRFToken header is present\", function () {\r",
+                      "    pm.expect(pm.request.headers.has(\"X-CSRFToken\")).to.be.true;\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-CSRFToken",
+                    "value": "{{csrf_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/invoices/{{test_invoice_id}}/cancel",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "invoices",
+                    "{{test_invoice_id}}",
+                    "cancel"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Chi tiết hóa đơn",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const status = pm.response.code;\r",
+                      "\r",
+                      "if (status === 200) {\r",
+                      "    pm.test(\"Lấy chi tiết hóa đơn nháp thành công\", function () {\r",
+                      "        pm.response.to.have.status(200);\r",
+                      "        pm.expect(pm.response.json().success).to.be.true;\r",
+                      "    });\r",
+                      "} else if (status === 400) {\r",
+                      "    pm.test(\"Hóa đơn không phải trạng thái Nháp\", function () {\r",
+                      "        pm.response.to.have.status(400);\r",
+                      "    });\r",
+                      "} else if (status === 404) {\r",
+                      "    pm.test(\"Không tìm thấy hóa đơn\", function () {\r",
+                      "        pm.response.to.have.status(404);\r",
+                      "    });\r",
+                      "} else if (status === 403) {\r",
+                      "    pm.test(\"Không có quyền Admin\", function () {\r",
+                      "        pm.response.to.have.status(403);\r",
+                      "    });\r",
+                      "} else {\r",
+                      "    pm.test(\"Trạng thái không lường trước: \" + status, function () {\r",
+                      "        pm.expect(status).to.be.oneOf([200, 400, 404, 403]);\r",
+                      "    });\r",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/invoices/{{test_invoice_id}}/draft-detail",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "invoices",
+                    "{{test_invoice_id}}",
+                    "draft-detail"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": ""
+    },
+    {
+      "key": "csrf_token",
+      "value": ""
+    },
+    {
+      "key": "test_appointment_id",
+      "value": ""
+    },
+    {
+      "key": "test_invoice_id",
+      "value": ""
+    }
+  ]
+}

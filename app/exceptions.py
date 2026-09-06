@@ -3,9 +3,9 @@ class ValidationError(Exception):
     pass
 
 class DuplicateError(Exception):
-    # Lỗi do bị trùng dữ liệu (username, email...) -> HTTP 409 Conflict
+    # Lỗi do bị trùng dữ liệu -> HTTP 409 Conflict
     pass
 
 class NotFoundError(Exception):
-    # Lỗi do không tìm thấy dữ liệu được yêu cầu (user, dịch vụ, lịch hẹn...) -> HTTP 404
+    # Lỗi do không tìm thấy dữ liệu được yêu cầu -> HTTP 404
     pass

@@ -18,15 +18,11 @@ class BaseModel(db.Model):
     updated_date = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
-# ============================================================
-# ENUM
-# ============================================================
-
 class UserRole(UserEnum):
     ADMIN = 1
-    STAFF = 2           # Nhân viên thực hiện dịch vụ (Stylist)
+    STAFF = 2
     CUSTOMER = 3
-    RECEPTIONIST = 4    # Lễ tân — xác nhận thanh toán, xuất hóa đơn
+    RECEPTIONIST = 4
 
 
 class AppointmentStatus(UserEnum):
@@ -42,14 +38,14 @@ class PaymentMethod(UserEnum):
 
 
 class InvoiceStatus(UserEnum):
-    DRAFT = 1     # Nhân viên tạo — đã ghi nhận dịch vụ + sản phẩm dùng, CHƯA thanh toán
-    PAID = 2      # Lễ tân xác nhận thanh toán — hóa đơn hoàn tất
+    DRAFT = 1
+    PAID = 2
     CANCELLED = 3
 
 
 class InvoiceItemType(UserEnum):
-    SERVICE = 1         # Dòng tính tiền — dịch vụ đã thực hiện
-    PRODUCT_USED = 2    # Dòng KHÔNG tính tiền — sản phẩm nội bộ đã tiêu hao, chỉ trừ kho
+    SERVICE = 1
+    PRODUCT_USED = 2
 
 
 class ProductUnit(UserEnum):
@@ -60,13 +56,9 @@ class ProductUnit(UserEnum):
 
 
 class PromotionType(UserEnum):
-    PERCENT = 1    # Giảm theo phần trăm tổng hóa đơn
-    FIXED = 2      # Giảm số tiền cố định
+    PERCENT = 1
+    FIXED = 2
 
-
-# ============================================================
-# MODELS
-# ============================================================
 
 class User(BaseModel, UserMixin):
     full_name = Column(String(100), nullable=False)
@@ -195,8 +187,8 @@ class Invoice(BaseModel):
 class InvoiceDetail(BaseModel):
     item_type = Column(Enum(InvoiceItemType), nullable=False)
     quantity = Column(Float, default=1, nullable=False)
-    unit_price = Column(Float, default=0, nullable=False)   # PRODUCT_USED luôn = 0
-    subtotal = Column(Float, default=0, nullable=False)     # PRODUCT_USED luôn = 0
+    unit_price = Column(Float, default=0, nullable=False)
+    subtotal = Column(Float, default=0, nullable=False)
 
     invoice_id = Column(Integer, ForeignKey(Invoice.id), nullable=False)
     service_id = Column(Integer, ForeignKey(Service.id), nullable=True)
@@ -235,7 +227,7 @@ if __name__ == '__main__':
         db.session.add_all([admin, staff1, staff2, receptionist1, cus1, cus2])
         db.session.flush()
 
-        # ---------- SERVICES (9-10 dịch vụ) ----------
+
         services_data = [
             Service(service_name='Cắt tóc nam', price=100000, duration_minutes=30,
                     description='Cắt tóc nam cơ bản'),
@@ -260,7 +252,7 @@ if __name__ == '__main__':
         ]
         db.session.add_all(services_data)
 
-        # ---------- PRODUCTS (nội bộ, có đơn vị đo) ----------
+
         products_data = [
             Product(product_name='Dầu gội', unit=ProductUnit.ML, stock_quantity=5000, min_stock_level=500),
             Product(product_name='Dầu xả', unit=ProductUnit.ML, stock_quantity=3000, min_stock_level=300),
@@ -278,13 +270,12 @@ if __name__ == '__main__':
         db.session.add_all(products_data)
         db.session.flush()
 
-        # Map nhanh cho dễ gán ServiceProduct
+
         svc = {s.service_name: s for s in services_data}
         prd = {p.product_name: p for p in products_data}
 
-        # ---------- SERVICE_PRODUCT (định mức gợi ý) ----------
+
         service_products_data = [
-            # Cắt tóc nam — không dùng sản phẩm
 
             ServiceProduct(service_id=svc['Gội đầu dưỡng sinh'].id, product_id=prd['Dầu gội'].id, default_quantity=30),
             ServiceProduct(service_id=svc['Gội đầu dưỡng sinh'].id, product_id=prd['Dầu xả'].id, default_quantity=15),
@@ -311,12 +302,10 @@ if __name__ == '__main__':
         ]
         db.session.add_all(service_products_data)
 
-        # ---------- PROMOTION ----------
         promo1 = Promotion(promo_code='SALON10', promo_type=PromotionType.PERCENT, value=10,
                            start_date=datetime(2026, 1, 1), end_date=datetime(2026, 12, 31))
         db.session.add(promo1)
 
-        # ---------- APPOINTMENTS ----------
         now = datetime.now().replace(minute=0, second=0, microsecond=0)
         appointments_data = [
             Appointment(appointment_date=now.replace(hour=14), status=AppointmentStatus.COMPLETED,
@@ -327,7 +316,6 @@ if __name__ == '__main__':
         db.session.add_all(appointments_data)
         db.session.flush()
 
-        # ---------- INVOICE mẫu (đầy đủ 1 hóa đơn ở trạng thái DRAFT) ----------
         invoice1 = Invoice(status=InvoiceStatus.DRAFT,
                            customer_id=cus1.id, staff_id=staff1.id,
                            appointment_id=appointments_data[0].id)
@@ -338,11 +326,9 @@ if __name__ == '__main__':
             InvoiceDetail(item_type=InvoiceItemType.SERVICE, quantity=1,
                           unit_price=svc['Cắt tóc nam'].price, subtotal=svc['Cắt tóc nam'].price,
                           invoice_id=invoice1.id, service_id=svc['Cắt tóc nam'].id),
-            # Cắt tóc nam không dùng sản phẩm — nên không có dòng PRODUCT_USED cho hóa đơn này
         ]
         db.session.add_all(invoice_details_data)
 
-        # Tổng tiền hóa đơn = tổng các dòng SERVICE (chưa áp khuyến mãi ở data mẫu)
         invoice1.total_amount = svc['Cắt tóc nam'].price
 
         db.session.commit()

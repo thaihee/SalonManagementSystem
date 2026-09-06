@@ -12,15 +12,10 @@ from app.decorators import role_required
 
 
 
-
-# ==========================0. FLASK-LOGIN USER LOADER + PHÂN QUYỀN==========================
-
 @login.user_loader
 def load_user(user_id):
     return dao.get_user_by_id(user_id)
 
-
-# ==========================1. TRANG CHỦ SALON (INDEX - HIỂN THỊ DANH SÁCH DỊCH VỤ & KHUYẾN MÃI)==========================
 
 @app.route('/')
 def index():
@@ -71,7 +66,7 @@ def booking_view():
     ), 200
 
 
-# ==========================2. XÁC THỰC: ĐĂNG NHẬP (LOGIN)==========================
+# 2. XÁC THỰC: ĐĂNG NHẬP (LOGIN)
 
 @app.route('/login', methods=['GET'])
 def login_view():
@@ -114,8 +109,7 @@ def login_process():
         return render_template('auth/login.html', err_msg="Có lỗi hệ thống xảy ra!"), 500
 
 
-# ==========================3. XÁC THỰC: ĐĂNG XUẤT (LOGOUT)==========================
-
+# 3. XÁC THỰC: ĐĂNG XUẤT (LOGOUT)
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout_process():
@@ -123,7 +117,7 @@ def logout_process():
     return redirect('/login'), 302
 
 
-# ==========================4. XÁC THỰC: ĐĂNG KÝ TÀI KHOẢN KHÁCH HÀNG (REGISTER)==========================
+# 4. XÁC THỰC: ĐĂNG KÝ TÀI KHOẢN KHÁCH HÀNG (REGISTER)
 
 @app.route('/register', methods=['GET'])
 def register_view():
@@ -166,7 +160,7 @@ def register_process():
         return render_template('auth/register.html', err_msg="Lỗi hệ thống khi đăng ký!"), 500
 
 
-# ==========================5. HỒ SƠ CÁ NHÂN==========================
+# 5. HỒ SƠ CÁ NHÂN
 
 @app.route('/users/me', methods=['GET'])
 @login_required
@@ -177,8 +171,6 @@ def users_me_view():
 @app.route('/users/me', methods=['PUT'])
 @login_required
 def users_me_update():
-    # FIX: PUT không thể được gọi từ HTML form thuần (form chỉ hỗ trợ GET/POST),
-    # nên route này chỉ được gọi qua JS fetch() => phải trả JSON, không phải HTML.
     data = request.get_json(silent=True) or request.form
     avatar = data.get("avatar")
 
@@ -203,7 +195,7 @@ def users_me_update():
         return jsonify({"error": "Không thể cập nhật hồ sơ!"}), 500
 
 
-# ==========================6. LỊCH HẸN==========================
+# 6. LỊCH HẸN
 
 # GET /appointments/available-slots?staff_id=1&service_id=2&date=2026-08-16&appointment_id=5
 @app.route('/appointments/available-slots', methods=['GET'])
@@ -212,7 +204,7 @@ def get_available_slots_route():
     service_id = request.args.get('service_id')
     date_str = request.args.get('date')
     staff_id = request.args.get('staff_id')
-    appointment_id = request.args.get('appointment_id') # <--- THÊM DÒNG NÀY
+    appointment_id = request.args.get('appointment_id')
 
     if not service_id or not date_str:
         return jsonify({"error": "Thiếu service_id hoặc date!"}), 400
@@ -222,7 +214,7 @@ def get_available_slots_route():
             service_id=int(service_id),
             date_str=date_str,
             staff_id=int(staff_id) if staff_id else None,
-            exclude_appointment_id=int(appointment_id) if appointment_id else None # <--- THÊM TRUYỀN PARAM NÀY
+            exclude_appointment_id=int(appointment_id) if appointment_id else None
         )
         return jsonify({"date": date_str, "available_slots": slots}), 200
     except ValidationError as e:
@@ -236,7 +228,6 @@ def get_available_slots_route():
 @app.route('/appointments', methods=['POST'])
 @login_required
 def create_appointment_route():
-    # Nhận dữ liệu từ JSON body hoặc Form-data
     data = request.get_json(silent=True) or request.form
 
     service_id = data.get('service_id')
@@ -245,7 +236,7 @@ def create_appointment_route():
     time_str = data.get('time')      # Định dạng: HH:MM
     note = data.get('note', '')
 
-    # FIX (IDOR): Customer CHỈ được đặt lịch cho chính mình, không được truyền
+    # Customer CHỈ được đặt lịch cho chính mình, không được truyền
     # customer_id để đặt hộ người khác. Chỉ Staff/Admin (đặt tại quầy) mới
     # được chỉ định customer_id khác chính họ.
     if current_user.role == UserRole.CUSTOMER:
@@ -296,7 +287,6 @@ def create_appointment_route():
 def update_appointment_route(appointment_id):
     data = request.get_json(silent=True) or request.form
 
-    # FIX (IDOR): lấy lịch hẹn ra trước để check quyền sở hữu
     appt = dao.get_appointment_by_id(appointment_id)
     if not appt or not appt.active:
         return jsonify({"error": "Lịch hẹn không tồn tại!"}), 404
@@ -306,7 +296,7 @@ def update_appointment_route(appointment_id):
     if current_user.role == UserRole.STAFF and appt.staff_id != current_user.id:
         return jsonify({"error": "Bạn không có quyền sửa lịch hẹn này!"}), 403
 
-    # FIX: chỉ Staff/Admin được phép đổi trạng thái lịch hẹn, Customer không được tự đổi
+    # chỉ Staff/Admin được phép đổi trạng thái lịch hẹn, Customer không được tự đổi
     status = data.get('status')
     if status and current_user.role == UserRole.CUSTOMER:
         return jsonify({"error": "Bạn không có quyền thay đổi trạng thái lịch hẹn!"}), 403
@@ -345,7 +335,7 @@ def update_appointment_route(appointment_id):
 @app.route('/appointments/<int:appointment_id>/cancel', methods=['PATCH', 'POST'])
 @login_required
 def cancel_appointment_route(appointment_id):
-    # FIX (IDOR): lấy lịch hẹn ra trước để check quyền sở hữu
+    # lấy lịch hẹn ra trước để check quyền sở hữu
     appt = dao.get_appointment_by_id(appointment_id)
     if not appt or not appt.active:
         return jsonify({"error": "Lịch hẹn không tồn tại!"}), 404
@@ -373,7 +363,7 @@ def cancel_appointment_route(appointment_id):
         return jsonify({"error": "Lỗi hệ thống khi hủy lịch hẹn!"}), 500
 
 
-# ==========================7. QUẢN LÝ HÓA ĐƠN & THANH TOÁN (INVOICES API)==========================
+# 7. QUẢN LÝ HÓA ĐƠN & THANH TOÁN (INVOICES API)
 
 # 7.1 POST /invoices - Tạo hóa đơn
 @app.route('/invoices', methods=['POST'])
@@ -383,7 +373,7 @@ def create_invoice_route():
 
     customer_id = data.get('customer_id')
     appointment_id = data.get('appointment_id')
-    details = data.get('details', [])   # gồm cả dòng SERVICE và PRODUCT_USED
+    details = data.get('details', [])
 
     staff_id = current_user.id
 
@@ -391,7 +381,7 @@ def create_invoice_route():
         return jsonify({"error": "Vui lòng cung cấp customer_id và danh sách chi tiết (details)!"}), 400
 
     try:
-        invoice = dao.create_invoice(   # giờ chỉ tạo DRAFT
+        invoice = dao.create_invoice(
             customer_id=int(customer_id),
             staff_id=int(staff_id),
             details_data=details,
@@ -485,7 +475,6 @@ def create_invoice_view():
     services = dao.get_all_services()
 
     # Lấy toàn bộ ServiceProduct để tạo bản đồ Định Mức Sản Phẩm theo Dịch Vụ
-    # Cấu trúc: { service_id: [ { product_id, product_name, unit_name, default_quantity, stock_quantity }, ... ] }
     service_products_map = {}
     for svc in services:
         s_prods = dao.get_service_products(svc.id)
@@ -565,7 +554,7 @@ def staff_invoices_view():
     ), 200
 
 
-#Lễ tân quản lý toàn bộ danh sách hóa đơn (Xem nháp, Xem đã thanh toán)
+# Lễ tân quản lý toàn bộ danh sách hóa đơn (Xem nháp, Xem đã thanh toán)
 @app.route('/reception/invoices', methods=['GET'])
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def reception_invoices_view():
@@ -612,8 +601,8 @@ def reception_invoices_view():
 
     return render_template(
         'receptionist/recept_invoice_list.html',
-        invoices=invoices_paged,          # Danh sách 10 mục của trang hiện tại
-        all_invoices=all_invoices,        # Dùng để tính tổng 3 thẻ thống kê
+        invoices=invoices_paged,
+        all_invoices=all_invoices,
         staff_list=staff_list,
         selected_date=date_str,
         selected_status=status_str,
@@ -622,13 +611,13 @@ def reception_invoices_view():
     ), 200
 
 
-# Lễ tân xem và tra cứu toàn bộ lịch hẹn của Salon (Đã hỗ trợ phân trang)
+# Lễ tân xem và tra cứu toàn bộ lịch hẹn của Salon
 @app.route('/reception/appointments', methods=['GET'])
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def reception_appointments_view():
     date_str = request.args.get('date')
     page = request.args.get('page', 1, type=int)
-    page_size = app.config.get('PAGE_SIZE', 10)  # 10 lịch hẹn / trang
+    page_size = app.config.get('PAGE_SIZE', 10)
 
     selected_date = None
     if date_str:
@@ -718,7 +707,7 @@ def invoice_checkout_view(invoice_id):
     ), 200
 
 
-# ==========================8. ĐỔI MẬT KHẨU==========================
+# 8. ĐỔI MẬT KHẨU
 
 @app.route('/users/change-password', methods=['POST'])
 @login_required
@@ -748,7 +737,7 @@ def change_password_route():
         return jsonify(success=False, error="Lỗi hệ thống khi đổi mật khẩu!"), 500
 
 
-# ==========================9. LỊCH HẸN==========================
+# 9. LỊCH HẸN
 
 # Lịch hẹn cá nhân của Khách hàng (Có Lọc & Phân trang)
 @app.route('/appointments/me', methods=['GET'])
@@ -839,7 +828,6 @@ def staff_appointments_view():
     ), 200
 
 
-# API trả về danh sách dữ liệu JSON cho JS fetch
 @app.route('/api/staff/appointments', methods=['GET'])
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def staff_appointments_api():
@@ -870,7 +858,7 @@ def staff_appointments_api():
         return jsonify({"error": str(ex)}), 400
 
 
-# ==========================10. TRA CỨU KHÁCH HÀNG (NHÂN VIÊN / QUẢN LÝ)==========================
+# 10. TRA CỨU KHÁCH HÀNG (NHÂN VIÊN / QUẢN LÝ)
 @app.route('/customers/search', methods=['GET'])
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def search_customers_route():
@@ -900,7 +888,7 @@ def search_customers_route():
     }), 200
 
 
-# ==========================XỬ LÝ LỖI TRANG (ERROR HANDLERS)==========================
+# XỬ LÝ LỖI TRANG
 
 @app.errorhandler(403)
 def forbidden_error(error):
@@ -911,6 +899,6 @@ def not_found_error(error):
     return render_template('error/404.html'), 404
 
 
-# ==========================CHẠY ỨNG DỤNG==========================
+# CHẠY ỨNG DỤNG
 if __name__ == "__main__":
     app.run(debug=True)
