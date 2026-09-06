@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import pytest
 from app import dao
-from app.models import UserRole, User
+from app.models import UserRole, User, Service, Product
 
 
 # =========================================================================
@@ -40,44 +40,52 @@ def admin_user(app):
 
 @pytest.fixture
 def staff_user(app):
-  user = dao.add_user(
-      'Staff Test',
-      'stafftest',
-      'Staff123',
-      '0900000002',
-      'staff@test.com',
-      role=UserRole.STAFF,
-  )
-  user.raw_password = 'Staff123'
-  return user
+    user = User.query.filter_by(username='stafftest').first()
+    if not user:
+        user = dao.add_user(
+            'Staff Test',
+            'stafftest',
+            'Staff123',
+            '0900000002',
+            'staff@test.com',
+            role=UserRole.STAFF,
+        )
+
+    user.raw_password = 'Staff123'
+    return user
 
 
 @pytest.fixture
 def receptionist_user(app):
-  user = dao.add_user(
-      'Reception Test',
-      'receptiontest',
-      'Recep123',
-      '0900000003',
-      'reception@test.com',
-      role=UserRole.RECEPTIONIST,
-  )
-  user.raw_password = 'Recep123'
-  return user
+    user = User.query.filter_by(username='receptiontest').first()
+    if not user:
+        user = dao.add_user(
+            'Reception Test',
+            'receptiontest',
+            'Recep123',
+            '0900000003',
+            'reception@test.com',
+            role=UserRole.RECEPTIONIST,
+        )
 
+    user.raw_password = 'Recep123'
+    return user
 
 @pytest.fixture
 def customer_user(app):
-  user = dao.add_user(
-      'Customer Test',
-      'customertest',
-      'Customer123',
-      '0900000004',
-      'customer@test.com',
-      role=UserRole.CUSTOMER,
-  )
-  user.raw_password = 'Customer123'
-  return user
+    user = User.query.filter_by(username='customertest').first()
+    if not user:
+        user = dao.add_user(
+            'Customer Test',
+            'customertest',
+            'Customer123',
+            '0900000004',
+            'customer@test.com',
+            role=UserRole.CUSTOMER,
+        )
+
+    user.raw_password = 'Customer123'
+    return user
 
 
 # =========================================================================
@@ -108,16 +116,35 @@ def customer_client(client, login_as, customer_user):
 # =========================================================================
 @pytest.fixture
 def sample_service(app):
-  return dao.add_service(
-      name='Cắt tóc nam', price=100000, duration=30, description='Cắt tóc nam'
-  )
+    service = Service.query.filter_by(
+        service_name='Cắt tóc nam'
+    ).first()
 
+    if not service:
+        service = dao.add_service(
+            name='Cắt tóc nam',
+            price=100000,
+            duration=30,
+            description='Cắt tóc nam'
+        )
+
+    return service
 
 @pytest.fixture
 def sample_product(app):
-  return dao.add_product(
-      name='Dầu gội', unit='CHAI', stock_quantity=50, min_stock_level=10
-  )
+    product = Product.query.filter_by(
+        product_name='Dầu gội'
+    ).first()
+
+    if not product:
+        product = dao.add_product(
+            name='Dầu gội',
+            unit='CHAI',
+            stock_quantity=50,
+            min_stock_level=10
+        )
+
+    return product
 
 
 @pytest.fixture
