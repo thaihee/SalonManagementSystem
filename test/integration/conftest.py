@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import pytest
 from app import dao
-from app.models import UserRole
+from app.models import UserRole, User
 
 
 # =========================================================================
@@ -24,16 +24,18 @@ def login_as(client):
 # =========================================================================
 @pytest.fixture
 def admin_user(app):
-  user = dao.add_user(
-      'Admin Test',
-      'admintest',
-      'Admin123',
-      '0900000001',
-      'admin@test.com',
-      role=UserRole.ADMIN,
-  )
-  user.raw_password = 'Admin123'
-  return user
+    user = User.query.filter_by(username='admintest').first()
+    if not user:
+        user = dao.add_user(
+            'Admin Test',
+            'admintest',
+            'Admin123',
+            '0900000001',
+            'admin@test.com',
+            role=UserRole.ADMIN,
+        )
+
+    return user
 
 
 @pytest.fixture
