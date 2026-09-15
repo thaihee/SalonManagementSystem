@@ -128,6 +128,151 @@
         </div>
     </div>
 
+
+    <!-- PHÂN TRANG BÁO CÁO -->
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination-wrap"
+         style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: #FAF7F2;
+            border-top: 1px solid #EAE0D5;
+         ">
+
+        <!-- THÔNG TIN TRANG -->
+        <div style="font-size: 13px; color: #7A726D;">
+            Trang <strong>{{ page }}</strong> / <strong>{{ total_pages }}</strong>
+        </div>
+
+
+        <div style="display: flex; align-items: center; gap: 6px;">
+
+            <!-- TRƯỚC -->
+            {% if page > 1 %}
+
+                <a href="{{ url_for(
+                    'revenue_report',
+                    page=page-1,
+                    period_type=period_type,
+                    from_date=from_date,
+                    to_date=to_date
+                ) }}"
+                   class="page-btn">
+
+                    <i class="fa-solid fa-chevron-left"></i>
+
+                </a>
+
+            {% else %}
+
+                <span class="page-btn disabled">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </span>
+
+            {% endif %}
+
+
+            <!-- XÁC ĐỊNH KHOẢNG TRANG -->
+            {% set start_page = [1, page - 2] | max %}
+            {% set end_page = [total_pages, page + 2] | min %}
+
+
+            <!-- TRANG ĐẦU -->
+            {% if start_page > 1 %}
+
+                <a href="{{ url_for(
+                    'revenue_report',
+                    page=1,
+                    period_type=period_type,
+                    from_date=from_date,
+                    to_date=to_date
+                ) }}"
+                   class="page-num">
+
+                    1
+
+                </a>
+
+                {% if start_page > 2 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+            {% endif %}
+
+
+            <!-- CÁC TRANG GẦN TRANG HIỆN TẠI -->
+            {% for p in range(start_page, end_page + 1) %}
+
+                <a href="{{ url_for(
+                    'revenue_report',
+                    page=p,
+                    period_type=period_type,
+                    from_date=from_date,
+                    to_date=to_date
+                ) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+
+                    {{ p }}
+
+                </a>
+
+            {% endfor %}
+
+
+            <!-- TRANG CUỐI -->
+            {% if end_page < total_pages %}
+
+                {% if end_page < total_pages - 1 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+                <a href="{{ url_for(
+                    'revenue_report',
+                    page=total_pages,
+                    period_type=period_type,
+                    from_date=from_date,
+                    to_date=to_date
+                ) }}"
+                   class="page-num">
+
+                    {{ total_pages }}
+
+                </a>
+
+            {% endif %}
+
+
+            <!-- SAU -->
+            {% if page < total_pages %}
+
+                <a href="{{ url_for(
+                    'revenue_report',
+                    page=page+1,
+                    period_type=period_type,
+                    from_date=from_date,
+                    to_date=to_date
+                ) }}"
+                   class="page-btn">
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </a>
+
+            {% else %}
+
+                <span class="page-btn disabled">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}
 
@@ -139,16 +284,16 @@
 document.addEventListener("DOMContentLoaded", function () {
     // 1. Chuẩn bị dữ liệu từ Jinja2
     const labels = [
-        {% if report_data %}
-            {% for item in report_data|reverse %}
+        {% if full_report_data %}
+            {% for item in full_report_data|reverse %}
                 "{{ item.period_label or item.period }}",
             {% endfor %}
         {% endif %}
     ];
 
     const dataRevenue = [
-        {% if report_data %}
-            {% for item in report_data|reverse %}
+        {% if full_report_data %}
+            {% for item in full_report_data|reverse %}
                 {{ item.total_revenue or 0 }},
             {% endfor %}
         {% endif %}

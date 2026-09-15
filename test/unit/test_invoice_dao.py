@@ -96,31 +96,28 @@ class TestCreateInvoice:
 # =========================================================================
 class TestConfirmInvoicePayment:
 
-    def test_confirm_payment_success_deducts_stock(self, app, customer_user, staff_user, receptionist_user, sample_service, sample_product, sample_service_product):
+    def test_confirm_payment_success_deducts_stock(self, app, customer_user, staff_user,
+                                                   receptionist_user, sample_service,
+                                                   sample_product, sample_service_product):
         details = [
             {"item_type": "SERVICE", "item_id": sample_service.id, "quantity": 1},
             {"item_type": "PRODUCT_USED", "item_id": sample_product.id, "quantity": 5}
         ]
         inv = dao.create_invoice(customer_user.id, staff_user.id, details_data=details)
-        assert sample_product.stock_quantity == 50.0  # Tạo DRAFT chưa trừ kho
-
+        assert sample_product.stock_quantity == 50.0
         paid_inv = dao.confirm_invoice_payment(
             invoice_id=inv.id,
             receptionist_id=receptionist_user.id,
             payment_method="CASH"
         )
-
         assert paid_inv.status == InvoiceStatus.PAID
         assert paid_inv.payment_method == PaymentMethod.CASH
         assert paid_inv.receptionist_id == receptionist_user.id
-        # MỚI TRỪ KHO TẠI BƯỚC NÀY: 50 - 5 = 45
         assert sample_product.stock_quantity == 45.0
 
     def test_confirm_payment_with_percent_promotion(self, app, sample_invoice, receptionist_user):
-        # Mã giảm giá 10%
         today = datetime.now().date()
         suffix = uuid.uuid4().hex[:8].upper()
-
         promo = dao.add_promotion(
             f"SALE{suffix}",
             "PERCENT",
@@ -128,16 +125,14 @@ class TestConfirmInvoicePayment:
             today.strftime("%Y-%m-%d"),
             (today + timedelta(days=5)).strftime("%Y-%m-%d")
         )
-
         paid_inv = dao.confirm_invoice_payment(
             invoice_id=sample_invoice.id,
             receptionist_id=receptionist_user.id,
             payment_method="BANK_TRANSFER",
             promotion_id=promo.id
         )
-
         assert paid_inv.promotion_id == promo.id
-        assert paid_inv.total_amount == 90000.0  # 100,000đ - 10%
+        assert paid_inv.total_amount == 90000.0
 
     def test_confirm_payment_with_fixed_promotion(self, app, sample_invoice, receptionist_user):
         # Mã giảm 30k

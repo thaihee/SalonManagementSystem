@@ -65,6 +65,13 @@ def admin_dashboard_view():
     total_items = len(appointments)
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
+    # Chặn page không hợp lệ
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
+
     start = (page - 1) * page_size
     end = start + page_size
     appointments_paged = appointments[start:end]
@@ -94,11 +101,32 @@ def admin_dashboard_view():
 @role_required(UserRole.ADMIN)
 def list_services():
     page = request.args.get('page', 1, type=int)
-    page_size = app.config.get('PAGE_SIZE', 10)  # Mặc định 10 mục / trang
+    page_size = app.config.get('PAGE_SIZE', 10)
 
-    # Lấy danh sách dịch vụ có phân trang
-    services, total_items = dao.get_services_paged(page=page, page_size=page_size)
-    total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
+    # Chặn page âm / bằng 0 trước
+    if page < 1:
+        page = 1
+
+    # Lấy dữ liệu trang hiện tại
+    services, total_items = dao.get_services_paged(
+        page=page,
+        page_size=page_size
+    )
+
+    total_pages = (
+        math.ceil(total_items / page_size)
+        if total_items > 0
+        else 1
+    )
+
+    # Nếu page vượt quá trang cuối
+    if page > total_pages:
+        page = total_pages
+
+        services, total_items = dao.get_services_paged(
+            page=page,
+            page_size=page_size
+        )
 
     all_products = dao.get_all_products()
 
@@ -252,6 +280,13 @@ def list_users_route():
     total_items = len(all_users) if all_users else 0
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
+    # Chặn page không hợp lệ
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
+
     start = (page - 1) * page_size
     end = start + page_size
     users_paged = all_users[start:end] if all_users else []
@@ -364,12 +399,20 @@ def revenue_report_route():
         grand_total_invoices = sum(item.get("total_invoices", 0) for item in report_data) if report_data else 0
 
         # PHÂN TRANG BẢNG BÁO CÁO
-        total_items = len(report_data) if report_data else 0
+        total_items = len(report_data)
         total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
+
+        # Chặn page không hợp lệ
+        if page < 1:
+            page = 1
+
+        if page > total_pages:
+            page = total_pages
 
         start = (page - 1) * page_size
         end = start + page_size
-        report_data_paged = report_data[start:end] if report_data else []
+
+        report_data_paged = report_data[start:end]
 
         return render_template(
             'admin/admin_reports.html',
@@ -540,12 +583,21 @@ def list_products():
 
     # Lấy toàn bộ danh sách sản phẩm
     all_products = dao.get_all_products()
+
     total_items = len(all_products)
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
+
+    # Chặn page không hợp lệ
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
 
     # Cắt danh sách theo trang hiện tại
     start = (page - 1) * page_size
     end = start + page_size
+
     products_paged = all_products[start:end]
 
     low_stock_products = dao.check_low_stock_products()
@@ -693,11 +745,20 @@ def list_promotions_route():
     all_promos = dao.get_all_promotions() if hasattr(dao, 'get_all_promotions') else []
 
     # 2. Tính toán phân trang
+    # 2. Tính toán phân trang
     total_items = len(all_promos) if all_promos else 0
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
+    # Chặn page không hợp lệ
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
+
     start = (page - 1) * page_size
     end = start + page_size
+
     promos_paged = all_promos[start:end] if all_promos else []
 
     return render_template(

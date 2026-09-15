@@ -31,19 +31,56 @@
     </div>
 
     <!-- THANH TÌM KIẾM & NGÀY -->
-    <div class="reception-toolbar">
+    <form method="GET"
+          action="{{ url_for('staff_invoices_view') }}"
+          class="reception-toolbar">
+
+        <!-- SEARCH -->
         <div class="reception-search-box">
+
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="staff_inv_search" class="reception-search-input" 
-                   placeholder="Mã HĐ, Tên hoặc SĐT Khách hàng..." autocomplete="off">
+
+            <input type="text"
+                   id="staff_inv_search"
+                   name="kw"
+                   value="{{ kw or '' }}"
+                   class="reception-search-input"
+                   placeholder="Mã HĐ, Tên hoặc SĐT Khách hàng..."
+                   autocomplete="off">
+
         </div>
 
-        <form method="GET" action="{{ url_for('staff_invoices_view') }}" id="dateStaffInvForm" style="margin: 0;">
-            <input type="hidden" name="status" value="{{ selected_status }}">
-            <input type="date" name="date" value="{{ selected_date or '' }}" 
-                   class="reception-filter-select" onchange="document.getElementById('dateStaffInvForm').submit()">
-        </form>
-    </div>
+
+        <!-- DATE -->
+        <input type="date"
+               name="date"
+               value="{{ selected_date or '' }}"
+               class="reception-filter-select">
+
+
+        <!-- GIỮ STATUS -->
+        <input type="hidden"
+               name="status"
+               value="{{ selected_status or 'ALL' }}">
+
+
+        <!-- LỌC -->
+        <button type="submit"
+                class="btn-action-primary">
+
+            <i class="fa-solid fa-filter me-1"></i>
+            Lọc
+
+        </button>
+
+        <!-- Reset -->
+        <a href="{{ url_for('staff_invoices_view') }}"
+           class="btn-cancel-modal"
+           style="text-decoration: none; white-space: nowrap;">
+            Đặt lại
+        </a>
+
+    </form>
 
     <!-- BẢNG DANH SÁCH HÓA ĐƠN CỦA STYLIST -->
     <div class="card-luxury p-0 overflow-hidden" style="max-height: 600px; overflow-y: auto;">
@@ -139,24 +176,134 @@
     </div>
 
     <!-- THANH PHÂN TRANG -->
-    {% if total_pages > 1 %}
+    {% if total_pages and total_pages > 1 %}
     <div class="pagination-wrap mt-4">
-        <a href="{{ url_for('staff_invoices_view', page=page-1, status=selected_status, date=selected_date) }}"
-           class="page-btn {{ 'disabled' if page <= 1 else '' }}">
-            <i class="fa-solid fa-chevron-left"></i> Trước
-        </a>
+
+        <!-- TRƯỚC -->
+        {% if page > 1 %}
+
+            <a href="{{ url_for(
+                'staff_invoices_view',
+                page=page-1,
+                status=selected_status,
+                date=selected_date,
+                kw=kw
+            ) }}"
+               class="page-btn">
+
+                <i class="fa-solid fa-chevron-left"></i>
+                Trước
+
+            </a>
+
+        {% else %}
+
+            <span class="page-btn disabled">
+                <i class="fa-solid fa-chevron-left"></i>
+                Trước
+            </span>
+
+        {% endif %}
+
+
+        <!-- SỐ TRANG -->
         <div class="page-numbers">
-            {% for p in range(1, total_pages + 1) %}
-                <a href="{{ url_for('staff_invoices_view', page=p, status=selected_status, date=selected_date) }}"
-                   class="page-num {{ 'active' if p == page else '' }}">
-                    {{ p }}
+
+            {% set start_page = [1, page - 2] | max %}
+            {% set end_page = [total_pages, page + 2] | min %}
+
+
+            <!-- TRANG ĐẦU -->
+            {% if start_page > 1 %}
+
+                <a href="{{ url_for(
+                    'staff_invoices_view',
+                    page=1,
+                    status=selected_status,
+                    date=selected_date,
+                    kw=kw
+                ) }}"
+                   class="page-num">
+                    1
                 </a>
+
+                {% if start_page > 2 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+            {% endif %}
+
+
+            <!-- CÁC TRANG GẦN TRANG HIỆN TẠI -->
+            {% for p in range(start_page, end_page + 1) %}
+
+                <a href="{{ url_for(
+                    'staff_invoices_view',
+                    page=p,
+                    status=selected_status,
+                    date=selected_date,
+                    kw=kw
+                ) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+
+                    {{ p }}
+
+                </a>
+
             {% endfor %}
+
+
+            <!-- TRANG CUỐI -->
+            {% if end_page < total_pages %}
+
+                {% if end_page < total_pages - 1 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+                <a href="{{ url_for(
+                    'staff_invoices_view',
+                    page=total_pages,
+                    status=selected_status,
+                    date=selected_date,
+                    kw=kw
+                ) }}"
+                   class="page-num">
+
+                    {{ total_pages }}
+
+                </a>
+
+            {% endif %}
+
         </div>
-        <a href="{{ url_for('staff_invoices_view', page=page+1, status=selected_status, date=selected_date) }}"
-           class="page-btn {{ 'disabled' if page >= total_pages else '' }}">
-            Sau <i class="fa-solid fa-chevron-right"></i>
-        </a>
+
+
+        <!-- SAU -->
+        {% if page < total_pages %}
+
+            <a href="{{ url_for(
+                'staff_invoices_view',
+                page=page+1,
+                status=selected_status,
+                date=selected_date,
+                kw=kw
+            ) }}"
+               class="page-btn">
+
+                Sau
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </a>
+
+        {% else %}
+
+            <span class="page-btn disabled">
+                Sau
+                <i class="fa-solid fa-chevron-right"></i>
+            </span>
+
+        {% endif %}
+
     </div>
     {% endif %}
 </div>
@@ -166,28 +313,11 @@
 <script>
 function filterByStatus(status) {
     const urlParams = new URLSearchParams(window.location.search);
+
     urlParams.set('status', status);
+    urlParams.set('page', 1);
+
     window.location.search = urlParams.toString();
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('staff_inv_search');
-
-    if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            const kw = searchInput.value.trim().toLowerCase();
-            const rows = document.querySelectorAll('.staff-inv-row');
-
-            rows.forEach(row => {
-                const invId = row.dataset.invId || '';
-                const cusName = row.dataset.customerName || '';
-                const cusPhone = row.dataset.customerPhone || '';
-
-                const matches = !kw || invId.toLowerCase().includes(kw) || cusName.includes(kw) || cusPhone.includes(kw);
-                row.style.display = matches ? '' : 'none';
-            });
-        });
-    }
-});
 </script>
 {% endblock %}

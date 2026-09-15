@@ -529,10 +529,15 @@ def staff1_booking_with_products(customer_page, base_url):
     service_card = customer_page.locator(
         '.service-select-card'
     ).filter(
-        has_text="Gội đầu dưỡng sinh"
+        has=customer_page.get_by_text(
+            "Gội đầu dưỡng sinh",
+            exact=True
+        )
     )
 
+    expect(service_card).to_have_count(1)
     expect(service_card).to_be_visible()
+
     service_card.click()
 
     # Chọn staff1 cụ thể

@@ -20,29 +20,99 @@ def load_user(user_id):
 @app.route('/')
 def index():
     kw = request.args.get('kw')
-    page = request.args.get('page', 1, type=int)
 
-    # 1. Lấy page_size từ config
+    # =========================
+    # PHÂN TRANG DỊCH VỤ
+    # =========================
+    page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 4)
 
-    # 2. Lấy danh sách dịch vụ
-    services = dao.load_services(kw=kw, page=page, page_size=page_size)
+    if page < 1:
+        page = 1
+
+    services = dao.load_services(
+        kw=kw,
+        page=page,
+        page_size=page_size
+    )
+
     total_services = dao.count_services(kw=kw)
-    total_pages = math.ceil(total_services / page_size) if total_services > 0 else 1
+    total_pages = (
+        math.ceil(total_services / page_size)
+        if total_services > 0
+        else 1
+    )
 
-    # 3. LẤY DANH SÁCH KHUYẾN MÃI ACTIVE & SẮP XẾP MỚI NHẤT TRƯỚC
-    all_promos = dao.get_active_promotions() if hasattr(dao, 'get_active_promotions') else []
+    # Nếu page vượt quá trang cuối
+    if page > total_pages:
+        page = total_pages
 
-    # Sắp xếp các mã khuyến mãi theo ngày bắt đầu giảm dần (mã mới nhất lên đầu)
-    all_promos = sorted(all_promos, key=lambda p: p.start_date, reverse=True)
+        services = dao.load_services(
+            kw=kw,
+            page=page,
+            page_size=page_size
+        )
 
+
+    # =========================
+    # PHÂN TRANG KHUYẾN MÃI
+    # =========================
+    promo_page = request.args.get('promo_page', 1, type=int)
+
+    # Mình để 6 ưu đãi / trang
+    promo_page_size = 6
+
+    all_promos = (
+        dao.get_active_promotions()
+        if hasattr(dao, 'get_active_promotions')
+        else []
+    )
+
+    # Mới nhất lên đầu
+    all_promos = sorted(
+        all_promos,
+        key=lambda p: p.start_date,
+        reverse=True
+    )
+
+    promo_total_items = len(all_promos)
+
+    promo_total_pages = (
+        math.ceil(promo_total_items / promo_page_size)
+        if promo_total_items > 0
+        else 1
+    )
+
+    # Chặn promo_page không hợp lệ
+    if promo_page < 1:
+        promo_page = 1
+
+    if promo_page > promo_total_pages:
+        promo_page = promo_total_pages
+
+    promo_start = (promo_page - 1) * promo_page_size
+    promo_end = promo_start + promo_page_size
+
+    promotions_paged = all_promos[promo_start:promo_end]
+
+
+    # =========================
+    # RENDER
+    # =========================
     return render_template(
         "customer/index.html",
+
+        # Dịch vụ
         services=services,
-        promotions=all_promos,  # Pass mảng đã sắp xếp
         total_pages=total_pages,
         page=page,
-        kw=kw
+        kw=kw,
+
+        # Khuyến mãi
+        promotions=promotions_paged,
+        promo_page=promo_page,
+        promo_total_pages=promo_total_pages
+
     ), 200
 
 
@@ -504,36 +574,45 @@ def create_invoice_view():
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def staff_invoices_view():
     status_str = request.args.get('status', 'ALL')
-    date_str = request.args.get('date')
+    date_str = request.args.get('date', '').strip()
+    kw = request.args.get('kw', '').strip()
+
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 10)
 
     from_date = None
     to_date = None
 
+    # ==============================
+    # 1. LỌC NGÀY
+    # ==============================
     if date_str:
         try:
             selected_dt = datetime.strptime(date_str, '%Y-%m-%d')
-            from_date = datetime.combine(selected_dt, datetime.min.time())
-            to_date = datetime.combine(selected_dt, datetime.max.time())
+
+            from_date = datetime.combine(
+                selected_dt,
+                datetime.min.time()
+            )
+
+            to_date = datetime.combine(
+                selected_dt,
+                datetime.max.time()
+            )
+
         except ValueError:
             pass
 
-    staff_id_filter = current_user.id if current_user.role == UserRole.STAFF else None
-
-    # Lấy danh sách hóa đơn theo trạng thái và trang
-    status_filter = None if status_str == 'ALL' else status_str
-
-    invoices, total_items = dao.get_invoices(
-        staff_id=staff_id_filter,
-        status=status_filter,
-        from_date=from_date,
-        to_date=to_date,
-        page=page,
-        page_size=page_size
+    # Staff chỉ xem hóa đơn do chính mình lập
+    staff_id_filter = (
+        current_user.id
+        if current_user.role == UserRole.STAFF
+        else None
     )
 
-    # Lấy tổng số hóa đơn để hiển thị trên 3 thẻ thống kê trên cùng
+    # ==============================
+    # 2. LẤY TOÀN BỘ HÓA ĐƠN
+    # ==============================
     all_invoices, _ = dao.get_invoices(
         staff_id=staff_id_filter,
         from_date=from_date,
@@ -541,14 +620,77 @@ def staff_invoices_view():
         page=None
     )
 
-    total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
+    # ==============================
+    # 3. FILTER STATUS
+    # ==============================
+    filtered_invoices = all_invoices
+
+    if status_str != 'ALL':
+        filtered_invoices = [
+            inv for inv in filtered_invoices
+            if inv.status.name == status_str
+        ]
+
+    # ==============================
+    # 4. SEARCH
+    # Mã HĐ / Tên khách / SĐT
+    # ==============================
+    if kw:
+        kw_lower = kw.lower()
+
+        filtered_invoices = [
+            inv for inv in filtered_invoices
+            if (
+                kw_lower in str(inv.id).lower()
+
+                or (
+                    inv.customer
+                    and inv.customer.full_name
+                    and kw_lower in inv.customer.full_name.lower()
+                )
+
+                or (
+                    inv.customer
+                    and inv.customer.phone
+                    and kw_lower in inv.customer.phone.lower()
+                )
+            )
+        ]
+
+    # ==============================
+    # 5. PHÂN TRANG SAU FILTER
+    # ==============================
+    total_items = len(filtered_invoices)
+
+    total_pages = (
+        math.ceil(total_items / page_size)
+        if total_items > 0
+        else 1
+    )
+
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
+
+    start = (page - 1) * page_size
+    end = start + page_size
+
+    invoices_paged = filtered_invoices[start:end]
 
     return render_template(
         'staff/draft_invoice_list.html',
-        invoices=invoices,
+
+        invoices=invoices_paged,
+
+        # Dùng cho 3 card thống kê
         all_invoices=all_invoices,
+
         selected_status=status_str,
         selected_date=date_str,
+        kw=kw,
+
         page=page,
         total_pages=total_pages
     ), 200
@@ -558,10 +700,13 @@ def staff_invoices_view():
 @app.route('/reception/invoices', methods=['GET'])
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def reception_invoices_view():
-    date_str = request.args.get('date')
+    date_str = request.args.get('date', '').strip()
     status_str = request.args.get('status', 'ALL')
+    kw = request.args.get('kw', '').strip()
+    staff_id = request.args.get('staff_id', type=int)
+
     page = request.args.get('page', 1, type=int)
-    page_size = app.config.get('PAGE_SIZE', 10) # 10 hóa đơn / trang
+    page_size = app.config.get('PAGE_SIZE', 10)
 
     from_date = None
     to_date = None
@@ -569,12 +714,18 @@ def reception_invoices_view():
     if date_str:
         try:
             selected_dt = datetime.strptime(date_str, '%Y-%m-%d')
-            from_date = datetime.combine(selected_dt, datetime.min.time())
-            to_date = datetime.combine(selected_dt, datetime.max.time())
+            from_date = datetime.combine(
+                selected_dt,
+                datetime.min.time()
+            )
+            to_date = datetime.combine(
+                selected_dt,
+                datetime.max.time()
+            )
         except ValueError:
             pass
 
-    # 1. Lấy toàn bộ danh sách hóa đơn không phân trang để tính tổng cho 3 thẻ Thống kê
+    # Lấy toàn bộ hóa đơn trước khi phân trang
     all_invoices, _ = dao.get_invoices(
         status=None,
         from_date=from_date,
@@ -582,30 +733,94 @@ def reception_invoices_view():
         page=None
     )
 
-    # 2. Lọc theo trạng thái status nếu chọn Tab
+    # =========================
+    # LỌC THEO TRẠNG THÁI
+    # =========================
+    filtered_invoices = all_invoices
+
     if status_str != 'ALL':
-        filtered_invoices = [inv for inv in all_invoices if inv.status.name == status_str]
-    else:
-        filtered_invoices = all_invoices
+        filtered_invoices = [
+            inv for inv in filtered_invoices
+            if inv.status.name == status_str
+        ]
 
-    # 3. Tính toán phân trang bằng Python trên danh sách đã lọc
+    # =========================
+    # LỌC THEO STYLIST
+    # =========================
+    if staff_id:
+        filtered_invoices = [
+            inv for inv in filtered_invoices
+            if inv.staff_id == staff_id
+        ]
+
+    # =========================
+    # TÌM KIẾM
+    # Mã HĐ / tên khách / SĐT / stylist
+    # =========================
+    if kw:
+        kw_lower = kw.lower()
+
+        filtered_invoices = [
+            inv for inv in filtered_invoices
+            if (
+                kw_lower in str(inv.id).lower()
+                or (
+                    inv.customer
+                    and inv.customer.full_name
+                    and kw_lower in inv.customer.full_name.lower()
+                )
+                or (
+                    inv.customer
+                    and inv.customer.phone
+                    and kw_lower in inv.customer.phone.lower()
+                )
+                or (
+                    inv.staff
+                    and inv.staff.full_name
+                    and kw_lower in inv.staff.full_name.lower()
+                )
+            )
+        ]
+
+    # =========================
+    # PHÂN TRANG SAU KHI FILTER
+    # =========================
     total_items = len(filtered_invoices)
-    total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
-    # Cắt danh sách hóa đơn cho trang hiện tại
+    total_pages = (
+        math.ceil(total_items / page_size)
+        if total_items > 0
+        else 1
+    )
+
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
+
     start = (page - 1) * page_size
     end = start + page_size
+
     invoices_paged = filtered_invoices[start:end]
 
     staff_list = dao.get_users(role=UserRole.STAFF)
 
     return render_template(
         'receptionist/recept_invoice_list.html',
+
         invoices=invoices_paged,
+
+        # Giữ dữ liệu tổng để tính các card thống kê
         all_invoices=all_invoices,
+
         staff_list=staff_list,
+
         selected_date=date_str,
         selected_status=status_str,
+        selected_staff_id=staff_id,
+        kw=kw,
+
         page=page,
         total_pages=total_pages
     ), 200
@@ -615,30 +830,72 @@ def reception_invoices_view():
 @app.route('/reception/appointments', methods=['GET'])
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def reception_appointments_view():
-    date_str = request.args.get('date')
+    date_str = request.args.get('date', '').strip()
+    kw = request.args.get('kw', '').strip()
+    staff_id = request.args.get('staff_id', type=int)
+
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 10)
 
     selected_date = None
+
     if date_str:
         try:
             selected_date = datetime.strptime(date_str, '%Y-%m-%d')
         except ValueError:
-            pass
+            selected_date = None
 
-    # 1. Lấy toàn bộ danh sách lịch hẹn theo ngày
+    # Lấy danh sách trước khi phân trang
     all_appointments = dao.get_appointments(
         date=selected_date,
+        staff_id=staff_id,
         page=None
     )
 
-    # 2. Tính toán phân trang
+    # Search theo tên khách hàng / SĐT / mã lịch hẹn
+    if kw:
+        kw_lower = kw.lower()
+
+        filtered_appointments = []
+
+        for apt in all_appointments:
+            customer_name = (
+                apt.customer.full_name.lower()
+                if apt.customer and apt.customer.full_name
+                else ''
+            )
+
+            customer_phone = (
+                apt.customer.phone.lower()
+                if apt.customer and apt.customer.phone
+                else ''
+            )
+
+            appointment_id = str(apt.id)
+
+            if (
+                kw_lower in customer_name
+                or kw_lower in customer_phone
+                or kw_lower in appointment_id
+            ):
+                filtered_appointments.append(apt)
+
+        all_appointments = filtered_appointments
+
+    # Tính phân trang SAU KHI filter
     total_items = len(all_appointments)
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
-    # 3. Cắt danh sách cho trang hiện tại
+    # Chặn page vượt giới hạn
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
+
     start = (page - 1) * page_size
     end = start + page_size
+
     appointments_paged = all_appointments[start:end]
 
     staff_list = dao.get_users(role=UserRole.STAFF)
@@ -648,6 +905,8 @@ def reception_appointments_view():
         appointments=appointments_paged,
         staff_list=staff_list,
         selected_date=date_str,
+        selected_staff_id=staff_id,
+        kw=kw,
         page=page,
         total_pages=total_pages
     ), 200
@@ -801,28 +1060,126 @@ def my_appointments_view():
 @app.route('/staff/appointments', methods=['GET'])
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def staff_appointments_view():
-    date_str = request.args.get('date', date.today().strftime('%Y-%m-%d'))
+    date_str = request.args.get(
+        'date',
+        date.today().strftime('%Y-%m-%d')
+    ).strip()
+
+    kw = request.args.get('kw', '').strip()
+    status_str = request.args.get('status', 'ALL')
+
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 10)
 
-    staff_id = current_user.id if current_user.role == UserRole.STAFF else request.args.get('staff_id', type=int)
+    # Staff chỉ xem lịch của chính mình
+    # Admin có thể truyền staff_id
+    staff_id = (
+        current_user.id
+        if current_user.role == UserRole.STAFF
+        else request.args.get('staff_id', type=int)
+    )
 
+    # ==============================
+    # 1. LẤY TOÀN BỘ LỊCH TRƯỚC
+    # ==============================
     if staff_id:
-        appointments, total_items = dao.get_appointments_by_staff(
+        all_appointments, _ = dao.get_appointments_by_staff(
             staff_id=staff_id,
             date_str=date_str,
-            page=page,
-            page_size=page_size
+            page=None
         )
     else:
-        appointments, total_items = [], 0
+        all_appointments = []
 
-    total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
+    # ==============================
+    # 2. DỮ LIỆU CHO CARD THỐNG KÊ
+    # ==============================
+    count_total = len(all_appointments)
+
+    count_confirmed = sum(
+        1 for a in all_appointments
+        if a.status.name == 'CONFIRMED'
+    )
+
+    count_completed = sum(
+        1 for a in all_appointments
+        if a.status.name == 'COMPLETED'
+    )
+
+    count_cancelled = sum(
+        1 for a in all_appointments
+        if a.status.name == 'CANCELLED'
+    )
+
+    # ==============================
+    # 3. FILTER STATUS
+    # ==============================
+    filtered_appointments = all_appointments
+
+    if status_str != 'ALL':
+        filtered_appointments = [
+            a for a in filtered_appointments
+            if a.status.name == status_str
+        ]
+
+    # ==============================
+    # 4. SEARCH TÊN / SĐT KHÁCH
+    # ==============================
+    if kw:
+        kw_lower = kw.lower()
+
+        filtered_appointments = [
+            a for a in filtered_appointments
+            if (
+                (
+                    a.customer
+                    and a.customer.full_name
+                    and kw_lower in a.customer.full_name.lower()
+                )
+                or (
+                    a.customer
+                    and a.customer.phone
+                    and kw_lower in a.customer.phone.lower()
+                )
+            )
+        ]
+
+    # ==============================
+    # 5. PHÂN TRANG SAU KHI FILTER
+    # ==============================
+    total_items = len(filtered_appointments)
+
+    total_pages = (
+        math.ceil(total_items / page_size)
+        if total_items > 0
+        else 1
+    )
+
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
+
+    start = (page - 1) * page_size
+    end = start + page_size
+
+    appointments_paged = filtered_appointments[start:end]
 
     return render_template(
         'staff/staff_appointments.html',
-        appointments=appointments,
+
+        appointments=appointments_paged,
+
         selected_date=date_str,
+        selected_status=status_str,
+        kw=kw,
+
+        count_total=count_total,
+        count_confirmed=count_confirmed,
+        count_completed=count_completed,
+        count_cancelled=count_cancelled,
+
         page=page,
         total_pages=total_pages
     ), 200

@@ -64,62 +64,38 @@ def test_customer_can_load_available_slots(customer_page, base_url):
 
 def test_customer_can_create_booking(customer_page, base_url):
     customer_page.goto(f"{base_url}/booking")
-
-    # Chọn ngày mai
     tomorrow = (
         date.today() + timedelta(days=1)
     ).strftime("%Y-%m-%d")
-
     customer_page.locator("#date").fill(tomorrow)
-
-    # Chờ giờ trống được load
     first_slot = customer_page.locator(".slot-btn").first
     expect(first_slot).to_be_visible(timeout=10000)
-
-    # Chọn giờ
     first_slot.click()
-
-    # Kiểm tra JS đã lưu giờ được chọn vào hidden input
     expect(
         customer_page.locator("#selected_time")
     ).not_to_have_value("")
-
-    # Nhập ghi chú để nhận diện appointment do test tạo
     customer_page.locator("#note").fill(
         "Playwright E2E booking test"
     )
-
-    # Bắt response POST /appointments
     with customer_page.expect_response(
         lambda response:
             "/appointments" in response.url
             and response.request.method == "POST"
     ) as response_info:
-
         customer_page.locator(
             "#btn-submit-booking"
         ).click()
-
     response = response_info.value
-
-    # Backend phải tạo appointment thành công
     assert response.status == 201
-
-    # Kiểm tra response JSON
     body = response.json()
-
     assert body["message"] == "Đặt lịch hẹn thành công!"
     assert body["appointment"]["id"] is not None
-
-    # Kiểm tra thông báo trên UI
     expect(
         customer_page.locator(".toast-success")
     ).to_contain_text(
         "Đặt lịch hẹn thành công",
         timeout=5000
     )
-
-    # JS redirect về trang chủ
     expect(customer_page).to_have_url(
         f"{base_url}/",
         timeout=5000

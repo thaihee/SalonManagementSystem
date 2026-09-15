@@ -58,20 +58,39 @@
                     <div class="card-thumb">
                         {% if s.avatar %}
                             {% if s.avatar.startswith('http://') or s.avatar.startswith('https://') %}
+
                                 <img src="{{ s.avatar }}"
                                      alt="{{ s.service_name }}"
                                      loading="lazy"
-                                     onerror="this.onerror=null; this.src='https://res.cloudinary.com/dxxwcby8l/image/upload/v1683162354/placeholder-image_q8mpxv.png';">
+                                     onerror="
+                                        this.style.display='none';
+                                        this.nextElementSibling.style.display='flex';
+                                     ">
+
                             {% else %}
+
                                 <img src="{{ url_for('static', filename='images/' + s.avatar) }}"
                                      alt="{{ s.service_name }}"
                                      loading="lazy"
-                                     onerror="this.onerror=null; this.src='https://res.cloudinary.com/dxxwcby8l/image/upload/v1683162354/placeholder-image_q8mpxv.png';">
+                                     onerror="
+                                        this.style.display='none';
+                                        this.nextElementSibling.style.display='flex';
+                                     ">
+
                             {% endif %}
+
+                            <!-- FALLBACK KHI ẢNH BỊ LỖI -->
+                            <div class="service-avatar-fallback" style="display: none;">
+                                {{ s.service_name[0] | upper }}
+                            </div>
+
                         {% else %}
-                            <img src="https://res.cloudinary.com/dxxwcby8l/image/upload/v1683162354/placeholder-image_q8mpxv.png"
-                                 alt="{{ s.service_name }}"
-                                 loading="lazy">
+
+                            <!-- KHÔNG CÓ ẢNH -->
+                            <div class="service-avatar-fallback">
+                                {{ s.service_name[0] | upper }}
+                            </div>
+
                         {% endif %}
 
                         <span class="duration-tag">
@@ -253,6 +272,141 @@
                 </div>
                 {% endfor %}
             </div>
+
+            <!-- PHÂN TRANG KHUYẾN MÃI -->
+            {% if promo_total_pages and promo_total_pages > 1 %}
+            <div class="pagination-wrap" style="margin-top: 24px;">
+
+                <!-- NÚT TRƯỚC -->
+                {% if promo_page > 1 %}
+                    <a href="{{ url_for(
+                        'index',
+                        kw=kw,
+                        page=page,
+                        promo_page=promo_page-1
+                    ) }}#promotions"
+                       class="page-btn prev-btn">
+
+                        <i class="fa-solid fa-chevron-left"></i>
+                        Trước
+
+                    </a>
+                {% else %}
+                    <span class="page-btn disabled">
+                        <i class="fa-solid fa-chevron-left"></i>
+                        Trước
+                    </span>
+                {% endif %}
+
+
+                <!-- CÁC SỐ TRANG -->
+                <div class="page-numbers">
+
+                    {% set start_page = [1, promo_page - 2] | max %}
+                    {% set end_page = [promo_total_pages, promo_page + 2] | min %}
+
+
+                    <!-- TRANG ĐẦU -->
+                    {% if start_page > 1 %}
+
+                        <a href="{{ url_for(
+                            'index',
+                            kw=kw,
+                            page=page,
+                            promo_page=1
+                        ) }}#promotions"
+                           class="page-num">
+
+                            1
+
+                        </a>
+
+                        {% if start_page > 2 %}
+                            <span class="page-num-ellipsis">…</span>
+                        {% endif %}
+
+                    {% endif %}
+
+
+                    <!-- TRANG GẦN HIỆN TẠI -->
+                    {% for p in range(start_page, end_page + 1) %}
+
+                        {% if p == promo_page %}
+
+                            <span class="page-num active">
+                                {{ p }}
+                            </span>
+
+                        {% else %}
+
+                            <a href="{{ url_for(
+                                'index',
+                                kw=kw,
+                                page=page,
+                                promo_page=p
+                            ) }}#promotions"
+                               class="page-num">
+
+                                {{ p }}
+
+                            </a>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+
+                    <!-- TRANG CUỐI -->
+                    {% if end_page < promo_total_pages %}
+
+                        {% if end_page < promo_total_pages - 1 %}
+                            <span class="page-num-ellipsis">…</span>
+                        {% endif %}
+
+                        <a href="{{ url_for(
+                            'index',
+                            kw=kw,
+                            page=page,
+                            promo_page=promo_total_pages
+                        ) }}#promotions"
+                           class="page-num">
+
+                            {{ promo_total_pages }}
+
+                        </a>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- NÚT SAU -->
+                {% if promo_page < promo_total_pages %}
+
+                    <a href="{{ url_for(
+                        'index',
+                        kw=kw,
+                        page=page,
+                        promo_page=promo_page+1
+                    ) }}#promotions"
+                       class="page-btn next-btn">
+
+                        Sau
+                        <i class="fa-solid fa-chevron-right"></i>
+
+                    </a>
+
+                {% else %}
+
+                    <span class="page-btn disabled">
+                        Sau
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </span>
+
+                {% endif %}
+
+            </div>
+            {% endif %}
         {% else %}
             <div class="empty-search-box" style="padding: 30px;">
                 <i class="fa-solid fa-ticket empty-icon"></i>
@@ -274,7 +428,7 @@ function filterServicesRealtime() {
     const servicesGrid = document.getElementById('servicesGrid');
     const noResultsBox = document.getElementById('noResultsBox');
     const searchKeywordLabel = document.getElementById('searchKeywordLabel');
-    const paginationWrap = document.querySelector('.pagination-wrap');
+    const paginationWrap = document.querySelector('#services .pagination-wrap');
 
     // Chống spam request: Đợi người dùng gõ xong 300ms mới gửi request
     clearTimeout(searchTimeout);
@@ -290,7 +444,7 @@ function filterServicesRealtime() {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             const newGrid = doc.getElementById('servicesGrid');
-            const newPagination = doc.querySelector('.pagination-wrap');
+            const newPagination = doc.querySelector('#services .pagination-wrap');
 
             if (newGrid && newGrid.children.length > 0) {
                 if (servicesGrid) {

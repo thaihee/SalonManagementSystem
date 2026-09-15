@@ -131,7 +131,6 @@ class TestCreateAppointmentRouteDetailed:
         assert response.status_code == 302
 
     def test_create_appointment_customer_success(self, customer_client, sample_service, staff_user):
-        """Khách hàng tự tạo lịch hẹn thành công -> 201 Created với status CONFIRMED"""
         target_date = (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
         response = customer_client.post('/appointments', json={
             'service_id': sample_service.id,
@@ -311,9 +310,7 @@ class TestUpdateAndCancelAppointmentRoutesDetailed:
         assert response.json['appointment']['status'] == 'COMPLETED'
 
     def test_update_appointment_other_customer_idor_blocked(self, client, app, sample_appointment):
-        """Customer A sửa lịch hẹn của Customer B -> 403 Forbidden"""
         suffix = uuid.uuid4().hex[:8]
-
         other_cust = dao.add_user(
             "Cust B",
             f"custb{suffix}",
@@ -325,7 +322,6 @@ class TestUpdateAndCancelAppointmentRoutesDetailed:
         with client.session_transaction() as sess:
             sess["user_id"] = str(other_cust.id)
             sess["_user_id"] = str(other_cust.id)
-
         response = client.put(f'/appointments/{sample_appointment.id}', json={'note': 'Hack note'})
         assert response.status_code == 403
         assert response.json['error'] == "Bạn không có quyền sửa lịch hẹn này!"

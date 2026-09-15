@@ -31,26 +31,66 @@
     </div>
 
     <!-- THANH CÔNG CỤ TÌM KIẾM & LỌC -->
-    <div class="reception-toolbar">
+    <form method="GET"
+          action="{{ url_for('reception_invoices_view') }}"
+          class="reception-toolbar">
+
+        <!-- SEARCH -->
         <div class="reception-search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="reception_invoice_search" class="reception-search-input"
-                   placeholder="Mã HĐ, Tên/SĐT Khách hàng, Tên Stylist..." autocomplete="off">
+
+            <input type="text"
+                   id="reception_invoice_search"
+                   name="kw"
+                   value="{{ kw or '' }}"
+                   class="reception-search-input"
+                   placeholder="Mã HĐ, Tên/SĐT Khách hàng, Tên Stylist..."
+                   autocomplete="off">
         </div>
 
-        <select id="stylist_filter" class="reception-filter-select">
-            <option value="ALL">-- Tất cả Stylist --</option>
+        <!-- STYLIST -->
+        <select id="stylist_filter"
+                name="staff_id"
+                class="reception-filter-select">
+
+            <option value="">-- Tất cả Stylist --</option>
+
             {% for st in staff_list %}
-                <option value="{{ st.full_name.lower() }}">{{ st.full_name }}</option>
+                <option value="{{ st.id }}"
+                        {% if selected_staff_id == st.id %}selected{% endif %}>
+                    {{ st.full_name }}
+                </option>
             {% endfor %}
         </select>
 
-        <form method="GET" action="{{ url_for('reception_invoices_view') }}" id="dateFilterForm" style="margin: 0;">
-            <input type="hidden" name="status" value="{{ selected_status }}">
-            <input type="date" id="date_filter" name="date" value="{{ selected_date or '' }}"
-                   class="reception-filter-select" onchange="document.getElementById('dateFilterForm').submit()">
-        </form>
-    </div>
+        <!-- DATE -->
+        <input type="date"
+               id="date_filter"
+               name="date"
+               value="{{ selected_date or '' }}"
+               class="reception-filter-select">
+
+        <!-- GIỮ STATUS HIỆN TẠI -->
+        <input type="hidden"
+               name="status"
+               value="{{ selected_status or 'ALL' }}">
+
+        <!-- LỌC -->
+        <button type="submit"
+                class="btn-action-primary">
+            <i class="fa-solid fa-filter me-1"></i>
+            Lọc
+        </button>
+
+
+        <!-- Reset -->
+        <a href="{{ url_for('reception_invoices_view') }}"
+           class="btn-cancel-modal"
+           style="text-decoration: none; white-space: nowrap;">
+            Đặt lại
+        </a>
+
+    </form>
 
     <!-- BẢNG DANH SÁCH HÓA ĐƠN -->
     <div class="card-luxury p-0 overflow-hidden">
@@ -200,24 +240,136 @@
     </div>
 
     <!-- THANH PHÂN TRANG -->
-    {% if total_pages > 1 %}
+    {% if total_pages and total_pages > 1 %}
     <div class="pagination-wrap mt-4">
-        <a href="{{ url_for('reception_invoices_view', page=page-1, status=selected_status, date=selected_date) }}"
-           class="page-btn {{ 'disabled' if page <= 1 else '' }}">
-            <i class="fa-solid fa-chevron-left"></i> Trước
-        </a>
+
+        <!-- TRƯỚC -->
+        {% if page > 1 %}
+            <a href="{{ url_for(
+                'reception_invoices_view',
+                page=page-1,
+                status=selected_status,
+                date=selected_date,
+                kw=kw,
+                staff_id=selected_staff_id
+            ) }}"
+               class="page-btn">
+
+                <i class="fa-solid fa-chevron-left"></i>
+                Trước
+            </a>
+
+        {% else %}
+
+            <span class="page-btn disabled">
+                <i class="fa-solid fa-chevron-left"></i>
+                Trước
+            </span>
+
+        {% endif %}
+
+
         <div class="page-numbers">
-            {% for p in range(1, total_pages + 1) %}
-                <a href="{{ url_for('reception_invoices_view', page=p, status=selected_status, date=selected_date) }}"
-                   class="page-num {{ 'active' if p == page else '' }}">
-                    {{ p }}
+
+            {% set start_page = [1, page - 2] | max %}
+            {% set end_page = [total_pages, page + 2] | min %}
+
+
+            <!-- TRANG ĐẦU -->
+            {% if start_page > 1 %}
+
+                <a href="{{ url_for(
+                    'reception_invoices_view',
+                    page=1,
+                    status=selected_status,
+                    date=selected_date,
+                    kw=kw,
+                    staff_id=selected_staff_id
+                ) }}"
+                   class="page-num">
+                    1
                 </a>
+
+                {% if start_page > 2 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+            {% endif %}
+
+
+            <!-- NHÓM TRANG HIỆN TẠI -->
+            {% for p in range(start_page, end_page + 1) %}
+
+                <a href="{{ url_for(
+                    'reception_invoices_view',
+                    page=p,
+                    status=selected_status,
+                    date=selected_date,
+                    kw=kw,
+                    staff_id=selected_staff_id
+                ) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+
+                    {{ p }}
+
+                </a>
+
             {% endfor %}
+
+
+            <!-- TRANG CUỐI -->
+            {% if end_page < total_pages %}
+
+                {% if end_page < total_pages - 1 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+                <a href="{{ url_for(
+                    'reception_invoices_view',
+                    page=total_pages,
+                    status=selected_status,
+                    date=selected_date,
+                    kw=kw,
+                    staff_id=selected_staff_id
+                ) }}"
+                   class="page-num">
+
+                    {{ total_pages }}
+
+                </a>
+
+            {% endif %}
+
         </div>
-        <a href="{{ url_for('reception_invoices_view', page=page+1, status=selected_status, date=selected_date) }}"
-           class="page-btn {{ 'disabled' if page >= total_pages else '' }}">
-            Sau <i class="fa-solid fa-chevron-right"></i>
-        </a>
+
+
+        <!-- SAU -->
+        {% if page < total_pages %}
+
+            <a href="{{ url_for(
+                'reception_invoices_view',
+                page=page+1,
+                status=selected_status,
+                date=selected_date,
+                kw=kw,
+                staff_id=selected_staff_id
+            ) }}"
+               class="page-btn">
+
+                Sau
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </a>
+
+        {% else %}
+
+            <span class="page-btn disabled">
+                Sau
+                <i class="fa-solid fa-chevron-right"></i>
+            </span>
+
+        {% endif %}
+
     </div>
     {% endif %}
 </div>
@@ -232,32 +384,6 @@ function filterByStatus(status) {
     urlParams.set('page', 1);
     window.location.search = urlParams.toString();
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('reception_invoice_search');
-    const stylistSelect = document.getElementById('stylist_filter');
-
-    function applyInvoiceFilters() {
-        const kw = searchInput ? searchInput.value.trim().toLowerCase() : '';
-        const selectedStylist = stylistSelect ? stylistSelect.value.toLowerCase() : 'all';
-        const rows = document.querySelectorAll('.inv-row');
-
-        rows.forEach(row => {
-            const invId = row.dataset.invId || '';
-            const cusName = row.dataset.customerName || '';
-            const cusPhone = row.dataset.customerPhone || '';
-            const staffName = row.dataset.staffName || '';
-
-            const matchesSearch = !kw || invId.toLowerCase().includes(kw) || cusName.includes(kw) || cusPhone.includes(kw) || staffName.includes(kw);
-            const matchesStylist = (selectedStylist === 'all' || staffName.includes(selectedStylist));
-
-            row.style.display = (matchesSearch && matchesStylist) ? '' : 'none';
-        });
-    }
-
-    if (searchInput) searchInput.addEventListener('input', applyInvoiceFilters);
-    if (stylistSelect) stylistSelect.addEventListener('change', applyInvoiceFilters);
-});
 
 // BẬT / TẮT HÀNG SỬA INLINE
 function toggleInlineEdit(invoiceId) {

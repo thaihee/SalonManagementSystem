@@ -134,34 +134,21 @@ class TestGetAvailableSlotsDetailed:
         assert dao.get_available_slots(sample_service.id, yesterday_str) == []
 
     def test_slot_overlapping_calculation(self, app, customer_user, staff_user):
-        # Dùng ngày cách 2 ngày tới
         target_date = (date.today() + timedelta(days=2)).strftime("%Y-%m-%d")
         suffix = uuid.uuid4().hex[:8]
-
         long_svc = dao.add_service(
             f"Nhuộm Tóc {suffix}",
             300000,
             90
         )
-
-        # Lịch hẹn bận lúc 10:00 -> Chiếm khoảng giờ 10:00 - 11:30
         dao.create_appointment(
             customer_id=customer_user.id, service_id=long_svc.id,
             staff_id=staff_user.id, date_str=target_date, time_str="10:00"
         )
-
         slots = dao.get_available_slots(long_svc.id, target_date, staff_id=staff_user.id)
-
-        # 08:00 -> 09:30 (Trống, không chạm 10:00) => KHẢ DỤNG
         assert "08:00" in slots
-
-        # 09:00 -> 10:30 (Bị va chạm với khoảng 10:00-11:30) => KHÔNG KHẢ DỤNG
         assert "09:00" not in slots
-
-        # 10:00 -> 11:30 (Trùng chính xác giờ bắt đầu) => KHÔNG KHẢ DỤNG
         assert "10:00" not in slots
-
-        # 12:00 -> 13:30 (Trống, sau 11:30) => KHẢ DỤNG
         assert "12:00" in slots
 
     def test_exclude_appointment_id_keeps_original_slot(self, app, sample_appointment):
@@ -214,16 +201,12 @@ class TestCreateAppointmentDetailed:
 
     def test_auto_assign_staff_finds_available_stylist(self, app, customer_user, staff_user, sample_service):
         target_date = (date.today() + timedelta(days=2)).strftime("%Y-%m-%d")
-
-        # Đặt lịch hẹn ngẫu nhiên (staff_id=None) ở khung giờ rảnh 10:00
         slots = dao.get_available_slots(
             service_id=sample_service.id,
             date_str=target_date,
             staff_id=None
         )
-
         assert len(slots) > 0
-
         new_appt = dao.create_appointment(
             customer_id=customer_user.id,
             service_id=sample_service.id,

@@ -189,61 +189,151 @@
             </table>
         </div>
 
-        <!-- KHỐI PHÂN TRANG HOÀN CHỈNH -->
-        {% if total_pages > 1 %}
-        <div style="padding: 16px 20px; background: #FAF7F2; border-top: 1px solid #EAE0D5; display: flex; justify-content: space-between; align-items: center;">
+        <!-- KHỐI PHÂN TRANG -->
+        {% if total_pages and total_pages > 1 %}
+        <div style="
+            padding: 16px 20px;
+            background: #FAF7F2;
+            border-top: 1px solid #EAE0D5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        ">
+
+            <!-- THÔNG TIN TRANG -->
             <div style="font-size: 13px; color: #7A726D;">
                 Trang <strong>{{ page }}</strong> / <strong>{{ total_pages }}</strong>
             </div>
-            <ul style="display: flex; gap: 6px; list-style: none; margin: 0; padding: 0;">
-                <!-- Nút Trang trước -->
-                <li>
-                    <a href="{{ url_for('admin_dashboard_view', page=page-1, date=selected_date or '', status=selected_status, kw=kw) }}"
-                       style="padding: 6px 12px; border: 1px solid #D8C8B8; border-radius: 8px; background: #FFF; color: #2C2623; text-decoration: none; font-size: 12px; {% if page <= 1 %}pointer-events: none; opacity: 0.5;{% endif %}">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </a>
-                </li>
 
-                <!-- Danh sách số trang -->
-                {% for p in range(1, total_pages + 1) %}
-                <li>
-                    <a href="{{ url_for('admin_dashboard_view', page=p, date=selected_date or '', status=selected_status, kw=kw) }}"
-                       style="padding: 6px 12px; border: 1px solid #D8C8B8; border-radius: 8px; text-decoration: none; font-size: 12px; {% if p == page %}background: #C5A880; color: #FFF; font-weight: 700;{% else %}background: #FFF; color: #2C2623;{% endif %}">
-                        {{ p }}
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+
+                <!-- TRƯỚC -->
+                {% if page > 1 %}
+
+                    <a href="{{ url_for(
+                        'admin_dashboard_view',
+                        page=page-1,
+                        date=selected_date or '',
+                        status=selected_status,
+                        kw=kw
+                    ) }}"
+                       class="page-btn">
+
+                        <i class="fa-solid fa-chevron-left"></i>
+
                     </a>
-                </li>
+
+                {% else %}
+
+                    <span class="page-btn disabled">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </span>
+
+                {% endif %}
+
+
+                <!-- CÁC SỐ TRANG -->
+                {% set start_page = [1, page - 2] | max %}
+                {% set end_page = [total_pages, page + 2] | min %}
+
+
+                <!-- TRANG 1 -->
+                {% if start_page > 1 %}
+
+                    <a href="{{ url_for(
+                        'admin_dashboard_view',
+                        page=1,
+                        date=selected_date or '',
+                        status=selected_status,
+                        kw=kw
+                    ) }}"
+                       class="page-num">
+
+                        1
+
+                    </a>
+
+
+                    {% if start_page > 2 %}
+                        <span class="page-ellipsis">...</span>
+                    {% endif %}
+
+                {% endif %}
+
+
+                <!-- TRANG GẦN HIỆN TẠI -->
+                {% for p in range(start_page, end_page + 1) %}
+
+                    <a href="{{ url_for(
+                        'admin_dashboard_view',
+                        page=p,
+                        date=selected_date or '',
+                        status=selected_status,
+                        kw=kw
+                    ) }}"
+                       class="page-num {{ 'active' if p == page else '' }}">
+
+                        {{ p }}
+
+                    </a>
+
                 {% endfor %}
 
-                <!-- Nút Trang sau -->
-                <li>
-                    <a href="{{ url_for('admin_dashboard_view', page=page+1, date=selected_date or '', status=selected_status, kw=kw) }}"
-                       style="padding: 6px 12px; border: 1px solid #D8C8B8; border-radius: 8px; background: #FFF; color: #2C2623; text-decoration: none; font-size: 12px; {% if page >= total_pages %}pointer-events: none; opacity: 0.5;{% endif %}">
-                        <i class="fa-solid fa-chevron-right"></i>
+
+                <!-- TRANG CUỐI -->
+                {% if end_page < total_pages %}
+
+                    {% if end_page < total_pages - 1 %}
+                        <span class="page-ellipsis">...</span>
+                    {% endif %}
+
+
+                    <a href="{{ url_for(
+                        'admin_dashboard_view',
+                        page=total_pages,
+                        date=selected_date or '',
+                        status=selected_status,
+                        kw=kw
+                    ) }}"
+                       class="page-num">
+
+                        {{ total_pages }}
+
                     </a>
-                </li>
-            </ul>
+
+                {% endif %}
+
+
+                <!-- SAU -->
+                {% if page < total_pages %}
+
+                    <a href="{{ url_for(
+                        'admin_dashboard_view',
+                        page=page+1,
+                        date=selected_date or '',
+                        status=selected_status,
+                        kw=kw
+                    ) }}"
+                       class="page-btn">
+
+                        <i class="fa-solid fa-chevron-right"></i>
+
+                    </a>
+
+                {% else %}
+
+                    <span class="page-btn disabled">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </span>
+
+                {% endif %}
+
+            </div>
+
         </div>
         {% endif %}
     </div>
 
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('admin_apt_search');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const kw = this.value.trim().toLowerCase();
-            const rows = document.querySelectorAll('.admin-apt-row');
-
-            rows.forEach(row => {
-                const text = (row.dataset.search || '').toLowerCase();
-                row.style.display = (!kw || text.includes(kw)) ? '' : 'none';
-            });
-        });
-    }
-});
-</script>
 {% endblock %}

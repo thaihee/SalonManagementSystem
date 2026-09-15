@@ -14,43 +14,118 @@
         </div>
 
         <!-- BỘ LỌC NGÀY & TÌM KHÁCH HÀNG -->
-        <div class="staff-filter-group">
+        <form method="GET"
+              action="{{ url_for('staff_appointments_view') }}"
+              class="staff-filter-group">
+
+            <!-- SEARCH -->
             <div class="search-customer-input-wrap">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="staff_customer_search" class="search-customer-input" placeholder="Tìm tên hoặc SĐT khách..." autocomplete="off">
+
+                <input type="text"
+                       id="staff_customer_search"
+                       name="kw"
+                       value="{{ kw or '' }}"
+                       class="search-customer-input"
+                       placeholder="Tìm tên hoặc SĐT khách..."
+                       autocomplete="off">
             </div>
 
-            <form method="GET" action="{{ url_for('staff_appointments_view') }}" class="staff-date-picker-wrap" id="dateFilterForm">
-                <label for="date_filter" class="picker-label"><i class="fa-regular fa-calendar-days"></i> Ngày:</label>
-                <input type="date" id="date_filter" name="date" value="{{ selected_date }}"
-                       class="luxury-date-input" onchange="document.getElementById('dateFilterForm').submit()">
-            </form>
-        </div>
+            <!-- DATE -->
+            <div class="staff-date-picker-wrap">
+
+                <label for="date_filter"
+                       class="picker-label">
+                    <i class="fa-regular fa-calendar-days"></i>
+                    Ngày:
+                </label>
+
+                <input type="date"
+                       id="date_filter"
+                       name="date"
+                       value="{{ selected_date }}"
+                       class="luxury-date-input">
+
+            </div>
+
+            <!-- GIỮ STATUS -->
+            <input type="hidden"
+                   name="status"
+                   value="{{ selected_status or 'ALL' }}">
+
+            <!-- LỌC -->
+            <button type="submit"
+                    class="btn-action-primary">
+
+                <i class="fa-solid fa-filter"></i>
+                Lọc
+
+            </button>
+
+            <!-- Reset -->
+            <a href="{{ url_for('staff_appointments_view') }}"
+               class="btn-cancel-modal"
+               style="text-decoration: none; white-space: nowrap;">
+                Đặt lại
+            </a>
+
+        </form>
     </div>
 
     <!-- KHỐI THỐNG KÊ LỊCH HẸN TRONG NGÀY -->
-    {% set count_total = appointments|length %}
-    {% set count_confirmed = appointments|selectattr('status.name', 'equalto', 'CONFIRMED')|list|length %}
-    {% set count_completed = appointments|selectattr('status.name', 'equalto', 'COMPLETED')|list|length %}
-    {% set count_cancelled = appointments|selectattr('status.name', 'equalto', 'CANCELLED')|list|length %}
-
     <div class="stat-box-grid">
-        <div class="filter-box active" onclick="filterAppointments('ALL', this)">
-            <div class="stat-label">TỔNG LỊCH HẸN</div>
-            <div class="stat-num">{{ count_total }}</div>
+
+        <div class="filter-box {{ 'active' if selected_status == 'ALL' else '' }}"
+             onclick="filterAppointments('ALL')">
+
+            <div class="stat-label">
+                TỔNG LỊCH HẸN
+            </div>
+
+            <div class="stat-num">
+                {{ count_total }}
+            </div>
         </div>
-        <div class="filter-box" onclick="filterAppointments('CONFIRMED', this)">
-            <div class="stat-label">ĐÃ XÁC NHẬN</div>
-            <div class="stat-num">{{ count_confirmed }}</div>
+
+
+        <div class="filter-box {{ 'active' if selected_status == 'CONFIRMED' else '' }}"
+             onclick="filterAppointments('CONFIRMED')">
+
+            <div class="stat-label">
+                ĐÃ XÁC NHẬN
+            </div>
+
+            <div class="stat-num">
+                {{ count_confirmed }}
+            </div>
         </div>
-        <div class="filter-box" onclick="filterAppointments('COMPLETED', this)">
-            <div class="stat-label">HOÀN THÀNH</div>
-            <div class="stat-num">{{ count_completed }}</div>
+
+
+        <div class="filter-box {{ 'active' if selected_status == 'COMPLETED' else '' }}"
+             onclick="filterAppointments('COMPLETED')">
+
+            <div class="stat-label">
+                HOÀN THÀNH
+            </div>
+
+            <div class="stat-num">
+                {{ count_completed }}
+            </div>
         </div>
-        <div class="filter-box" onclick="filterAppointments('CANCELLED', this)">
-            <div class="stat-label">ĐÃ HỦY</div>
-            <div class="stat-num">{{ count_cancelled }}</div>
+
+
+        <div class="filter-box {{ 'active' if selected_status == 'CANCELLED' else '' }}"
+             onclick="filterAppointments('CANCELLED')">
+
+            <div class="stat-label">
+                ĐÃ HỦY
+            </div>
+
+            <div class="stat-num">
+                {{ count_cancelled }}
+            </div>
         </div>
+
     </div>
 
     <!-- DANH SÁCH LỊCH HẸN -->
@@ -156,25 +231,135 @@
         </div>
     </div>
 
-    <!-- THANH PHÂN TRANG CHUẨN CỦA HỆ THỐNG -->
-    {% if total_pages > 1 %}
+    <!-- THANH PHÂN TRANG -->
+    {% if total_pages and total_pages > 1 %}
     <div class="pagination-wrap mt-4">
-        <a href="{{ url_for('staff_appointments_view', page=page-1, date=selected_date) }}"
-           class="page-btn {{ 'disabled' if page <= 1 else '' }}">
-            <i class="fa-solid fa-chevron-left"></i> Trước
-        </a>
+
+        <!-- TRƯỚC -->
+        {% if page > 1 %}
+
+            <a href="{{ url_for(
+                'staff_appointments_view',
+                page=page-1,
+                date=selected_date,
+                status=selected_status,
+                kw=kw
+            ) }}"
+               class="page-btn">
+
+                <i class="fa-solid fa-chevron-left"></i>
+                Trước
+
+            </a>
+
+        {% else %}
+
+            <span class="page-btn disabled">
+                <i class="fa-solid fa-chevron-left"></i>
+                Trước
+            </span>
+
+        {% endif %}
+
+
+        <!-- SỐ TRANG -->
         <div class="page-numbers">
-            {% for p in range(1, total_pages + 1) %}
-                <a href="{{ url_for('staff_appointments_view', page=p, date=selected_date) }}"
-                   class="page-num {{ 'active' if p == page else '' }}">
-                    {{ p }}
+
+            {% set start_page = [1, page - 2] | max %}
+            {% set end_page = [total_pages, page + 2] | min %}
+
+
+            <!-- TRANG ĐẦU -->
+            {% if start_page > 1 %}
+
+                <a href="{{ url_for(
+                    'staff_appointments_view',
+                    page=1,
+                    date=selected_date,
+                    status=selected_status,
+                    kw=kw
+                ) }}"
+                   class="page-num">
+                    1
                 </a>
+
+                {% if start_page > 2 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+            {% endif %}
+
+
+            <!-- CÁC TRANG GẦN HIỆN TẠI -->
+            {% for p in range(start_page, end_page + 1) %}
+
+                <a href="{{ url_for(
+                    'staff_appointments_view',
+                    page=p,
+                    date=selected_date,
+                    status=selected_status,
+                    kw=kw
+                ) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+
+                    {{ p }}
+
+                </a>
+
             {% endfor %}
+
+
+            <!-- TRANG CUỐI -->
+            {% if end_page < total_pages %}
+
+                {% if end_page < total_pages - 1 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+                <a href="{{ url_for(
+                    'staff_appointments_view',
+                    page=total_pages,
+                    date=selected_date,
+                    status=selected_status,
+                    kw=kw
+                ) }}"
+                   class="page-num">
+
+                    {{ total_pages }}
+
+                </a>
+
+            {% endif %}
+
         </div>
-        <a href="{{ url_for('staff_appointments_view', page=page+1, date=selected_date) }}"
-           class="page-btn {{ 'disabled' if page >= total_pages else '' }}">
-            Sau <i class="fa-solid fa-chevron-right"></i>
-        </a>
+
+
+        <!-- SAU -->
+        {% if page < total_pages %}
+
+            <a href="{{ url_for(
+                'staff_appointments_view',
+                page=page+1,
+                date=selected_date,
+                status=selected_status,
+                kw=kw
+            ) }}"
+               class="page-btn">
+
+                Sau
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </a>
+
+        {% else %}
+
+            <span class="page-btn disabled">
+                Sau
+                <i class="fa-solid fa-chevron-right"></i>
+            </span>
+
+        {% endif %}
+
     </div>
     {% endif %}
 </div>
@@ -210,65 +395,14 @@
 
 {% block extra_js %}
 <script>
-let activeFilter = 'ALL';
-let searchQuery = '';
+function filterAppointments(status) {
+    const urlParams = new URLSearchParams(window.location.search);
 
-document.addEventListener("DOMContentLoaded", function () {
-    // 1. Tìm kiếm Realtime theo Tên / SĐT Khách hàng
-    const searchInput = document.getElementById("staff_customer_search");
-    if (searchInput) {
-        searchInput.addEventListener("input", function () {
-            searchQuery = this.value.trim().toLowerCase();
-            applyFilters();
-        });
-    }
-});
+    urlParams.set('status', status);
+    urlParams.set('page', 1);
 
-// 2. Lọc danh sách trực tiếp trên DOM theo Tab Trạng thái
-function filterAppointments(status, element) {
-    activeFilter = status;
-    document.querySelectorAll('.filter-box').forEach(el => el.classList.remove('active'));
-    element.classList.add('active');
-    applyFilters();
+    window.location.search = urlParams.toString();
 }
-
-function applyFilters() {
-    const rows = document.querySelectorAll('.appt-row');
-    let visibleCount = 0;
-
-    rows.forEach(row => {
-        const rowStatus = row.dataset.status;
-        const name = row.dataset.customerName || '';
-        const phone = row.dataset.customerPhone || '';
-
-        const matchesStatus = (activeFilter === 'ALL' || rowStatus === activeFilter);
-        const matchesSearch = !searchQuery || name.includes(searchQuery) || phone.includes(searchQuery);
-
-        if (matchesStatus && matchesSearch) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-
-    // Nếu lọc không ra kết quả nào -> Hiển thị dòng thông báo rỗng
-    const tbody = document.getElementById('appointments-tbody');
-    let emptyRow = document.getElementById('filter-empty-row');
-
-    if (visibleCount === 0 && rows.length > 0) {
-        if (!emptyRow) {
-            emptyRow = document.createElement('tr');
-            emptyRow.id = 'filter-empty-row';
-            emptyRow.innerHTML = `<td colspan="7" class="text-center py-5 text-muted"><i class="fa-regular fa-folder-open fs-3 d-block mb-2"></i>Không có lịch hẹn nào khớp với bộ lọc hiện tại.</td>`;
-            tbody.appendChild(emptyRow);
-        }
-        emptyRow.style.display = '';
-    } else if (emptyRow) {
-        emptyRow.style.display = 'none';
-    }
-}
-
 // 3. Quản lý Popup Modal xem thông tin chi tiết
 function openUpdateModal(id, currentStatus, currentNote) {
     document.getElementById("modal-appointment-id").value = id;

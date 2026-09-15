@@ -111,16 +111,63 @@
                             <td style="padding: 14px 20px; font-weight: 700; color: #8C827A;">#{{ s.id }}</td>
 
                             <td style="padding: 14px 20px;">
-                                {% if s.avatar %}
-                                    <img src="{{ s.avatar }}"
-                                         alt="{{ s.service_name }}"
-                                         onerror="this.onerror=null; this.src='https://res.cloudinary.com/dxxwcby8l/image/upload/v1683162354/placeholder-image_q8mpxv.png';"
-                                         style="width: 42px; height: 42px; border-radius: 8px; object-fit: cover; border: 1px solid #EAE0D5;">
-                                {% else %}
-                                    <div style="width: 42px; height: 42px; border-radius: 8px; background: #FAF7F2; border: 1px solid #EAE0D5; display: flex; align-items: center; justify-content: center; color: #C5A880; font-size: 16px;">
-                                        <i class="fa-solid fa-scissors"></i>
-                                    </div>
-                                {% endif %}
+                                <div style="position: relative; width: 42px; height: 42px;">
+
+                                    {% if s.avatar %}
+                                        <!-- Ảnh dịch vụ -->
+                                        <img src="{{ s.avatar }}"
+                                             alt="{{ s.service_name }}"
+                                             onerror="
+                                                this.style.display='none';
+                                                this.nextElementSibling.style.display='flex';
+                                             "
+                                             style="
+                                                width: 42px;
+                                                height: 42px;
+                                                border-radius: 8px;
+                                                object-fit: cover;
+                                                border: 1px solid #EAE0D5;
+                                             ">
+
+                                        <!-- Fallback nếu ảnh bị lỗi -->
+                                        <div style="
+                                            width: 42px;
+                                            height: 42px;
+                                            border-radius: 8px;
+                                            background: #FAF7F2;
+                                            border: 1px solid #EAE0D5;
+                                            display: none;
+                                            align-items: center;
+                                            justify-content: center;
+                                            color: #C5A880;
+                                            font-size: 18px;
+                                            font-weight: 700;
+                                        ">
+                                            {{ s.service_name[0] | upper }}
+                                        </div>
+
+                                    {% else %}
+
+                                        <!-- Không có ảnh -->
+                                        <div style="
+                                            width: 42px;
+                                            height: 42px;
+                                            border-radius: 8px;
+                                            background: #FAF7F2;
+                                            border: 1px solid #EAE0D5;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            color: #C5A880;
+                                            font-size: 18px;
+                                            font-weight: 700;
+                                        ">
+                                            {{ s.service_name[0] | upper }}
+                                        </div>
+
+                                    {% endif %}
+
+                                </div>
                             </td>
 
                             <td style="padding: 14px 20px; font-weight: 700; color: #2C2623;">{{ s.service_name }}</td>
@@ -260,26 +307,114 @@
     </div>
 
     <!-- THANH PHÂN TRANG -->
-    {% if total_pages > 1 %}
-    <div class="pagination-wrap" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px;">
-        <a href="{{ url_for('list_services', page=page-1) }}"
-           style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page <= 1 else '' }}">
-            <i class="fa-solid fa-chevron-left" style="margin-right: 4px;"></i> Trước
-        </a>
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination-wrap"
+         style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+         ">
 
-        <div style="display: flex; gap: 4px;">
-            {% for p in range(1, total_pages + 1) %}
-                <a href="{{ url_for('list_services', page=p) }}"
-                   style="padding: 6px 12px; border-radius: 50%; font-size: 12px; font-weight: 700; text-decoration: none; {{ 'background: #2C2623; color: #FFF;' if p == page else 'background: #FFF; color: #2C2623; border: 1px solid #D8C8B8;' }}">
-                    {{ p }}
+        <!-- NÚT TRƯỚC -->
+        {% if page > 1 %}
+
+            <a href="{{ url_for('list_services', page=page-1) }}"
+               class="page-btn">
+
+                <i class="fa-solid fa-chevron-left"></i>
+                Trước
+
+            </a>
+
+        {% else %}
+
+            <span class="page-btn disabled">
+                <i class="fa-solid fa-chevron-left"></i>
+                Trước
+            </span>
+
+        {% endif %}
+
+
+        <!-- CÁC SỐ TRANG -->
+        <div style="display: flex; align-items: center; gap: 4px;">
+
+            {% set start_page = [1, page - 2] | max %}
+            {% set end_page = [total_pages, page + 2] | min %}
+
+
+            <!-- TRANG ĐẦU -->
+            {% if start_page > 1 %}
+
+                <a href="{{ url_for('list_services', page=1) }}"
+                   class="page-num">
+                    1
                 </a>
+
+                {% if start_page > 2 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+            {% endif %}
+
+
+            <!-- CÁC TRANG GẦN TRANG HIỆN TẠI -->
+            {% for p in range(start_page, end_page + 1) %}
+
+                <a href="{{ url_for('list_services', page=p) }}"
+                   class="page-num {{ 'active' if p == page else '' }}">
+
+                    {{ p }}
+
+                </a>
+
             {% endfor %}
+
+
+            <!-- TRANG CUỐI -->
+            {% if end_page < total_pages %}
+
+                {% if end_page < total_pages - 1 %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+
+                <a href="{{ url_for(
+                    'list_services',
+                    page=total_pages
+                ) }}"
+                   class="page-num">
+
+                    {{ total_pages }}
+
+                </a>
+
+            {% endif %}
+
         </div>
 
-        <a href="{{ url_for('list_services', page=page+1) }}"
-           style="padding: 6px 14px; background: #FFF; border: 1px solid #D8C8B8; border-radius: 20px; font-size: 12px; color: #2C2623; text-decoration: none; font-weight: 600; {{ 'pointer-events: none; opacity: 0.5;' if page >= total_pages else '' }}">
-            Sau <i class="fa-solid fa-chevron-right" style="margin-left: 4px;"></i>
-        </a>
+
+        <!-- NÚT SAU -->
+        {% if page < total_pages %}
+
+            <a href="{{ url_for('list_services', page=page+1) }}"
+               class="page-btn">
+
+                Sau
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </a>
+
+        {% else %}
+
+            <span class="page-btn disabled">
+                Sau
+                <i class="fa-solid fa-chevron-right"></i>
+            </span>
+
+        {% endif %}
+
     </div>
     {% endif %}
 </div>

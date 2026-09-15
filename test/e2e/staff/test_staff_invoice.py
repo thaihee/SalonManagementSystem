@@ -272,62 +272,67 @@ def test_staff_can_create_draft_invoice(
 ):
     appointment_id = staff1_booking_with_products["id"]
     booking_date = staff1_booking_with_products["date"]
-
-    # ==========================================
-    # 1. Mở appointment của Staff1
-    # ==========================================
-
     staff_page.goto(
         f"{base_url}/staff/appointments?date={booking_date}"
     )
-
     row = find_row_across_pages(
         staff_page,
         f"#row-appt-{appointment_id}"
     )
-
-    assert row is not None
-
-    row.get_by_role(
+    assert row is not None, (
+        f"Không tìm thấy appointment #{appointment_id}"
+    )
+    expect(row).to_be_visible()
+    create_invoice_link = row.get_by_role(
         "link",
         name="Tạo hóa đơn"
-    ).click()
-
-    # ==========================================
-    # 2. Kiểm tra đúng appointment
-    # ==========================================
-
+    )
+    expect(create_invoice_link).to_be_visible()
+    create_invoice_link.click()
     expect(
         staff_page.locator("#appointment_id")
     ).to_have_value(str(appointment_id))
-
-    # ==========================================
-    # 3. Product phải được load
-    # ==========================================
-
+    service_rows = staff_page.locator(
+        "#selectedServicesBody tr"
+    )
+    expect(service_rows).to_have_count(1)
+    expect(
+        service_rows.first
+    ).not_to_contain_text(
+        "Chưa chọn dịch vụ nào"
+    )
     quantity_inputs = staff_page.locator(
         '#selectedProductsBody input[type="number"]'
     )
-
-    expect(quantity_inputs).to_have_count(2)
-
-    # ==========================================
-    # 4. Staff nhập lượng thực tế
-    # ==========================================
-
-    quantity_inputs.nth(0).fill("25")
-    quantity_inputs.nth(0).blur()
-
-    quantity_inputs.nth(1).fill("12")
-    quantity_inputs.nth(1).blur()
-
-    expect(quantity_inputs.nth(0)).to_have_value("25")
-    expect(quantity_inputs.nth(1)).to_have_value("12")
-
-    # ==========================================
-    # 5. Click Lưu Hóa Đơn Nháp qua UI
-    # ==========================================
-
+    product_count = quantity_inputs.count()
+    assert product_count > 0, (
+        "Service được chọn không có sản phẩm định mức"
+    )
+    for i in range(product_count):
+        quantity_input = quantity_inputs.nth(i)
+        current_value = float(
+            quantity_input.input_value()
+        )
+        assert current_value > 0, (
+            f"Product thứ {i + 1} có định mức không hợp lệ"
+        )
+        new_value = round(
+            max(current_value * 0.8, 0.01),
+            2
+        )
+        if new_value.is_integer():
+            new_value_text = str(int(new_value))
+        else:
+            new_value_text = str(new_value)
+        quantity_input.fill(
+            new_value_text
+        )
+        quantity_input.blur()
+        expect(
+            quantity_input
+        ).to_have_value(
+            new_value_text
+        )
     with staff_page.expect_response(
         lambda response:
             response.url.endswith("/invoices")
@@ -337,25 +342,25 @@ def test_staff_can_create_draft_invoice(
         staff_page.locator(
             "#btnSubmitDraft"
         ).click()
-
     response = response_info.value
-
-    # ==========================================
-    # 6. Backend tạo thành công
-    # ==========================================
-
-    assert response.status == 201
-
-    body = response.json()
-
-    assert body["invoice"]["status"] == "DRAFT"
-
-    invoice_id = body["invoice"]["id"]
-
-    print(
-        f"\n[TEST] Đã tạo invoice DRAFT #{invoice_id}"
+    assert response.status == 201, (
+        f"Tạo invoice thất bại - "
+        f"status={response.status}, "
+        f"body={response.text()}"
     )
-
+    body = response.json()
+    assert "invoice" in body
+    assert (
+        body["invoice"]["status"]
+        == "DRAFT"
+    )
+    invoice_id = body["invoice"]["id"]
+    assert invoice_id is not None
+    print(
+        f"\n[TEST] Đã tạo invoice DRAFT "
+        f"#{invoice_id} "
+        f"cho appointment #{appointment_id}"
+    )
 
 def test_created_draft_invoice_appears_in_staff_invoice_list(
     staff_page,

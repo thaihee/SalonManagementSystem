@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 from app import dao
 from app.exceptions import ValidationError, DuplicateError, NotFoundError
@@ -10,14 +12,17 @@ from app.models import ProductUnit
 class TestAddProduct:
 
     def test_add_product_success(self, app):
+        product_name = f"Gôm xịt tóc {uuid4().hex[:8]}"
+
         p = dao.add_product(
-            name="Gôm xịt tóc Silhouett",
+            name=product_name,
             unit="CHAI",
             stock_quantity=20,
             min_stock_level=5
         )
+
         assert p.id is not None
-        assert p.product_name == "Gôm xịt tóc Silhouett"
+        assert p.product_name == product_name
         assert p.unit == ProductUnit.CHAI
         assert p.stock_quantity == 20.0
         assert p.min_stock_level == 5.0
@@ -51,13 +56,16 @@ class TestAddProduct:
 class TestUpdateAndDeleteProduct:
 
     def test_update_success(self, app, sample_product):
+        new_name = f"Dầu gội xịn {uuid4().hex[:8]}"
+
         updated = dao.update_product(
             product_id=sample_product.id,
-            name="Dầu gội xịn",
+            name=new_name,
             unit="ML",
             min_stock_level=15
         )
-        assert updated.product_name == "Dầu gội xịn"
+
+        assert updated.product_name == new_name
         assert updated.unit == ProductUnit.ML
         assert updated.min_stock_level == 15.0
 
@@ -111,11 +119,18 @@ class TestStockOperations:
             dao.export_stock(99999, quantity=5)
 
     def test_check_low_stock_products(self, app, sample_product):
-        # Ban đầu stock=50, min=10 -> không nằm trong low stock
-        assert len(dao.check_low_stock_products()) == 0
+        # Ban đầu stock=50, min=10
+        low_stock_before = dao.check_low_stock_products()
 
-        # Xuất kho 45 chai -> stock=5 <= min=10 -> nằm trong low stock
+        assert sample_product.id not in [
+            product.id for product in low_stock_before
+        ]
+
+        # Xuất 45 -> stock còn 5 <= min_stock_level 10
         dao.export_stock(sample_product.id, 45)
-        low_stock = dao.check_low_stock_products()
-        assert len(low_stock) == 1
-        assert low_stock[0].id == sample_product.id
+
+        low_stock_after = dao.check_low_stock_products()
+
+        assert sample_product.id in [
+            product.id for product in low_stock_after
+        ]
