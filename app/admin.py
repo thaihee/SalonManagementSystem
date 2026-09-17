@@ -12,7 +12,6 @@ from app.models import UserRole, InvoiceStatus
 from app.exceptions import ValidationError, DuplicateError, NotFoundError
 
 
-# Trang quản trị
 @app.route('/admin', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def admin_dashboard_view():
@@ -22,7 +21,6 @@ def admin_dashboard_view():
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 10)
 
-    # Nếu người dùng truyền date rỗng (bấm Clear) -> selected_date = None
     selected_date = None
     if date_str and date_str.strip():
         try:
@@ -31,7 +29,6 @@ def admin_dashboard_view():
             selected_date = None
             date_str = ''
 
-    # Thống kê Doanh thu (nếu không chọn ngày thì lấy hôm nay)
     kpi_date = selected_date or date.today()
     today_invoices, _ = dao.get_invoices(
         status='PAID',
@@ -40,17 +37,13 @@ def admin_dashboard_view():
         page=None
     )
     today_revenue = sum(inv.total_amount for inv in today_invoices)
-
-    # Lấy danh sách lịch hẹn (Nếu selected_date=None -> lấy TOÀN BỘ)
     all_appointments = dao.get_appointments(date=selected_date, page=None)
 
-    # Lọc theo Trạng thái
     if status_str != 'ALL':
         appointments = [a for a in all_appointments if a.status.name == status_str]
     else:
         appointments = all_appointments
 
-    # Lọc theo Từ khóa
     if kw:
         kw_lower = kw.lower()
         appointments = [
@@ -61,11 +54,9 @@ def admin_dashboard_view():
                (a.staff and kw_lower in a.staff.full_name.lower())
         ]
 
-    # Phân trang
     total_items = len(appointments)
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
-    # Chặn page không hợp lệ
     if page < 1:
         page = 1
 
@@ -95,19 +86,14 @@ def admin_dashboard_view():
     ), 200
 
 
-# CRUD Dịch vụ
-
 @app.route('/admin/services', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def list_services():
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 10)
-
-    # Chặn page âm / bằng 0 trước
     if page < 1:
         page = 1
 
-    # Lấy dữ liệu trang hiện tại
     services, total_items = dao.get_services_paged(
         page=page,
         page_size=page_size
@@ -119,7 +105,6 @@ def list_services():
         else 1
     )
 
-    # Nếu page vượt quá trang cuối
     if page > total_pages:
         page = total_pages
 
@@ -207,8 +192,6 @@ def delete_service_route(service_id):
         return jsonify(success=False, error="Lỗi hệ thống khi xóa dịch vụ!"), 500
 
 
-# Nhập / Xuất kho
-
 @app.route('/admin/products/<int:product_id>/import', methods=['POST'])
 @role_required(UserRole.ADMIN)
 def import_stock_route(product_id):
@@ -241,7 +224,6 @@ def export_stock_route(product_id):
         return jsonify(success=False, error="Lỗi hệ thống khi xuất kho!"), 500
 
 
-# Cảnh báo tồn kho thấp
 @app.route('/admin/products/low-stock', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def low_stock_products_route():
@@ -254,7 +236,6 @@ def low_stock_products_route():
     } for p in products]), 200
 
 
-# Admin quản lý User/Nhân viên
 def _serialize_user(u):
     return {
         "id": u.id,
@@ -271,16 +252,13 @@ def _serialize_user(u):
 def list_users_route():
     role_filter = request.args.get('role')
     page = request.args.get('page', 1, type=int)
-    page_size = app.config.get('PAGE_SIZE', 10)  # 10 tài khoản / trang
+    page_size = app.config.get('PAGE_SIZE', 10)
 
-    # Lấy danh sách người dùng theo vai trò
     all_users = dao.get_users(role=role_filter) if role_filter else dao.get_users()
 
-    # Tính toán phân trang
     total_items = len(all_users) if all_users else 0
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
-    # Chặn page không hợp lệ
     if page < 1:
         page = 1
 
@@ -292,7 +270,7 @@ def list_users_route():
     users_paged = all_users[start:end] if all_users else []
 
     return render_template(
-        'admin/admin_staff.html',  # hoặc tên file template quản lý nhân sự của bạn
+        'admin/admin_staff.html',
         users=users_paged,
         total_items=total_items,
         selected_role=role_filter,
@@ -373,9 +351,6 @@ def deactivate_user_route(user_id):
         app.logger.exception(ex)
         return jsonify(success=False, error="Lỗi hệ thống khi vô hiệu hóa tài khoản!"), 500
 
-
-# Báo cáo Doanh thu
-
 @app.route('/admin/reports/revenue', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def revenue_report_route():
@@ -383,7 +358,7 @@ def revenue_report_route():
     from_date = request.args.get('from_date', '').strip()
     to_date = request.args.get('to_date', '').strip()
     page = request.args.get('page', 1, type=int)
-    page_size = app.config.get('PAGE_SIZE', 10) # 10 dòng / trang
+    page_size = app.config.get('PAGE_SIZE', 10)
 
     try:
         from_date_str = from_date if from_date else None
@@ -398,11 +373,9 @@ def revenue_report_route():
         grand_total_revenue = sum(item.get("total_revenue", 0) for item in report_data) if report_data else 0
         grand_total_invoices = sum(item.get("total_invoices", 0) for item in report_data) if report_data else 0
 
-        # PHÂN TRANG BẢNG BÁO CÁO
         total_items = len(report_data)
         total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
-        # Chặn page không hợp lệ
         if page < 1:
             page = 1
 
@@ -416,8 +389,8 @@ def revenue_report_route():
 
         return render_template(
             'admin/admin_reports.html',
-            report_data=report_data_paged, # Truyền danh sách đã cắt theo trang
-            full_report_data=report_data,  # Dùng cho Biểu đồ Chart.js (vẽ đầy đủ)
+            report_data=report_data_paged,
+            full_report_data=report_data,
             period_type=period_type,
             from_date=from_date,
             to_date=to_date,
@@ -438,7 +411,6 @@ def export_revenue_report_route():
     from_date = request.args.get('from_date', '').strip() or None
     to_date = request.args.get('to_date', '').strip() or None
 
-    # Lấy danh sách hóa đơn PAID trong khoảng thời gian chọn
     from_dt = datetime.strptime(from_date, '%Y-%m-%d') if from_date else None
     to_dt = datetime.strptime(to_date, '%Y-%m-%d') if to_date else None
 
@@ -452,12 +424,10 @@ def export_revenue_report_route():
         page=None
     )
 
-    # 1. Khởi tạo Workbook & Sheet
     wb = Workbook()
     ws = wb.active
     ws.title = "Báo Cáo Doanh Thu"
 
-    # Định nghĩa Màu sắc & Font chữ mẫu Luxury
     font_title = Font(name="Arial", size=14, bold=True, color="000000")
     font_header = Font(name="Arial", size=11, bold=True, color="FFFFFF")
     font_body = Font(name="Arial", size=10)
@@ -473,7 +443,6 @@ def export_revenue_report_route():
         bottom=Side(style='thin', color='E0E0E0')
     )
 
-    # 2. Tiêu đề Báo Báo
     date_title = f"BÁO CÁO DOANH THU NHÂN VIÊN"
     if from_date and to_date:
         date_title += f" TỪ {from_date} ĐẾN {to_date}"
@@ -487,7 +456,6 @@ def export_revenue_report_route():
     ws['A1'].fill = fill_title
     ws.row_dimensions[1].height = 40
 
-    # 3. Header Bảng
     headers = [
         "Mã Nhân Viên",
         "Họ Tên Nhân Viên",
@@ -506,7 +474,6 @@ def export_revenue_report_route():
         cell.fill = fill_header
         cell.alignment = Alignment(horizontal="center" if col_num != 6 else "left", vertical="center")
 
-    # 4. Ghi Dữ Liệu Chi Tiết Hóa Đơn
     total_sum = 0
     row_idx = 3
 
@@ -517,7 +484,6 @@ def export_revenue_report_route():
         inv_code = f"{inv.id}"
         cust_name = inv.customer.full_name if inv.customer else "Khách vãng lai"
 
-        # Gom danh sách các dịch vụ trong hóa đơn
         services_done = ", ".join([d.service.service_name for d in inv.details if d.service]) or "---"
         amount = inv.total_amount or 0
         total_sum += amount
@@ -525,12 +491,10 @@ def export_revenue_report_route():
         row_data = [staff_code, staff_name, inv_date, inv_code, cust_name, services_done, amount]
         ws.append(row_data)
 
-        # Định dạng dòng
         ws.cell(row=row_idx, column=1).alignment = Alignment(horizontal="center")
         ws.cell(row=row_idx, column=3).alignment = Alignment(horizontal="center")
         ws.cell(row=row_idx, column=4).alignment = Alignment(horizontal="center")
 
-        # Định dạng tiền tệ
         amount_cell = ws.cell(row=row_idx, column=7)
         amount_cell.number_format = '#,##0 "đ"'
         amount_cell.alignment = Alignment(horizontal="right")
@@ -542,7 +506,6 @@ def export_revenue_report_route():
 
         row_idx += 1
 
-    # 5. Dòng Tổng Cộng
     ws.cell(row=row_idx, column=1, value="Tổng cộng").font = font_total
     ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=6)
 
@@ -554,12 +517,10 @@ def export_revenue_report_route():
     for col in range(1, 8):
         ws.cell(row=row_idx, column=col).border = thin_border
 
-    # Tự động điều chỉnh độ rộng cột
     column_widths = {'A': 15, 'B': 22, 'C': 18, 'D': 15, 'E': 22, 'F': 32, 'G': 25}
     for col, width in column_widths.items():
         ws.column_dimensions[col].width = width
 
-    # 6. Xuất ra Byte Stream
     output = BytesIO()
     wb.save(output)
     output.seek(0)
@@ -573,28 +534,23 @@ def export_revenue_report_route():
     )
 
 
-# CRUD Sản phẩm
-
 @app.route('/admin/products', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def list_products():
     page = request.args.get('page', 1, type=int)
-    page_size = app.config.get('PAGE_SIZE', 10)  # Mặc định 10 sản phẩm / trang
+    page_size = app.config.get('PAGE_SIZE', 10)
 
-    # Lấy toàn bộ danh sách sản phẩm
     all_products = dao.get_all_products()
 
     total_items = len(all_products)
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
-    # Chặn page không hợp lệ
     if page < 1:
         page = 1
 
     if page > total_pages:
         page = total_pages
 
-    # Cắt danh sách theo trang hiện tại
     start = (page - 1) * page_size
     end = start + page_size
 
@@ -604,10 +560,10 @@ def list_products():
 
     return render_template(
         'admin/admin_products.html',
-        products=products_paged,  # Danh sách đã phân trang
+        products=products_paged,
         low_stock=low_stock_products,
-        page=page,                # Trang hiện tại
-        total_pages=total_pages   # Tổng số trang
+        page=page,
+        total_pages=total_pages
     ), 200
 
 
@@ -667,9 +623,6 @@ def delete_product_route(product_id):
         app.logger.exception(ex)
         return jsonify(success=False, error="Lỗi hệ thống khi xóa sản phẩm!"), 500
 
-
-# Định mức Sản phẩm theo Dịch vụ
-
 @app.route('/admin/services/<int:service_id>/products', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def list_service_products_route(service_id):
@@ -680,7 +633,6 @@ def list_service_products_route(service_id):
         "product_name": sp.product.product_name,
         "default_quantity": sp.default_quantity
     } for sp in items]), 200
-
 
 @app.route('/admin/service-products', methods=['POST'])
 @role_required(UserRole.ADMIN)
@@ -733,23 +685,17 @@ def delete_service_product_route(sp_id):
         return jsonify(success=False, error="Lỗi hệ thống khi xóa định mức!"), 500
 
 
-# Khuyến mãi
-
 @app.route('/admin/promotions', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def list_promotions_route():
     page = request.args.get('page', 1, type=int)
-    page_size = app.config.get('PAGE_SIZE', 10)  # 10 khuyến mãi / trang
+    page_size = app.config.get('PAGE_SIZE', 10)
 
-    # 1. Lấy toàn bộ mã khuyến mãi
     all_promos = dao.get_all_promotions() if hasattr(dao, 'get_all_promotions') else []
 
-    # 2. Tính toán phân trang
-    # 2. Tính toán phân trang
     total_items = len(all_promos) if all_promos else 0
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
-    # Chặn page không hợp lệ
     if page < 1:
         page = 1
 
@@ -845,8 +791,6 @@ def toggle_user_active_route(user_id):
         return jsonify(success=False, error="Lỗi hệ thống khi thay đổi trạng thái tài khoản!"), 500
 
 
-# Xóa /Sửa đơn nháp
-
 @app.route('/admin/invoices/<int:invoice_id>', methods=['PUT'])
 @role_required(UserRole.ADMIN)
 def update_invoice_draft_route(invoice_id):
@@ -887,7 +831,6 @@ def cancel_invoice_draft_route(invoice_id):
         return jsonify(success=False, error="Lỗi hệ thống khi hủy hóa đơn!"), 500
 
 
-# Trả về danh sách chi tiết của Hóa đơn nháp để Admin sửa tại chỗ
 @app.route('/admin/invoices/<int:invoice_id>/draft-detail', methods=['GET'])
 @role_required(UserRole.ADMIN)
 def get_invoice_draft_detail_route(invoice_id):

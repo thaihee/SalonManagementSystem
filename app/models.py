@@ -97,8 +97,6 @@ class Service(BaseModel):
 
 
 class Product(BaseModel):
-    """Sản phẩm nội bộ — dùng để tiêu hao trong quá trình thực hiện dịch vụ,
-    KHÔNG bán lẻ cho khách mang về."""
     product_name = Column(String(100), nullable=False, unique=True)
     unit = Column(Enum(ProductUnit), default=ProductUnit.CHAI, nullable=False)
     stock_quantity = Column(Float, default=0, nullable=False)
@@ -111,9 +109,6 @@ class Product(BaseModel):
 
 
 class ServiceProduct(BaseModel):
-    """Định mức sản phẩm khả dụng cho từng dịch vụ — do Quản lý cấu hình.
-    Nhân viên khi lập hóa đơn chỉ được chọn sản phẩm nằm trong danh sách này
-    cho dịch vụ tương ứng."""
     service_id = Column(Integer, ForeignKey(Service.id), nullable=False)
     product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
     default_quantity = Column(Float, default=0, nullable=False)   # định mức gợi ý, VD: 30 (ml)
@@ -138,7 +133,6 @@ class Appointment(BaseModel):
     staff_id = Column(Integer, ForeignKey(User.id), nullable=True)
     service_id = Column(Integer, ForeignKey(Service.id), nullable=False)
 
-    # Mỗi nhân viên không được nhận trùng 2 lịch hẹn cùng 1 thời điểm
     __table_args__ = (
         UniqueConstraint('staff_id', 'appointment_date', name='unique_staff_appointment_time'),
     )
@@ -148,7 +142,6 @@ class Appointment(BaseModel):
 
 
 class Promotion(BaseModel):
-    """Khuyến mãi đơn giản — giảm % hoặc giảm cố định trên tổng hóa đơn."""
     promo_code = Column(String(50), nullable=False, unique=True)
     promo_type = Column(Enum(PromotionType), nullable=False, default=PromotionType.PERCENT)
     value = Column(Float, nullable=False)   # % (0-100) hoặc số tiền cố định tùy promo_type
@@ -163,19 +156,18 @@ class Promotion(BaseModel):
 
 class Invoice(BaseModel):
     invoice_date = Column(DateTime, default=datetime.now)
-    total_amount = Column(Float, default=0, nullable=False)   # tự tính từ các dòng SERVICE, sau khuyến mãi
+    total_amount = Column(Float, default=0, nullable=False)
     status = Column(Enum(InvoiceStatus), default=InvoiceStatus.DRAFT, nullable=False)
-    payment_method = Column(Enum(PaymentMethod), nullable=True)   # chỉ có giá trị khi status = PAID
+    payment_method = Column(Enum(PaymentMethod), nullable=True)
 
     customer_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    staff_id = Column(Integer, ForeignKey(User.id), nullable=False)          # người thực hiện dịch vụ
-    receptionist_id = Column(Integer, ForeignKey(User.id), nullable=True)    # người xác nhận thanh toán
+    staff_id = Column(Integer, ForeignKey(User.id), nullable=False)
+    receptionist_id = Column(Integer, ForeignKey(User.id), nullable=True)
     appointment_id = Column(Integer, ForeignKey(Appointment.id), nullable=True)
     promotion_id = Column(Integer, ForeignKey(Promotion.id), nullable=True)
 
     details = relationship('InvoiceDetail', backref='invoice', lazy=True)
 
-    # Mỗi lịch hẹn chỉ được lập tối đa 1 hóa đơn
     __table_args__ = (
         UniqueConstraint('appointment_id', name='unique_invoice_per_appointment'),
     )
@@ -200,12 +192,10 @@ class InvoiceDetail(BaseModel):
 
 if __name__ == '__main__':
     with app.app_context():
-        #db.drop_all()
         db.create_all()
 
         password = str(hashlib.md5('123456'.encode('utf-8')).hexdigest())
 
-        # ---------- USERS ----------
         admin = User(full_name="Nguyễn Văn Quản Lý", username="admin", password=password,
                      role=UserRole.ADMIN, phone="0900000000", email="admin@salon.com")
 

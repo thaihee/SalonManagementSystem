@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
@@ -16,9 +18,12 @@ login.login_view = 'login_view'
 login.login_message = 'Vui lòng đăng nhập để tiếp tục đặt lịch hẹn!'
 login.login_message_category = 'info'
 
-cloudinary.config(cloud_name='dphbawbuk',
-api_key='466151686122924',
-api_secret='dH86bZJEC8Z800SNhRZVQEw648k')
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
+    secure=True
+)
 
 csrf = CSRFProtect(app)
 app.config['WTF_CSRF_ENABLED'] = True

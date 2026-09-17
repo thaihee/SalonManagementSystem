@@ -21,9 +21,6 @@ def load_user(user_id):
 def index():
     kw = request.args.get('kw')
 
-    # =========================
-    # PHÂN TRANG DỊCH VỤ
-    # =========================
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 4)
 
@@ -43,7 +40,6 @@ def index():
         else 1
     )
 
-    # Nếu page vượt quá trang cuối
     if page > total_pages:
         page = total_pages
 
@@ -53,13 +49,8 @@ def index():
             page_size=page_size
         )
 
-
-    # =========================
-    # PHÂN TRANG KHUYẾN MÃI
-    # =========================
     promo_page = request.args.get('promo_page', 1, type=int)
 
-    # Mình để 6 ưu đãi / trang
     promo_page_size = 6
 
     all_promos = (
@@ -68,7 +59,6 @@ def index():
         else []
     )
 
-    # Mới nhất lên đầu
     all_promos = sorted(
         all_promos,
         key=lambda p: p.start_date,
@@ -95,35 +85,26 @@ def index():
 
     promotions_paged = all_promos[promo_start:promo_end]
 
-
-    # =========================
-    # RENDER
-    # =========================
     return render_template(
         "customer/index.html",
 
-        # Dịch vụ
         services=services,
         total_pages=total_pages,
         page=page,
         kw=kw,
 
-        # Khuyến mãi
         promotions=promotions_paged,
         promo_page=promo_page,
         promo_total_pages=promo_total_pages
 
     ), 200
 
-
-# TRANG ĐẶT LỊCH HẸN (BOOKING)
 @app.route('/booking', methods=['GET'])
 @login_required
 def booking_view():
-    # Cho phép chọn sẵn dịch vụ nếu người dùng bấm "Đặt lịch" từ 1 service card cụ thể
     service_id = request.args.get('service_id', type=int)
 
-    services = dao.get_all_services() # Lấy toàn bộ dịch vụ để hiện trong form chọn
+    services = dao.get_all_services()
     staff_list = dao.get_users(role=UserRole.STAFF)
     today_str = date.today().strftime('%Y-%m-%d')
 
@@ -135,8 +116,6 @@ def booking_view():
         min_date=today_str
     ), 200
 
-
-# 2. XÁC THỰC: ĐĂNG NHẬP (LOGIN)
 
 @app.route('/login', methods=['GET'])
 def login_view():
@@ -150,18 +129,15 @@ def login_process():
     username = request.form.get('username')
     password = request.form.get('password')
 
-    # Ưu tiên lấy 'next' từ URL Query String, nếu không có thì lấy từ Form Hidden Field
     next_page = request.args.get('next') or request.form.get('next')
 
     try:
         user = dao.auth_user(username=username, password=password)
         login_user(user=user)
 
-        # 1. Nếu có 'next' (ví dụ user truy cập đường dẫn bảo mật trước đó), ưu tiên quay lại đó
         if next_page:
             return redirect(next_page), 302
 
-        # 2. Nếu không có 'next', điều hướng theo vai trò (Role)
         if user.role == UserRole.ADMIN:
             return redirect('/admin'), 302
         elif user.role == UserRole.RECEPTIONIST:
@@ -169,7 +145,6 @@ def login_process():
         elif user.role == UserRole.STAFF:
             return redirect('/staff/appointments'), 302
 
-        # Khách hàng (CUSTOMER) về trang chủ
         return redirect('/'), 302
 
     except ValidationError as val:
@@ -178,16 +153,12 @@ def login_process():
         app.logger.exception(ex)
         return render_template('auth/login.html', err_msg="Có lỗi hệ thống xảy ra!"), 500
 
-
-# 3. XÁC THỰC: ĐĂNG XUẤT (LOGOUT)
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout_process():
     logout_user()
     return redirect('/login'), 302
 
-
-# 4. XÁC THỰC: ĐĂNG KÝ TÀI KHOẢN KHÁCH HÀNG (REGISTER)
 
 @app.route('/register', methods=['GET'])
 def register_view():
@@ -220,17 +191,13 @@ def register_process():
         return redirect('/login'), 302
 
     except ValidationError as ex:
-        # HTTP 400 Bad Request: dữ liệu sai định dạng
         return render_template('auth/register.html', err_msg=str(ex)), 400
     except DuplicateError as ex:
-        # HTTP 409 Conflict: username/email đã tồn tại
         return render_template('auth/register.html', err_msg=str(ex)), 409
     except Exception as ex:
         app.logger.exception(ex)
         return render_template('auth/register.html', err_msg="Lỗi hệ thống khi đăng ký!"), 500
 
-
-# 5. HỒ SƠ CÁ NHÂN
 
 @app.route('/users/me', methods=['GET'])
 @login_required
@@ -265,9 +232,6 @@ def users_me_update():
         return jsonify({"error": "Không thể cập nhật hồ sơ!"}), 500
 
 
-# 6. LỊCH HẸN
-
-# GET /appointments/available-slots?staff_id=1&service_id=2&date=2026-08-16&appointment_id=5
 @app.route('/appointments/available-slots', methods=['GET'])
 @login_required
 def get_available_slots_route():
@@ -294,7 +258,7 @@ def get_available_slots_route():
     except Exception as e:
         return jsonify({"error": "Lỗi hệ thống!"}), 500
 
-# POST /appointments - API Tạo lịch hẹn mới
+
 @app.route('/appointments', methods=['POST'])
 @login_required
 def create_appointment_route():
@@ -302,13 +266,10 @@ def create_appointment_route():
 
     service_id = data.get('service_id')
     staff_id = data.get('staff_id')
-    date_str = data.get('date')      # Định dạng: YYYY-MM-DD
-    time_str = data.get('time')      # Định dạng: HH:MM
+    date_str = data.get('date')
+    time_str = data.get('time')
     note = data.get('note', '')
 
-    # Customer CHỈ được đặt lịch cho chính mình, không được truyền
-    # customer_id để đặt hộ người khác. Chỉ Staff/Admin (đặt tại quầy) mới
-    # được chỉ định customer_id khác chính họ.
     if current_user.role == UserRole.CUSTOMER:
         customer_id = current_user.id
     else:
@@ -340,18 +301,16 @@ def create_appointment_route():
         }), 201
 
     except ValidationError as ex:
-        # HTTP 400 Bad Request: Lỗi dữ liệu / Giờ trùng / Sai định dạng
         return jsonify({"error": str(ex)}), 400
 
     except NotFoundError as ex:
-        # HTTP 404 Not Found: Khách hàng / Nhân viên / Dịch vụ không tồn tại
         return jsonify({"error": str(ex)}), 404
 
     except Exception as ex:
         app.logger.exception(ex)
         return jsonify({"error": "Lỗi hệ thống khi tạo lịch hẹn!"}), 500
 
-# PUT /appointments/<id> - Sửa lịch hẹn
+
 @app.route('/appointments/<int:appointment_id>', methods=['PUT'])
 @login_required
 def update_appointment_route(appointment_id):
@@ -366,7 +325,6 @@ def update_appointment_route(appointment_id):
     if current_user.role == UserRole.STAFF and appt.staff_id != current_user.id:
         return jsonify({"error": "Bạn không có quyền sửa lịch hẹn này!"}), 403
 
-    # chỉ Staff/Admin được phép đổi trạng thái lịch hẹn, Customer không được tự đổi
     status = data.get('status')
     if status and current_user.role == UserRole.CUSTOMER:
         return jsonify({"error": "Bạn không có quyền thay đổi trạng thái lịch hẹn!"}), 403
@@ -401,11 +359,9 @@ def update_appointment_route(appointment_id):
         return jsonify({"error": "Lỗi hệ thống khi cập nhật lịch hẹn!"}), 500
 
 
-# PATCH /appointments/<id>/cancel - Hủy lịch hẹn
 @app.route('/appointments/<int:appointment_id>/cancel', methods=['PATCH', 'POST'])
 @login_required
 def cancel_appointment_route(appointment_id):
-    # lấy lịch hẹn ra trước để check quyền sở hữu
     appt = dao.get_appointment_by_id(appointment_id)
     if not appt or not appt.active:
         return jsonify({"error": "Lịch hẹn không tồn tại!"}), 404
@@ -433,9 +389,6 @@ def cancel_appointment_route(appointment_id):
         return jsonify({"error": "Lỗi hệ thống khi hủy lịch hẹn!"}), 500
 
 
-# 7. QUẢN LÝ HÓA ĐƠN & THANH TOÁN (INVOICES API)
-
-# 7.1 POST /invoices - Tạo hóa đơn
 @app.route('/invoices', methods=['POST'])
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def create_invoice_route():
@@ -472,7 +425,6 @@ def create_invoice_route():
         return jsonify({"error": "Lỗi hệ thống khi lập hóa đơn!"}), 500
 
 
-# 7.2 GET /invoices/<id> - Xem chi tiết 1 hóa đơn (Biên nhận thanh toán)
 @app.route('/invoices/<int:invoice_id>', methods=['GET'])
 @login_required
 def get_invoice_detail_route(invoice_id):
@@ -480,14 +432,12 @@ def get_invoice_detail_route(invoice_id):
     if not invoice:
         abort(404)
 
-    # Ràng buộc bảo mật IDOR
     if current_user.role == UserRole.CUSTOMER and invoice.customer_id != current_user.id:
         abort(403)
 
     return render_template('receptionist/invoice_detail.html', invoice=invoice), 200
 
 
-# Khách hàng xem lịch sử hóa đơn của mình (Có Lọc & Phân trang)
 @app.route('/invoices/me', methods=['GET'])
 @login_required
 def my_invoices_view():
@@ -497,21 +447,17 @@ def my_invoices_view():
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 10)
 
-    # 1. Lấy toàn bộ hóa đơn của khách hàng hiện tại
     all_invoices, _ = dao.get_invoices(customer_id=current_user.id, page=None)
 
-    # 3. Lọc theo trạng thái (DRAFT / PAID / CANCELLED)
     if status_str and status_str != 'ALL':
         all_invoices = [inv for inv in all_invoices if inv.status.name == status_str]
 
-    # 4. Lọc theo ngày tháng (YYYY-MM-DD)
     if date_str:
         all_invoices = [
             inv for inv in all_invoices
             if inv.invoice_date.strftime('%Y-%m-%d') == date_str
         ]
 
-    # 5. Phân trang
     total_items = len(all_invoices)
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
@@ -530,7 +476,6 @@ def my_invoices_view():
     ), 200
 
 
-# Giao diện lập hóa đơn nháp (Nhân viên)
 @app.route('/staff/create-invoice', methods=['GET'])
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def create_invoice_view():
@@ -544,7 +489,6 @@ def create_invoice_view():
 
     services = dao.get_all_services()
 
-    # Lấy toàn bộ ServiceProduct để tạo bản đồ Định Mức Sản Phẩm theo Dịch Vụ
     service_products_map = {}
     for svc in services:
         s_prods = dao.get_service_products(svc.id)
@@ -569,7 +513,6 @@ def create_invoice_view():
     ), 200
 
 
-# Giao diện danh sách hóa đơn do Nhân viên lập
 @app.route('/staff/invoices', methods=['GET'])
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def staff_invoices_view():
@@ -583,9 +526,6 @@ def staff_invoices_view():
     from_date = None
     to_date = None
 
-    # ==============================
-    # 1. LỌC NGÀY
-    # ==============================
     if date_str:
         try:
             selected_dt = datetime.strptime(date_str, '%Y-%m-%d')
@@ -603,16 +543,12 @@ def staff_invoices_view():
         except ValueError:
             pass
 
-    # Staff chỉ xem hóa đơn do chính mình lập
     staff_id_filter = (
         current_user.id
         if current_user.role == UserRole.STAFF
         else None
     )
 
-    # ==============================
-    # 2. LẤY TOÀN BỘ HÓA ĐƠN
-    # ==============================
     all_invoices, _ = dao.get_invoices(
         staff_id=staff_id_filter,
         from_date=from_date,
@@ -620,9 +556,6 @@ def staff_invoices_view():
         page=None
     )
 
-    # ==============================
-    # 3. FILTER STATUS
-    # ==============================
     filtered_invoices = all_invoices
 
     if status_str != 'ALL':
@@ -631,10 +564,6 @@ def staff_invoices_view():
             if inv.status.name == status_str
         ]
 
-    # ==============================
-    # 4. SEARCH
-    # Mã HĐ / Tên khách / SĐT
-    # ==============================
     if kw:
         kw_lower = kw.lower()
 
@@ -657,9 +586,6 @@ def staff_invoices_view():
             )
         ]
 
-    # ==============================
-    # 5. PHÂN TRANG SAU FILTER
-    # ==============================
     total_items = len(filtered_invoices)
 
     total_pages = (
@@ -684,7 +610,6 @@ def staff_invoices_view():
 
         invoices=invoices_paged,
 
-        # Dùng cho 3 card thống kê
         all_invoices=all_invoices,
 
         selected_status=status_str,
@@ -696,7 +621,6 @@ def staff_invoices_view():
     ), 200
 
 
-# Lễ tân quản lý toàn bộ danh sách hóa đơn (Xem nháp, Xem đã thanh toán)
 @app.route('/reception/invoices', methods=['GET'])
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def reception_invoices_view():
@@ -725,7 +649,6 @@ def reception_invoices_view():
         except ValueError:
             pass
 
-    # Lấy toàn bộ hóa đơn trước khi phân trang
     all_invoices, _ = dao.get_invoices(
         status=None,
         from_date=from_date,
@@ -733,9 +656,6 @@ def reception_invoices_view():
         page=None
     )
 
-    # =========================
-    # LỌC THEO TRẠNG THÁI
-    # =========================
     filtered_invoices = all_invoices
 
     if status_str != 'ALL':
@@ -744,19 +664,12 @@ def reception_invoices_view():
             if inv.status.name == status_str
         ]
 
-    # =========================
-    # LỌC THEO STYLIST
-    # =========================
     if staff_id:
         filtered_invoices = [
             inv for inv in filtered_invoices
             if inv.staff_id == staff_id
         ]
 
-    # =========================
-    # TÌM KIẾM
-    # Mã HĐ / tên khách / SĐT / stylist
-    # =========================
     if kw:
         kw_lower = kw.lower()
 
@@ -782,9 +695,6 @@ def reception_invoices_view():
             )
         ]
 
-    # =========================
-    # PHÂN TRANG SAU KHI FILTER
-    # =========================
     total_items = len(filtered_invoices)
 
     total_pages = (
@@ -810,10 +720,7 @@ def reception_invoices_view():
         'receptionist/recept_invoice_list.html',
 
         invoices=invoices_paged,
-
-        # Giữ dữ liệu tổng để tính các card thống kê
         all_invoices=all_invoices,
-
         staff_list=staff_list,
 
         selected_date=date_str,
@@ -826,7 +733,6 @@ def reception_invoices_view():
     ), 200
 
 
-# Lễ tân xem và tra cứu toàn bộ lịch hẹn của Salon
 @app.route('/reception/appointments', methods=['GET'])
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def reception_appointments_view():
@@ -845,14 +751,12 @@ def reception_appointments_view():
         except ValueError:
             selected_date = None
 
-    # Lấy danh sách trước khi phân trang
     all_appointments = dao.get_appointments(
         date=selected_date,
         staff_id=staff_id,
         page=None
     )
 
-    # Search theo tên khách hàng / SĐT / mã lịch hẹn
     if kw:
         kw_lower = kw.lower()
 
@@ -882,11 +786,9 @@ def reception_appointments_view():
 
         all_appointments = filtered_appointments
 
-    # Tính phân trang SAU KHI filter
     total_items = len(all_appointments)
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
-    # Chặn page vượt giới hạn
     if page < 1:
         page = 1
 
@@ -911,13 +813,13 @@ def reception_appointments_view():
         total_pages=total_pages
     ), 200
 
-# PATCH /invoices/<id>/confirm-payment - Lễ tân xác nhận thanh toán (DRAFT -> PAID)
+
 @app.route('/invoices/<int:invoice_id>/confirm-payment', methods=['PATCH'])
 @role_required(UserRole.RECEPTIONIST, UserRole.ADMIN)
 def confirm_invoice_payment_route(invoice_id):
     data = request.get_json(silent=True) or request.form
     payment_method = data.get('payment_method')
-    promotion_id = data.get('promotion_id')  # optional
+    promotion_id = data.get('promotion_id')
 
     if not payment_method:
         return jsonify({"error": "Vui lòng chọn hình thức thanh toán!"}), 400
@@ -953,10 +855,8 @@ def invoice_checkout_view(invoice_id):
     invoice = dao.get_invoice_by_id(invoice_id)
     if not invoice or invoice.status != InvoiceStatus.DRAFT:
         flash("Hóa đơn không hợp lệ hoặc đã thanh toán!", "error")
-        # Đã cập nhật sang đường dẫn quản lý hóa đơn mới
         return redirect('/reception/invoices')
 
-    # Lấy danh sách khuyến mãi còn hạn truyền thẳng vào Template Jinja2
     active_promos = dao.get_active_promotions()
 
     return render_template(
@@ -966,12 +866,9 @@ def invoice_checkout_view(invoice_id):
     ), 200
 
 
-# 8. ĐỔI MẬT KHẨU
-
 @app.route('/users/change-password', methods=['POST'])
 @login_required
 def change_password_route():
-    # Sửa từ request.form thành request.get_json(silent=True) or request.form để nhận diện đúng JSON từ fetch
     data = request.get_json(silent=True) or request.form
     old_password = data.get('old_password')
     new_password = data.get('new_password')
@@ -996,9 +893,6 @@ def change_password_route():
         return jsonify(success=False, error="Lỗi hệ thống khi đổi mật khẩu!"), 500
 
 
-# 9. LỊCH HẸN
-
-# Lịch hẹn cá nhân của Khách hàng (Có Lọc & Phân trang)
 @app.route('/appointments/me', methods=['GET'])
 @login_required
 def my_appointments_view():
@@ -1008,10 +902,8 @@ def my_appointments_view():
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 10)
 
-    # 1. Lấy tất cả lịch hẹn của khách hàng này
     all_appts = dao.get_appointments_by_customer(current_user.id)
 
-    # 2. Lọc theo từ khóa (Tên dịch vụ)
     if kw:
         kw_lower = kw.lower()
         all_appts = [
@@ -1019,18 +911,15 @@ def my_appointments_view():
             if a.service and kw_lower in a.service.service_name.lower()
         ]
 
-    # 3. Lọc theo trạng thái (CONFIRMED / COMPLETED / CANCELLED)
     if status_str and status_str != 'ALL':
         all_appts = [a for a in all_appts if a.status.name == status_str]
 
-    # 4. Lọc theo ngày tháng (YYYY-MM-DD)
     if date_str:
         all_appts = [
             a for a in all_appts
             if a.appointment_date.strftime('%Y-%m-%d') == date_str
         ]
 
-    # 5. Phân trang
     total_items = len(all_appts)
     total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
 
@@ -1051,12 +940,11 @@ def my_appointments_view():
         selected_date=date_str,
         page=page,
         total_pages=total_pages,
-        datetime=datetime,  # Bổ sung truyền sang Jinja2
+        datetime=datetime,
         timedelta=timedelta
     ), 200
 
 
-# Nhân viên xem danh sách lịch hẹn được giao
 @app.route('/staff/appointments', methods=['GET'])
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def staff_appointments_view():
@@ -1071,17 +959,12 @@ def staff_appointments_view():
     page = request.args.get('page', 1, type=int)
     page_size = app.config.get('PAGE_SIZE', 10)
 
-    # Staff chỉ xem lịch của chính mình
-    # Admin có thể truyền staff_id
     staff_id = (
         current_user.id
         if current_user.role == UserRole.STAFF
         else request.args.get('staff_id', type=int)
     )
 
-    # ==============================
-    # 1. LẤY TOÀN BỘ LỊCH TRƯỚC
-    # ==============================
     if staff_id:
         all_appointments, _ = dao.get_appointments_by_staff(
             staff_id=staff_id,
@@ -1091,9 +974,6 @@ def staff_appointments_view():
     else:
         all_appointments = []
 
-    # ==============================
-    # 2. DỮ LIỆU CHO CARD THỐNG KÊ
-    # ==============================
     count_total = len(all_appointments)
 
     count_confirmed = sum(
@@ -1111,9 +991,6 @@ def staff_appointments_view():
         if a.status.name == 'CANCELLED'
     )
 
-    # ==============================
-    # 3. FILTER STATUS
-    # ==============================
     filtered_appointments = all_appointments
 
     if status_str != 'ALL':
@@ -1122,9 +999,6 @@ def staff_appointments_view():
             if a.status.name == status_str
         ]
 
-    # ==============================
-    # 4. SEARCH TÊN / SĐT KHÁCH
-    # ==============================
     if kw:
         kw_lower = kw.lower()
 
@@ -1144,9 +1018,6 @@ def staff_appointments_view():
             )
         ]
 
-    # ==============================
-    # 5. PHÂN TRANG SAU KHI FILTER
-    # ==============================
     total_items = len(filtered_appointments)
 
     total_pages = (
@@ -1191,7 +1062,6 @@ def staff_appointments_api():
     date_str = request.args.get('date')
     staff_id = request.args.get('staff_id', type=int)
 
-    # Staff chỉ xem được lịch của chính mình; Admin phải chỉ định staff_id cần xem
     if current_user.role == UserRole.STAFF:
         staff_id = current_user.id
     elif not staff_id:
@@ -1215,13 +1085,9 @@ def staff_appointments_api():
         return jsonify({"error": str(ex)}), 400
 
 
-# 10. TRA CỨU KHÁCH HÀNG (NHÂN VIÊN / QUẢN LÝ)
 @app.route('/customers/search', methods=['GET'])
 @role_required(UserRole.STAFF, UserRole.ADMIN)
 def search_customers_route():
-    """Nhân viên tra cứu khách hàng theo tên hoặc SĐT khi lập hóa đơn.
-    Không dùng chung /users (route đó chỉ dành cho Admin quản lý toàn bộ user,
-    bao gồm cả Staff/Admin khác - lộ thông tin không cần thiết cho Nhân viên)."""
     kw = request.args.get('kw', '').strip()
 
     customers = dao.get_users(role=UserRole.CUSTOMER)
@@ -1245,8 +1111,6 @@ def search_customers_route():
     }), 200
 
 
-# XỬ LÝ LỖI TRANG
-
 @app.errorhandler(403)
 def forbidden_error(error):
     return render_template('error/403.html'), 403
@@ -1256,6 +1120,5 @@ def not_found_error(error):
     return render_template('error/404.html'), 404
 
 
-# CHẠY ỨNG DỤNG
 if __name__ == "__main__":
     app.run(debug=True)
